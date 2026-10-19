@@ -1,0 +1,59 @@
+{
+  "name": "pokcam",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PokCam: roguelike de cartas con póker y un mapa por recorrer",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tipos": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "escritorio": "npm run build && electron .",
+    "escritorio:dev": "electron . --dev",
+    "instalador:windows": "npm run build && electron-builder --win --publish never",
+    "android:sync": "npm run build && cap sync android",
+    "android:apk": "npm run android:sync && node scripts/gradle.mjs assembleDebug",
+    "version:nueva": "node scripts/nueva-version.mjs"
+  },
+  "main": "electron/main.js",
+  "author": "CamstagDev",
+  "build": {
+    "appId": "com.camstagdev.pokcam",
+    "productName": "PokCam",
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/icons/icon-512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "PokCam"
+    }
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "phaser": "^4.2.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "@types/node": "^24.19.2",
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}
