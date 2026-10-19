@@ -14,3 +14,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
 - Combate de póker: mano de 8 cartas, se juegan o descartan de 1 a 5, y
   hay que llegar al objetivo con 4 manos y 3 descartes. Puntos =
   (fichas de la mano + fichas de las cartas) × multiplicador.
+- Menú principal con el título del juego, "Nueva partida" y "Continuar".
+- 3 ranuras de guardado: al empezar se elige una (si está ocupada se
+  pide confirmar antes de sobrescribirla), y desde "Continuar" se puede
+  seguir o borrar cada partida. Se guarda sola al elegir un nodo del
+  mapa y al ganar un combate; si se sale a mitad de un combate, al
+  continuar se vuelve a ese combate. Al perder o vencer al jefe, la
+  ranura queda libre.

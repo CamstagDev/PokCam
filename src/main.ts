@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import './estilos.css';
-import { crearPartida } from './juego/partida.ts';
+import { EscenaMenu } from './escenas/EscenaMenu.ts';
+import { EscenaRanuras } from './escenas/EscenaRanuras.ts';
 import { EscenaMapa } from './escenas/EscenaMapa.ts';
 import { EscenaMesa } from './escenas/EscenaMesa.ts';
 import { COLORES } from './escenas/estilo.ts';
@@ -18,8 +19,6 @@ new Phaser.Game({
     width: 1280,
     height: 720,
   },
-  scene: [EscenaMapa, EscenaMesa],
-  callbacks: {
-    preBoot: (juego) => juego.registry.set('partida', crearPartida(Date.now())),
-  },
+  // La primera es la que arranca: el menú principal.
+  scene: [EscenaMenu, EscenaRanuras, EscenaMapa, EscenaMesa],
 });

@@ -1,5 +1,5 @@
-// Dónde está corriendo el juego. Por ahora solo se usa para mostrarlo;
-// cuando llegue el guardado decidirá dónde se escribe, como en SudoCam.
+// Dónde está corriendo el juego. Por ahora solo se usa para mostrarlo; el
+// guardado usa localStorage en las tres (ver escenas/sesion.ts).
 //
 //   'android'     dentro de Capacitor
 //   'escritorio'  dentro de Electron (Windows), que expone window.pokcamEscritorio

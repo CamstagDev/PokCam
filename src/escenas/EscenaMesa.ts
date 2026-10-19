@@ -7,10 +7,11 @@ import { crearAleatorio } from '../juego/aleatorio.ts';
 import { SIMBOLO_PALO, nombreRango, type Carta } from '../juego/cartas.ts';
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
 import { MANOS } from '../juego/manos.ts';
-import { crearPartida, type Partida } from '../juego/partida.ts';
+import { ganarCombate } from '../juego/partida.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton, type Boton } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
+import { jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
 
 const OBJETIVOS: Partial<Record<TipoNodo, number>> = { combate: 300, elite: 500, jefe: 800 };
 
@@ -40,7 +41,7 @@ export class EscenaMesa extends Phaser.Scene {
   }
 
   create(): void {
-    const partida = this.registry.get('partida') as Partida;
+    const partida = partidaActual(this);
     const aleatorio = crearAleatorio(partida.mapa.semilla + partida.visitados.length);
     this.combate = crearCombate(aleatorio, { objetivo: OBJETIVOS[this.tipo] ?? 300 });
 
@@ -128,11 +129,14 @@ export class EscenaMesa extends Phaser.Scene {
 
     this.botonJugar.activar(false);
     this.botonDescartar.activar(false);
+    // Ganado, el combate deja de estar pendiente; al terminar la partida
+    // (derrota o jefe vencido) su ranura queda libre.
+    if (finDePartida) terminarPartida(this);
+    else jugarPartida(this, ganarCombate(partidaActual(this)));
     this.add.rectangle(width / 2, height / 2, width, height, COLORES.fondo, 0.85);
     this.add.text(width / 2, height / 2 - 60, titulo, estiloTexto(48, gano ? COLORES.acento : COLORES.multi)).setOrigin(0.5);
-    crearBoton(this, width / 2, height / 2 + 40, finDePartida ? 'Nueva partida' : 'Seguir', COLORES.acento, () => {
-      if (finDePartida) this.registry.set('partida', crearPartida(Date.now()));
-      this.scene.start('mapa');
-    });
+    crearBoton(this, width / 2, height / 2 + 40, finDePartida ? 'Menú principal' : 'Seguir', COLORES.acento, () =>
+      this.scene.start(finDePartida ? 'menu' : 'mapa'),
+    );
   }
 }

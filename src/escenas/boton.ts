@@ -13,8 +13,8 @@ export function crearBoton(
   texto: string,
   color: number,
   alTocar: () => void,
+  ancho = 200,
 ): Boton {
-  const ancho = 200;
   const alto = 56;
   const fondo = escena.add.graphics();
   const etiqueta = escena.add.text(0, 0, texto, estiloTexto(22)).setOrigin(0.5);

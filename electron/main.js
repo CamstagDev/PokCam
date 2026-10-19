@@ -2,8 +2,8 @@
 //
 // Electron es solo un marco: abre una ventana que muestra el mismo juego
 // que corre en el navegador (la carpeta dist/ que genera `vite build`).
-// Cuando llegue el guardado, aquí se agregan los archivos .json en
-// %APPDATA%\PokCam\, como en SudoCam.
+// Las partidas guardadas viven en el localStorage de la ventana, que
+// Electron guarda en %APPDATA%\PokCam\.
 //
 //   npm run escritorio        build + abre la ventana
 //   npm run escritorio:dev    abre la ventana contra el servidor de Vite

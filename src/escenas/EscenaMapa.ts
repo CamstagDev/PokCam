@@ -1,12 +1,14 @@
 // El mapa de la partida. Se recorre de izquierda (inicio) a derecha (jefe);
 // los nodos a los que se puede ir laten. Tocar uno avanza: si es un
 // combate abre la mesa, y el resto (tienda, evento, descanso) por ahora
-// solo avanza.
+// solo avanza. Cada vez que se elige un nodo la partida se guarda.
 
 import Phaser from 'phaser';
-import { avanzar, nodosDisponibles, type Partida } from '../juego/partida.ts';
+import { TIPOS_DE_COMBATE, avanzar, nodosDisponibles, type Partida } from '../juego/partida.ts';
 import { buscarNodo, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
+import { crearBoton } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
+import { jugarPartida, partidaActual } from './sesion.ts';
 
 const ICONOS: Record<TipoNodo, string> = {
   inicio: '⌂',
@@ -18,15 +20,13 @@ const ICONOS: Record<TipoNodo, string> = {
   jefe: '☠',
 };
 
-export const TIPOS_DE_COMBATE: readonly TipoNodo[] = ['combate', 'elite', 'jefe'];
-
 export class EscenaMapa extends Phaser.Scene {
   constructor() {
     super('mapa');
   }
 
   create(): void {
-    const partida = this.registry.get('partida') as Partida;
+    const partida = partidaActual(this);
     const { width, height } = this.scale;
     const margenX = 110;
     const margenY = 130;
@@ -38,6 +38,7 @@ export class EscenaMapa extends Phaser.Scene {
     });
 
     this.add.text(width / 2, 50, 'Elige tu camino', estiloTexto(30)).setOrigin(0.5);
+    crearBoton(this, 90, 50, 'Menú', COLORES.borde, () => this.scene.start('menu'), 130);
 
     const caminos = this.add.graphics();
     for (const fila of partida.mapa.pisos) {
@@ -71,7 +72,7 @@ export class EscenaMapa extends Phaser.Scene {
   }
 
   private ir(partida: Partida, nodo: Nodo): void {
-    this.registry.set('partida', avanzar(partida, nodo.id));
+    jugarPartida(this, avanzar(partida, nodo.id));
     if (TIPOS_DE_COMBATE.includes(nodo.tipo)) {
       this.scene.start('mesa', { tipo: nodo.tipo });
     } else {

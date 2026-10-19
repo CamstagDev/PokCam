@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { crearAleatorio } from '../src/juego/aleatorio.ts';
 import { TAMANO_MANO, crearCombate, descartar, jugar } from '../src/juego/combate.ts';
-import { avanzar, crearPartida, nodosDisponibles } from '../src/juego/partida.ts';
+import { avanzar, crearPartida, ganarCombate, nodosDisponibles } from '../src/juego/partida.ts';
 
 describe('partida', () => {
   it('se recorre desde el inicio hasta el jefe', () => {
     let partida = crearPartida(7);
-    while (nodosDisponibles(partida).length > 0) partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
+    while (nodosDisponibles(partida).length > 0) partida = ganarCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id));
     expect(partida.visitados).toHaveLength(partida.mapa.pisos.length);
     expect(partida.nodoActual).toBe(partida.mapa.pisos.at(-1)![0]!.id);
   });
@@ -14,6 +14,14 @@ describe('partida', () => {
   it('no deja saltar a un nodo que no está unido', () => {
     const partida = crearPartida(7);
     expect(() => avanzar(partida, partida.mapa.pisos.at(-1)![0]!.id)).toThrow();
+  });
+
+  it('al elegir un combate queda pendiente hasta ganarlo', () => {
+    const partida = crearPartida(7);
+    const enCombate = avanzar(partida, nodosDisponibles(partida)[0]!.id); // el piso 1 siempre es combate
+    expect(enCombate.combatePendiente).toBe(true);
+    expect(() => avanzar(enCombate, nodosDisponibles(enCombate)[0]!.id)).toThrow();
+    expect(ganarCombate(enCombate).combatePendiente).toBe(false);
   });
 });
 
