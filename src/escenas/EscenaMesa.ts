@@ -6,7 +6,7 @@ import Phaser from 'phaser';
 import { crearAleatorio } from '../juego/aleatorio.ts';
 import { SIMBOLO_PALO, nombreRango, type Carta } from '../juego/cartas.ts';
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
-import { MANOS } from '../juego/manos.ts';
+import { MANOS, evaluarMano } from '../juego/manos.ts';
 import { ganarCombate } from '../juego/partida.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton, type Boton } from './boton.ts';
@@ -60,6 +60,9 @@ export class EscenaMesa extends Phaser.Scene {
     this.elegidas.clear();
     this.combate = hacer(this.combate, ids);
     this.actualizar();
+    if (hacer === jugar) {
+      this.tweens.add({ targets: this.jugada, scale: { from: 1.3, to: 1 }, duration: 250, ease: 'Back.easeOut' });
+    }
     if (this.combate.estado !== 'jugando') this.terminar();
   }
 
@@ -70,10 +73,16 @@ export class EscenaMesa extends Phaser.Scene {
       `Puntos: ${c.puntos}`,
       `Manos: ${c.manosRestantes}   Descartes: ${c.descartesRestantes}`,
     ]);
-    if (c.ultimaJugada) {
+    // Con cartas elegidas se anticipa qué mano se jugaría (solo el nombre);
+    // sin elegir, queda el resultado de la última jugada.
+    if (this.elegidas.size > 0) {
+      const cartas = c.mano.filter((carta) => this.elegidas.has(carta.id));
+      this.jugada.setText(MANOS[evaluarMano(cartas).tipo].nombre);
+    } else if (c.ultimaJugada) {
       const j = c.ultimaJugada;
       this.jugada.setText(`${MANOS[j.tipo].nombre}: ${j.fichas} × ${j.multi} = ${j.total}`);
-      this.tweens.add({ targets: this.jugada, scale: { from: 1.3, to: 1 }, duration: 250, ease: 'Back.easeOut' });
+    } else {
+      this.jugada.setText('');
     }
     this.dibujarMano();
     const hayElegidas = this.elegidas.size > 0;

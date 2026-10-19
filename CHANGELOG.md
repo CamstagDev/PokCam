@@ -21,3 +21,5 @@ la versión nueva (ver scripts/nueva-version.mjs).
   mapa y al ganar un combate; si se sale a mitad de un combate, al
   continuar se vuelve a ese combate. Al perder o vencer al jefe, la
   ranura queda libre.
+- En el combate, al elegir cartas se ve qué mano se va a jugar (por
+  ejemplo "Doble pareja") antes de jugarla.
