@@ -29,3 +29,7 @@ la versión nueva (ver scripts/nueva-version.mjs).
   ejemplo "Doble pareja") antes de jugarla.
 - Botón "Menú" también en el combate, con confirmación: la partida
   queda guardada y al continuar el combate empieza de nuevo.
+- Mapa vertical, como en Inscryption: se sube desde el inicio hasta el
+  jefe, con la cámara de cerca y nodos más grandes. Solo se ven el piso
+  actual y los dos siguientes; arrastrando (o con la rueda) se baja a
+  ver el camino hecho. Al avanzar, la cámara sube sola al piso nuevo.
