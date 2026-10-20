@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { crearAleatorio } from '../src/juego/aleatorio.ts';
 import { TAMANO_MANO, crearCombate, descartar, jugar } from '../src/juego/combate.ts';
-import { avanzar, crearPartida, ganarCombate, nodosDisponibles } from '../src/juego/partida.ts';
+import { avanzar, crearPartida, enBancarrota, resolverCombate, nodosDisponibles } from '../src/juego/partida.ts';
 
 describe('partida', () => {
   it('se recorre desde el inicio hasta el jefe', () => {
     let partida = crearPartida(7);
-    while (nodosDisponibles(partida).length > 0) partida = ganarCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id));
+    while (nodosDisponibles(partida).length > 0) partida = resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true);
     expect(partida.visitados).toHaveLength(partida.mapa.pisos.length);
     expect(partida.nodoActual).toBe(partida.mapa.pisos.at(-1)![0]!.id);
   });
@@ -16,12 +16,36 @@ describe('partida', () => {
     expect(() => avanzar(partida, partida.mapa.pisos.at(-1)![0]!.id)).toThrow();
   });
 
+  it('empieza con 300 de oro; ganar un combate suma 100 y perderlo resta 100', () => {
+    const partida = crearPartida(7);
+    expect(partida.oro).toBe(300);
+    const enCombate = avanzar(partida, nodosDisponibles(partida)[0]!.id);
+    expect(resolverCombate(enCombate, true).oro).toBe(400);
+    const perdido = resolverCombate(enCombate, false);
+    expect(perdido.oro).toBe(200);
+    expect(perdido.combatePendiente).toBe(false); // se sigue por el mapa
+  });
+
+  it('se queda en bancarrota al llegar a 0 de oro', () => {
+    let partida = { ...crearPartida(7), oro: 100 };
+    partida = resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), false);
+    expect(partida.oro).toBe(0);
+    expect(enBancarrota(partida)).toBe(true);
+  });
+
+  it('al jefe perdido hay que volver a enfrentarlo', () => {
+    let partida = crearPartida(7);
+    while (nodosDisponibles(partida).length > 0) partida = resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true);
+    const conJefe = { ...partida, combatePendiente: true };
+    expect(resolverCombate(conJefe, false).combatePendiente).toBe(true);
+  });
+
   it('al elegir un combate queda pendiente hasta ganarlo', () => {
     const partida = crearPartida(7);
     const enCombate = avanzar(partida, nodosDisponibles(partida)[0]!.id); // el piso 1 siempre es combate
     expect(enCombate.combatePendiente).toBe(true);
     expect(() => avanzar(enCombate, nodosDisponibles(enCombate)[0]!.id)).toThrow();
-    expect(ganarCombate(enCombate).combatePendiente).toBe(false);
+    expect(resolverCombate(enCombate, true).combatePendiente).toBe(false);
   });
 });
 

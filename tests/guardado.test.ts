@@ -22,7 +22,7 @@ describe('guardado', () => {
     let partida = crearPartida(7);
     partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
     guardar(almacen, 1, partida, 1234);
-    expect(cargar(almacen, 1)).toEqual({ version: 1, guardadoEn: 1234, partida });
+    expect(cargar(almacen, 1)).toEqual({ version: 2, guardadoEn: 1234, partida });
     expect(cargar(almacen, 0)).toBeNull();
   });
 
@@ -31,7 +31,7 @@ describe('guardado', () => {
     let partida = crearPartida(7);
     partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
     guardar(almacen, 2, partida, 99);
-    expect(resumirTodas(almacen)).toEqual([null, null, { ranura: 2, guardadoEn: 99, piso: 1, pisos: 9 }]);
+    expect(resumirTodas(almacen)).toEqual([null, null, { ranura: 2, guardadoEn: 99, piso: 1, pisos: 9, oro: 300 }]);
   });
 
   it('sobrescribir reemplaza la partida de la ranura', () => {
@@ -57,6 +57,13 @@ describe('guardado', () => {
     almacen.setItem('pokcam.ranura.1', JSON.stringify({ version: 999, partida: {} }));
     expect(cargar(almacen, 0)).toBeNull();
     expect(cargar(almacen, 1)).toBeNull();
+  });
+
+  it('las partidas de antes del oro cargan con el oro inicial', () => {
+    const almacen = almacenDePrueba();
+    const { oro: _, ...vieja } = crearPartida(3);
+    almacen.setItem('pokcam.ranura.0', JSON.stringify({ version: 1, guardadoEn: 5, partida: vieja }));
+    expect(cargar(almacen, 0)?.partida.oro).toBe(300);
   });
 
   it('no existe una cuarta ranura', () => {

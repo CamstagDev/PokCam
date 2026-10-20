@@ -21,6 +21,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
   mapa y al ganar un combate; si se sale a mitad de un combate, al
   continuar se vuelve a ese combate. Al perder o vencer al jefe, la
   ranura queda libre.
+- Oro: se empieza con 300, cada combate ganado da 100 y cada uno
+  perdido quita 100 (al perder se sigue por el mapa, salvo con el jefe,
+  que hay que reintentar). Con 0 de oro la partida termina. El oro se ve
+  siempre arriba a la derecha y en cada ranura de guardado.
 - En el combate, al elegir cartas se ve qué mano se va a jugar (por
   ejemplo "Doble pareja") antes de jugarla.
 - Botón "Menú" también en el combate, con confirmación: la partida

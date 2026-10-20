@@ -7,11 +7,12 @@ import { crearAleatorio } from '../juego/aleatorio.ts';
 import { SIMBOLO_PALO, nombreRango, type Carta } from '../juego/cartas.ts';
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
 import { MANOS, evaluarMano } from '../juego/manos.ts';
-import { ganarCombate } from '../juego/partida.ts';
+import { enBancarrota, resolverCombate } from '../juego/partida.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton, type Boton } from './boton.ts';
 import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
+import { mostrarOro, type Marcador } from './oro.ts';
 import { jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
 
 const OBJETIVOS: Partial<Record<TipoNodo, number>> = { combate: 300, elite: 500, jefe: 800 };
@@ -31,6 +32,7 @@ export class EscenaMesa extends Phaser.Scene {
   private botonJugar!: Boton;
   private botonDescartar!: Boton;
   private botonMenu!: Boton;
+  private oro!: Marcador;
 
   constructor() {
     super('mesa');
@@ -44,7 +46,9 @@ export class EscenaMesa extends Phaser.Scene {
 
   create(): void {
     const partida = partidaActual(this);
-    const aleatorio = crearAleatorio(partida.mapa.semilla + partida.visitados.length);
+    // El oro entra en la semilla para que reintentar al jefe (con menos oro)
+    // reparta otras cartas; continuar la misma partida reparte las mismas.
+    const aleatorio = crearAleatorio(partida.mapa.semilla + partida.visitados.length + partida.oro);
     this.combate = crearCombate(aleatorio, { objetivo: OBJETIVOS[this.tipo] ?? 300 });
 
     const { width } = this.scale;
@@ -58,6 +62,7 @@ export class EscenaMesa extends Phaser.Scene {
       confirmar(this, '¿Salir al menú?\nAl continuar, este combate empieza de nuevo.', 'Salir', COLORES.multi, () =>
         this.scene.start('menu'),
       ), 130);
+    this.oro = mostrarOro(this, partida.oro);
     this.actualizar();
   }
 
@@ -141,20 +146,34 @@ export class EscenaMesa extends Phaser.Scene {
   private terminar(): void {
     const { width, height } = this.scale;
     const gano = this.combate.estado === 'ganado';
-    const finDePartida = !gano || this.tipo === 'jefe';
-    const titulo = gano ? (this.tipo === 'jefe' ? '¡Venciste al jefe!' : '¡Combate ganado!') : 'Te quedaste sin manos';
+    const antes = partidaActual(this).oro;
+    const partida = resolverCombate(partidaActual(this), gano);
+    const quebrado = enBancarrota(partida);
+    const jefeVencido = gano && this.tipo === 'jefe';
+    const finDePartida = quebrado || jefeVencido;
+    const titulo = jefeVencido ? '¡Venciste al jefe!' : gano ? '¡Combate ganado!' : quebrado ? 'Te quedaste sin oro' : 'Perdiste el combate';
+    const diferencia = partida.oro - antes;
 
     this.botonJugar.activar(false);
     this.botonDescartar.activar(false);
     this.botonMenu.activar(false);
-    // Ganado, el combate deja de estar pendiente; al terminar la partida
-    // (derrota o jefe vencido) su ranura queda libre.
+    // Al terminar la partida (bancarrota o jefe vencido) su ranura queda
+    // libre; si no, se guarda con el oro nuevo.
     if (finDePartida) terminarPartida(this);
-    else jugarPartida(this, ganarCombate(partidaActual(this)));
+    else jugarPartida(this, partida);
+    this.oro.cambiar(partida.oro);
+
     this.add.rectangle(width / 2, height / 2, width, height, COLORES.fondo, 0.85);
-    this.add.text(width / 2, height / 2 - 60, titulo, estiloTexto(48, gano ? COLORES.acento : COLORES.multi)).setOrigin(0.5);
-    crearBoton(this, width / 2, height / 2 + 40, finDePartida ? 'Menú principal' : 'Seguir', COLORES.acento, () =>
-      this.scene.start(finDePartida ? 'menu' : 'mapa'),
-    );
+    this.add.text(width / 2, height / 2 - 80, titulo, estiloTexto(48, gano ? COLORES.acento : COLORES.multi)).setOrigin(0.5);
+    const detalle = quebrado ? 'Fin de la partida' : `${diferencia > 0 ? '+' : '−'}${Math.abs(diferencia)} de oro`;
+    this.add.text(width / 2, height / 2 - 20, detalle, estiloTexto(28, quebrado ? COLORES.textoSuave : COLORES.oro)).setOrigin(0.5);
+
+    if (finDePartida) {
+      crearBoton(this, width / 2, height / 2 + 60, 'Menú principal', COLORES.acento, () => this.scene.start('menu'));
+    } else if (partida.combatePendiente) {
+      crearBoton(this, width / 2, height / 2 + 60, 'Reintentar', COLORES.acento, () => this.scene.restart({ tipo: this.tipo }));
+    } else {
+      crearBoton(this, width / 2, height / 2 + 60, 'Seguir', COLORES.acento, () => this.scene.start('mapa'));
+    }
   }
 }

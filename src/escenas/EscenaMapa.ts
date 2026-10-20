@@ -7,6 +7,7 @@ import Phaser from 'phaser';
 import { TIPOS_DE_COMBATE, avanzar, nodosDisponibles, type Partida } from '../juego/partida.ts';
 import { buscarNodo, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton } from './boton.ts';
+import { mostrarOro } from './oro.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { jugarPartida, partidaActual } from './sesion.ts';
 
@@ -39,6 +40,7 @@ export class EscenaMapa extends Phaser.Scene {
 
     this.add.text(width / 2, 50, 'Elige tu camino', estiloTexto(30)).setOrigin(0.5);
     crearBoton(this, 90, 50, 'Menú', COLORES.borde, () => this.scene.start('menu'), 130);
+    mostrarOro(this, partida.oro);
 
     const caminos = this.add.graphics();
     for (const fila of partida.mapa.pisos) {

@@ -13,6 +13,7 @@ export const COLORES = {
   carta: 0xf4f1ea,
   cartaRoja: 0xd23c3c,
   cartaNegra: 0x22232b,
+  oro: 0xf2c14e,
 } as const;
 
 export const FUENTE = 'system-ui, "Segoe UI", Roboto, sans-serif';

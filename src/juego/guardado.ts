@@ -5,10 +5,10 @@
 // Una ranura que no se puede leer (JSON roto, de una versión que ya no
 // existe) se trata como vacía, para que nunca impida jugar.
 
-import type { Partida } from './partida.ts';
+import { ORO_INICIAL, type Partida } from './partida.ts';
 
 export const RANURAS = 3;
-const VERSION = 1;
+const VERSION = 2;
 const PREFIJO = 'pokcam.ranura.';
 
 export interface Almacen {
@@ -29,6 +29,7 @@ export interface Resumen {
   guardadoEn: number;
   piso: number; // en el que está el jugador, contando el inicio como 0
   pisos: number; // del mapa, contando el inicio y el jefe
+  oro: number;
 }
 
 function clave(ranura: number): string {
@@ -46,7 +47,10 @@ export function cargar(almacen: Almacen, ranura: number): Guardado | null {
   if (texto === null) return null;
   try {
     const guardado = JSON.parse(texto) as Guardado;
-    if (guardado?.version !== VERSION || !guardado.partida?.mapa) return null;
+    if (!guardado?.partida?.mapa) return null;
+    // Las partidas de la versión 1 son de antes del oro: empiezan con el inicial.
+    if (guardado.version === 1) return { ...guardado, version: VERSION, partida: { ...guardado.partida, oro: ORO_INICIAL } };
+    if (guardado.version !== VERSION) return null;
     return guardado;
   } catch {
     return null;
@@ -62,7 +66,7 @@ export function resumir(almacen: Almacen, ranura: number): Resumen | null {
   if (!guardado) return null;
   const { partida } = guardado;
   const piso = partida.mapa.pisos.findIndex((fila) => fila.some((n) => n.id === partida.nodoActual));
-  return { ranura, guardadoEn: guardado.guardadoEn, piso, pisos: partida.mapa.pisos.length };
+  return { ranura, guardadoEn: guardado.guardadoEn, piso, pisos: partida.mapa.pisos.length, oro: partida.oro };
 }
 
 // Las 3 ranuras en orden, null en las vacías.
