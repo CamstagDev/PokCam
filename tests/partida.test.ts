@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { crearAleatorio } from '../src/juego/aleatorio.ts';
 import { TAMANO_MANO, crearCombate, descartar, jugar } from '../src/juego/combate.ts';
-import { avanzar, crearPartida, enBancarrota, resolverCombate, nodosDisponibles } from '../src/juego/partida.ts';
+import { crearMazo } from '../src/juego/cartas.ts';
+import {
+  avanzar,
+  crearPartida,
+  enBancarrota,
+  nivelDeRiesgo,
+  nodosDisponibles,
+  objetivoDelCombate,
+  resolverCombate,
+} from '../src/juego/partida.ts';
 
 describe('partida', () => {
   it('se recorre desde el inicio hasta el jefe', () => {
@@ -14,6 +23,26 @@ describe('partida', () => {
   it('no deja saltar a un nodo que no está unido', () => {
     const partida = crearPartida(7);
     expect(() => avanzar(partida, partida.mapa.pisos.at(-1)![0]!.id)).toThrow();
+  });
+
+  it('el nivel de riesgo es el piso, y cada nivel sube 100 el objetivo', () => {
+    let partida = crearPartida(7);
+    expect(nivelDeRiesgo(partida)).toBe(0);
+    while (nodosDisponibles(partida).length > 0) {
+      partida = resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true);
+      const { piso, tipo } = partida.mapa.pisos.flat().find((n) => n.id === partida.nodoActual)!;
+      expect(nivelDeRiesgo(partida)).toBe(piso);
+      const base = { elite: 500, jefe: 800 }[tipo as 'elite' | 'jefe'] ?? 300;
+      expect(objetivoDelCombate(partida)).toBe(base + 100 * piso);
+    }
+  });
+
+  it('empieza con el mazo de 52 cartas, que es el que se reparte en el combate', () => {
+    const partida = crearPartida(7);
+    expect(partida.mazo).toEqual(crearMazo());
+    const combate = crearCombate(crearAleatorio(1), { objetivo: 300, mazo: partida.mazo });
+    expect([...combate.mano, ...combate.pila].map((c) => c.id).sort()).toEqual(partida.mazo.map((c) => c.id).sort());
+    expect(partida.mazo).toEqual(crearMazo()); // barajar no lo toca
   });
 
   it('empieza con 300 de oro; ganar un combate suma 100 y perderlo resta 100', () => {
@@ -50,7 +79,7 @@ describe('partida', () => {
 });
 
 describe('combate', () => {
-  const nuevo = (objetivo = 300) => crearCombate(crearAleatorio(1), { objetivo });
+  const nuevo = (objetivo = 300) => crearCombate(crearAleatorio(1), { objetivo, mazo: crearMazo() });
 
   it('reparte una mano completa', () => {
     const combate = nuevo();

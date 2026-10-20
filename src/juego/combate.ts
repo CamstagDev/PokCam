@@ -3,7 +3,7 @@
 // inmutable: cada acción devuelve un combate nuevo.
 
 import { barajar, type Aleatorio } from './aleatorio.ts';
-import { crearMazo, type Carta } from './cartas.ts';
+import type { Carta } from './cartas.ts';
 import { puntuar, type Puntuacion } from './puntuacion.ts';
 
 export const TAMANO_MANO = 8;
@@ -22,12 +22,13 @@ export interface Combate {
 
 export interface OpcionesCombate {
   objetivo: number;
+  mazo: readonly Carta[]; // el de la partida; se baraja una copia
   manos?: number;
   descartes?: number;
 }
 
-export function crearCombate(aleatorio: Aleatorio, { objetivo, manos = 4, descartes = 3 }: OpcionesCombate): Combate {
-  const pila = barajar(crearMazo(), aleatorio);
+export function crearCombate(aleatorio: Aleatorio, { objetivo, mazo, manos = 4, descartes = 3 }: OpcionesCombate): Combate {
+  const pila = barajar(mazo, aleatorio);
   return robar({
     objetivo,
     puntos: 0,

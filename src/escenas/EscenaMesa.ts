@@ -7,15 +7,14 @@ import { crearAleatorio } from '../juego/aleatorio.ts';
 import { SIMBOLO_PALO, nombreRango, type Carta } from '../juego/cartas.ts';
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
 import { MANOS, evaluarMano } from '../juego/manos.ts';
-import { enBancarrota, resolverCombate } from '../juego/partida.ts';
+import { enBancarrota, nivelDeRiesgo, objetivoDelCombate, resolverCombate } from '../juego/partida.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton, type Boton } from './boton.ts';
 import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { mostrarOro, type Marcador } from './oro.ts';
+import { mostrarRiesgo } from './riesgo.ts';
 import { jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
-
-const OBJETIVOS: Partial<Record<TipoNodo, number>> = { combate: 300, elite: 500, jefe: 800 };
 
 const ANCHO_CARTA = 110;
 const ALTO_CARTA = 154;
@@ -49,7 +48,7 @@ export class EscenaMesa extends Phaser.Scene {
     // El oro entra en la semilla para que reintentar al jefe (con menos oro)
     // reparta otras cartas; continuar la misma partida reparte las mismas.
     const aleatorio = crearAleatorio(partida.mapa.semilla + partida.visitados.length + partida.oro);
-    this.combate = crearCombate(aleatorio, { objetivo: OBJETIVOS[this.tipo] ?? 300 });
+    this.combate = crearCombate(aleatorio, { objetivo: objetivoDelCombate(partida), mazo: partida.mazo });
 
     const { width } = this.scale;
     this.marcador = this.add.text(40, 30, '', estiloTexto(24)).setLineSpacing(8);
@@ -63,6 +62,7 @@ export class EscenaMesa extends Phaser.Scene {
         this.scene.start('menu'),
       ), 130);
     this.oro = mostrarOro(this, partida.oro);
+    mostrarRiesgo(this, nivelDeRiesgo(partida));
     this.actualizar();
   }
 

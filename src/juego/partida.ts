@@ -1,6 +1,7 @@
-// El estado de una partida: el mapa, por dónde va el jugador y su oro.
-// Aquí se sumarán el mazo y los comodines.
+// El estado de una partida: el mapa, por dónde va el jugador, su oro y su
+// mazo. Aquí se sumarán los comodines.
 
+import { crearMazo, type Carta } from './cartas.ts';
 import { buscarNodo, generarMapa, type Mapa, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 
 export const TIPOS_DE_COMBATE: readonly TipoNodo[] = ['combate', 'elite', 'jefe'];
@@ -8,6 +9,11 @@ export const TIPOS_DE_COMBATE: readonly TipoNodo[] = ['combate', 'elite', 'jefe'
 export const ORO_INICIAL = 300;
 // Lo que se gana al vencer un combate, y lo mismo se pierde al perderlo.
 export const ORO_POR_COMBATE: Partial<Record<TipoNodo, number>> = { combate: 100, elite: 100, jefe: 100 };
+
+// Puntos a alcanzar en cada tipo de combate con riesgo 0; cada nivel de
+// riesgo suma OBJETIVO_POR_RIESGO.
+export const OBJETIVO_BASE: Partial<Record<TipoNodo, number>> = { combate: 300, elite: 500, jefe: 800 };
+export const OBJETIVO_POR_RIESGO = 100;
 
 export interface Partida {
   mapa: Mapa;
@@ -17,12 +23,15 @@ export interface Partida {
   // una partida guardada así, se vuelve a la mesa y no al mapa.
   combatePendiente: boolean;
   oro: number; // con 0 o menos la partida se termina
+  // Las cartas del jugador, con lo que cada una tenga encima; cada combate
+  // se juega con una copia barajada de este mazo.
+  mazo: Carta[];
 }
 
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo() };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -54,6 +63,18 @@ export function resolverCombate(partida: Partida, gano: boolean): Partida {
 
 export function enBancarrota(partida: Partida): boolean {
   return partida.oro <= 0;
+}
+
+// El nivel de riesgo es el piso en el que está el jugador (el inicio es el
+// 0). Aquí se sumarán los modificadores de riesgo.
+export function nivelDeRiesgo(partida: Partida): number {
+  return nodoActual(partida).piso;
+}
+
+// Los puntos que pide el combate del nodo actual.
+export function objetivoDelCombate(partida: Partida): number {
+  const base = OBJETIVO_BASE[nodoActual(partida).tipo] ?? OBJETIVO_BASE.combate!;
+  return base + OBJETIVO_POR_RIESGO * nivelDeRiesgo(partida);
 }
 
 export function nodoActual(partida: Partida): Nodo {

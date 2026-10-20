@@ -22,7 +22,7 @@ describe('guardado', () => {
     let partida = crearPartida(7);
     partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
     guardar(almacen, 1, partida, 1234);
-    expect(cargar(almacen, 1)).toEqual({ version: 2, guardadoEn: 1234, partida });
+    expect(cargar(almacen, 1)).toEqual({ version: 3, guardadoEn: 1234, partida });
     expect(cargar(almacen, 0)).toBeNull();
   });
 
@@ -64,6 +64,23 @@ describe('guardado', () => {
     const { oro: _, ...vieja } = crearPartida(3);
     almacen.setItem('pokcam.ranura.0', JSON.stringify({ version: 1, guardadoEn: 5, partida: vieja }));
     expect(cargar(almacen, 0)?.partida.oro).toBe(300);
+  });
+
+  it('guarda el mazo de la partida tal como está', () => {
+    const almacen = almacenDePrueba();
+    const partida = crearPartida(4);
+    const mazo = partida.mazo.slice(0, 40); // como si se hubieran quitado cartas
+    guardar(almacen, 0, { ...partida, mazo });
+    expect(cargar(almacen, 0)?.partida.mazo).toEqual(mazo);
+  });
+
+  it('las partidas de antes del mazo cargan con el de 52 cartas', () => {
+    const almacen = almacenDePrueba();
+    const { mazo, ...vieja } = crearPartida(3);
+    almacen.setItem('pokcam.ranura.0', JSON.stringify({ version: 2, guardadoEn: 5, partida: { ...vieja, oro: 150 } }));
+    const cargada = cargar(almacen, 0)?.partida;
+    expect(cargada?.mazo).toEqual(mazo);
+    expect(cargada?.oro).toBe(150);
   });
 
   it('no existe una cuarta ranura', () => {

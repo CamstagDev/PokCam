@@ -8,10 +8,11 @@
 // volver al mapa la cámara sube suave hasta el piso nuevo.
 
 import Phaser from 'phaser';
-import { TIPOS_DE_COMBATE, avanzar, nodoActual, nodosDisponibles, type Partida } from '../juego/partida.ts';
+import { TIPOS_DE_COMBATE, avanzar, nivelDeRiesgo, nodoActual, nodosDisponibles, type Partida } from '../juego/partida.ts';
 import { buscarNodo, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton } from './boton.ts';
 import { mostrarOro } from './oro.ts';
+import { mostrarRiesgo } from './riesgo.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { jugarPartida, partidaActual } from './sesion.ts';
 
@@ -101,6 +102,7 @@ export class EscenaMapa extends Phaser.Scene {
     this.add.text(width / 2, 50, 'Elige tu camino', estiloTexto(30)).setOrigin(0.5).setDepth(41);
     crearBoton(this, 90, 50, 'Menú', COLORES.borde, () => this.scene.start('menu'), 130).setDepth(41);
     mostrarOro(this, partida.oro);
+    mostrarRiesgo(this, nivelDeRiesgo(partida));
     const barra = this.children.list.filter((objeto) => !mundo.includes(objeto));
 
     const camara = this.cameras.main;

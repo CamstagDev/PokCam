@@ -5,10 +5,11 @@
 // Una ranura que no se puede leer (JSON roto, de una versión que ya no
 // existe) se trata como vacía, para que nunca impida jugar.
 
+import { crearMazo } from './cartas.ts';
 import { ORO_INICIAL, type Partida } from './partida.ts';
 
 export const RANURAS = 3;
-const VERSION = 2;
+const VERSION = 3;
 const PREFIJO = 'pokcam.ranura.';
 
 export interface Almacen {
@@ -48,10 +49,14 @@ export function cargar(almacen: Almacen, ranura: number): Guardado | null {
   try {
     const guardado = JSON.parse(texto) as Guardado;
     if (!guardado?.partida?.mapa) return null;
-    // Las partidas de la versión 1 son de antes del oro: empiezan con el inicial.
-    if (guardado.version === 1) return { ...guardado, version: VERSION, partida: { ...guardado.partida, oro: ORO_INICIAL } };
-    if (guardado.version !== VERSION) return null;
-    return guardado;
+    const { version } = guardado;
+    if (typeof version !== 'number' || version < 1 || version > VERSION) return null;
+    // Las de la versión 1 son de antes del oro: siguen con el inicial. Las
+    // de antes de la 3 no guardaban el mazo: siguen con el de 52 cartas.
+    const partida = { ...guardado.partida };
+    if (version < 2) partida.oro = ORO_INICIAL;
+    if (version < 3) partida.mazo = crearMazo();
+    return { ...guardado, version: VERSION, partida };
   } catch {
     return null;
   }
