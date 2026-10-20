@@ -40,3 +40,5 @@ la versión nueva (ver scripts/nueva-version.mjs).
   jefe, con la cámara de cerca y nodos más grandes. Solo se ven el piso
   actual y los dos siguientes; arrastrando (o con la rueda) se baja a
   ver el camino hecho. Al avanzar, la cámara sube sola al piso nuevo.
+- Mesa: dos botones redondos entre "Jugar mano" y "Descartar" ordenan
+  la mano por valor o por palo; el orden se mantiene al robar.

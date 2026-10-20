@@ -33,3 +33,13 @@ export function fichasDeCarta(carta: Carta): number {
   if (carta.rango === 14) return 11;
   return Math.min(carta.rango, 10);
 }
+
+// Cómo ordenar la mano: por valor (de mayor a menor) o por palo (agrupando
+// cada palo, y dentro de él de mayor a menor).
+export type Orden = 'valor' | 'palo';
+
+export function ordenarMano(mano: readonly Carta[], orden: Orden): Carta[] {
+  const porPalo = (a: Carta, b: Carta) => PALOS.indexOf(a.palo) - PALOS.indexOf(b.palo);
+  const porValor = (a: Carta, b: Carta) => b.rango - a.rango;
+  return [...mano].sort(orden === 'valor' ? (a, b) => porValor(a, b) || porPalo(a, b) : (a, b) => porPalo(a, b) || porValor(a, b));
+}

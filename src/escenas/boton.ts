@@ -39,3 +39,31 @@ export function crearBoton(
   });
   return boton;
 }
+
+export interface BotonRedondo extends Phaser.GameObjects.Container {
+  marcar(marcado: boolean): void;
+}
+
+// Un botón circular chico con un símbolo y una palabra debajo. Marcado,
+// se pinta con el color de acento.
+export function crearBotonRedondo(
+  escena: Phaser.Scene,
+  x: number,
+  y: number,
+  simbolo: string,
+  leyenda: string,
+  alTocar: () => void,
+): BotonRedondo {
+  const radio = 24;
+  const circulo = escena.add.circle(0, 0, radio, COLORES.borde);
+  const etiqueta = escena.add.text(0, 0, simbolo, estiloTexto(18)).setOrigin(0.5);
+  const debajo = escena.add.text(0, radio + 12, leyenda, estiloTexto(13, COLORES.textoSuave)).setOrigin(0.5);
+  const boton = escena.add.container(x, y, [circulo, etiqueta, debajo]) as BotonRedondo;
+  boton.setSize(radio * 2, radio * 2).setInteractive({ useHandCursor: true });
+  boton.marcar = (marcado) => void circulo.setFillStyle(marcado ? COLORES.acento : COLORES.borde);
+  boton.on('pointerdown', () => {
+    escena.tweens.add({ targets: boton, scale: 0.9, duration: 60, yoyo: true });
+    alTocar();
+  });
+  return boton;
+}

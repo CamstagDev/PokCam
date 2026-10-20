@@ -1,15 +1,17 @@
 // La mesa de un combate: la mano de 8 cartas abajo, se tocan de 1 a 5 para
-// elegirlas y se juegan o se descartan. Arriba, cuánto falta para el
+// elegirlas y se juegan o se descartan. Entre los dos botones, otros dos
+// redondos ordenan la mano por valor o por palo; el orden elegido se
+// mantiene con las cartas que se roban después. Arriba, cuánto falta para el
 // objetivo. Las reglas están en juego/combate.ts; aquí solo se dibujan.
 
 import Phaser from 'phaser';
 import { crearAleatorio } from '../juego/aleatorio.ts';
-import { SIMBOLO_PALO, nombreRango, type Carta } from '../juego/cartas.ts';
+import { SIMBOLO_PALO, nombreRango, ordenarMano, type Carta, type Orden } from '../juego/cartas.ts';
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
 import { MANOS, evaluarMano } from '../juego/manos.ts';
 import { enBancarrota, nivelDeRiesgo, objetivoDelCombate, resolverCombate } from '../juego/partida.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
-import { crearBoton, type Boton } from './boton.ts';
+import { crearBoton, crearBotonRedondo, type Boton, type BotonRedondo } from './boton.ts';
 import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { mostrarOro, type Marcador } from './oro.ts';
@@ -32,6 +34,8 @@ export class EscenaMesa extends Phaser.Scene {
   private botonDescartar!: Boton;
   private botonMenu!: Boton;
   private oro!: Marcador;
+  private orden: Orden | null = null;
+  private botonesOrden = new Map<Orden, BotonRedondo>();
 
   constructor() {
     super('mesa');
@@ -41,6 +45,8 @@ export class EscenaMesa extends Phaser.Scene {
     this.tipo = datos.tipo;
     this.elegidas.clear();
     this.cartas.clear();
+    this.orden = null;
+    this.botonesOrden.clear();
   }
 
   create(): void {
@@ -53,8 +59,10 @@ export class EscenaMesa extends Phaser.Scene {
     const { width } = this.scale;
     this.marcador = this.add.text(40, 30, '', estiloTexto(24)).setLineSpacing(8);
     this.jugada = this.add.text(width / 2, 250, '', estiloTexto(34)).setOrigin(0.5);
-    this.botonJugar = crearBoton(this, width / 2 - 120, 660, 'Jugar mano', COLORES.fichas, () => this.accion(jugar));
-    this.botonDescartar = crearBoton(this, width / 2 + 120, 660, 'Descartar', COLORES.multi, () => this.accion(descartar));
+    this.botonJugar = crearBoton(this, width / 2 - 170, 660, 'Jugar mano', COLORES.fichas, () => this.accion(jugar));
+    this.botonDescartar = crearBoton(this, width / 2 + 170, 660, 'Descartar', COLORES.multi, () => this.accion(descartar));
+    this.botonesOrden.set('valor', crearBotonRedondo(this, width / 2 - 32, 652, 'A↓', 'Valor', () => this.ordenar('valor')));
+    this.botonesOrden.set('palo', crearBotonRedondo(this, width / 2 + 32, 652, '♠♥', 'Palo', () => this.ordenar('palo')));
     // La partida ya está guardada con este combate pendiente: al continuar
     // se vuelve a él, pero desde el principio.
     this.botonMenu = crearBoton(this, width - 90, 50, 'Menú', COLORES.borde, () =>
@@ -72,6 +80,7 @@ export class EscenaMesa extends Phaser.Scene {
     for (const id of ids) this.cartas.delete(id);
     this.elegidas.clear();
     this.combate = hacer(this.combate, ids);
+    if (this.orden) this.combate = { ...this.combate, mano: ordenarMano(this.combate.mano, this.orden) };
     this.actualizar();
     if (hacer === jugar) {
       this.tweens.add({ targets: this.jugada, scale: { from: 1.3, to: 1 }, duration: 250, ease: 'Back.easeOut' });
@@ -134,6 +143,14 @@ export class EscenaMesa extends Phaser.Scene {
     objeto.setSize(ANCHO_CARTA, ALTO_CARTA).setInteractive({ useHandCursor: true });
     objeto.on('pointerdown', () => this.alternar(carta.id));
     return objeto;
+  }
+
+  private ordenar(orden: Orden): void {
+    if (this.combate.estado !== 'jugando') return;
+    this.orden = orden;
+    for (const [cual, boton] of this.botonesOrden) boton.marcar(cual === orden);
+    this.combate = { ...this.combate, mano: ordenarMano(this.combate.mano, orden) };
+    this.actualizar();
   }
 
   private alternar(id: string): void {
