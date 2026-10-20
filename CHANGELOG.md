@@ -23,3 +23,5 @@ la versión nueva (ver scripts/nueva-version.mjs).
   ranura queda libre.
 - En el combate, al elegir cartas se ve qué mano se va a jugar (por
   ejemplo "Doble pareja") antes de jugarla.
+- Botón "Menú" también en el combate, con confirmación: la partida
+  queda guardada y al continuar el combate empieza de nuevo.

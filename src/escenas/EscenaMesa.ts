@@ -10,6 +10,7 @@ import { MANOS, evaluarMano } from '../juego/manos.ts';
 import { ganarCombate } from '../juego/partida.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton, type Boton } from './boton.ts';
+import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
 
@@ -29,6 +30,7 @@ export class EscenaMesa extends Phaser.Scene {
   private jugada!: Phaser.GameObjects.Text;
   private botonJugar!: Boton;
   private botonDescartar!: Boton;
+  private botonMenu!: Boton;
 
   constructor() {
     super('mesa');
@@ -50,6 +52,12 @@ export class EscenaMesa extends Phaser.Scene {
     this.jugada = this.add.text(width / 2, 250, '', estiloTexto(34)).setOrigin(0.5);
     this.botonJugar = crearBoton(this, width / 2 - 120, 660, 'Jugar mano', COLORES.fichas, () => this.accion(jugar));
     this.botonDescartar = crearBoton(this, width / 2 + 120, 660, 'Descartar', COLORES.multi, () => this.accion(descartar));
+    // La partida ya está guardada con este combate pendiente: al continuar
+    // se vuelve a él, pero desde el principio.
+    this.botonMenu = crearBoton(this, width - 90, 50, 'Menú', COLORES.borde, () =>
+      confirmar(this, '¿Salir al menú?\nAl continuar, este combate empieza de nuevo.', 'Salir', COLORES.multi, () =>
+        this.scene.start('menu'),
+      ), 130);
     this.actualizar();
   }
 
@@ -138,6 +146,7 @@ export class EscenaMesa extends Phaser.Scene {
 
     this.botonJugar.activar(false);
     this.botonDescartar.activar(false);
+    this.botonMenu.activar(false);
     // Ganado, el combate deja de estar pendiente; al terminar la partida
     // (derrota o jefe vencido) su ranura queda libre.
     if (finDePartida) terminarPartida(this);
