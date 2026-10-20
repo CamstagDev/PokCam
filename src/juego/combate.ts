@@ -3,6 +3,7 @@
 // inmutable: cada acción devuelve un combate nuevo.
 
 import { barajar, type Aleatorio } from './aleatorio.ts';
+import { aplicar, baratijasDe } from './baratijas.ts';
 import type { Carta } from './cartas.ts';
 import { puntuar, type Puntuacion } from './puntuacion.ts';
 
@@ -18,6 +19,7 @@ export interface Combate {
   pila: Carta[]; // las que quedan por robar
   estado: 'jugando' | 'ganado' | 'perdido';
   ultimaJugada: Puntuacion | null;
+  baratijas: readonly string[]; // ids de las del jugador, que cambian la puntuación
 }
 
 export interface OpcionesCombate {
@@ -25,26 +27,32 @@ export interface OpcionesCombate {
   mazo: readonly Carta[]; // el de la partida; se baraja una copia
   manos?: number;
   descartes?: number;
+  baratijas?: readonly string[]; // ids
 }
 
-export function crearCombate(aleatorio: Aleatorio, { objetivo, mazo, manos = 4, descartes = 3 }: OpcionesCombate): Combate {
+export function crearCombate(
+  aleatorio: Aleatorio,
+  { objetivo, mazo, manos = 4, descartes = 3, baratijas = [] }: OpcionesCombate,
+): Combate {
   const pila = barajar(mazo, aleatorio);
+  const inicio = aplicar(baratijasDe(baratijas), 'alEmpezarCombate', { manos, descartes });
   return robar({
     objetivo,
     puntos: 0,
-    manosRestantes: manos,
-    descartesRestantes: descartes,
+    manosRestantes: inicio.manos,
+    descartesRestantes: inicio.descartes,
     mano: [],
     pila,
     estado: 'jugando',
     ultimaJugada: null,
+    baratijas,
   });
 }
 
 export function jugar(combate: Combate, ids: readonly string[]): Combate {
   const cartas = elegidas(combate, ids, MAX_CARTAS_JUGADAS);
   if (combate.manosRestantes === 0) throw new Error('No quedan manos');
-  const jugada = puntuar(cartas);
+  const jugada = puntuar(cartas, baratijasDe(combate.baratijas));
   const puntos = combate.puntos + jugada.total;
   const manosRestantes = combate.manosRestantes - 1;
   const estado = puntos >= combate.objetivo ? 'ganado' : manosRestantes === 0 ? 'perdido' : 'jugando';

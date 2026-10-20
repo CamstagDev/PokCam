@@ -5,11 +5,11 @@
 
 import Phaser from 'phaser';
 import { RANURAS, borrar, cargar, resumirTodas, type Resumen } from '../juego/guardado.ts';
-import { crearPartida, nodoActual } from '../juego/partida.ts';
+import { crearPartida } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
 import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
-import { almacen, jugarPartida } from './sesion.ts';
+import { almacen, irAPartida, jugarPartida } from './sesion.ts';
 
 type Modo = 'nueva' | 'continuar';
 
@@ -76,9 +76,7 @@ export class EscenaRanuras extends Phaser.Scene {
       const guardado = cargar(almacen, ranura);
       if (!guardado) return;
       jugarPartida(this, guardado.partida, ranura);
-      const { partida } = guardado;
-      if (partida.combatePendiente) this.scene.start('mesa', { tipo: nodoActual(partida).tipo });
-      else this.scene.start('mapa');
+      irAPartida(this, guardado.partida);
       return;
     }
 

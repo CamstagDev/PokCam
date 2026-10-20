@@ -1,6 +1,8 @@
-// El estado de una partida: el mapa, por dónde va el jugador, su oro y su
-// mazo. Aquí se sumarán los comodines.
+// El estado de una partida: el mapa, por dónde va el jugador, su oro, su
+// mazo y sus baratijas.
 
+import { crearAleatorio } from './aleatorio.ts';
+import { aplicar, baratijasDe, buscarBaratija, sortearBaratijas } from './baratijas.ts';
 import { crearMazo, type Carta } from './cartas.ts';
 import { buscarNodo, generarMapa, type Mapa, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 
@@ -26,12 +28,22 @@ export interface Partida {
   // Las cartas del jugador, con lo que cada una tenga encima; cada combate
   // se juega con una copia barajada de este mazo.
   mazo: Carta[];
+  baratijas: string[]; // ids, en el orden en que se consiguieron
+  // Baratijas a la vista que el jugador todavía no resolvió: la recompensa
+  // de un élite (elige 1) o lo que ofrece el vendedor. Se guarda para que
+  // al continuar la partida se vuelva a la misma oferta.
+  oferta: Oferta | null;
+}
+
+export interface Oferta {
+  tipo: 'elite' | 'vendedor';
+  baratijas: string[]; // ids
 }
 
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo() };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -41,11 +53,13 @@ export function nodosDisponibles(partida: Partida): Nodo[] {
 
 export function avanzar(partida: Partida, id: string): Partida {
   if (partida.combatePendiente) throw new Error(`Falta ganar el combate de ${partida.nodoActual}`);
+  if (partida.oferta) throw new Error('Falta cerrar la oferta de baratijas');
   if (!nodosDisponibles(partida).some((n) => n.id === id)) {
     throw new Error(`Desde ${partida.nodoActual} no se puede ir a ${id}`);
   }
-  const combatePendiente = TIPOS_DE_COMBATE.includes(buscarNodo(partida.mapa, id).tipo);
-  return { ...partida, nodoActual: id, visitados: [...partida.visitados, id], combatePendiente };
+  const tipo = buscarNodo(partida.mapa, id).tipo;
+  const siguiente = { ...partida, nodoActual: id, visitados: [...partida.visitados, id], combatePendiente: TIPOS_DE_COMBATE.includes(tipo) };
+  return tipo === 'vendedor' ? { ...siguiente, oferta: sortearOferta(siguiente, 'vendedor') } : siguiente;
 }
 
 // Suma o resta el oro del combate en curso. Un combate perdido también
@@ -54,11 +68,54 @@ export function avanzar(partida: Partida, id: string): Partida {
 export function resolverCombate(partida: Partida, gano: boolean): Partida {
   const nodo = nodoActual(partida);
   const oro = ORO_POR_COMBATE[nodo.tipo] ?? 0;
-  return {
+  const resuelto = {
     ...partida,
-    oro: partida.oro + (gano ? oro : -oro),
+    oro: partida.oro + (gano ? aplicar(baratijasDe(partida.baratijas), 'alGanarCombate', oro) : -oro),
     combatePendiente: !gano && nodo.tipo === 'jefe',
   };
+  // Vencer a un élite ofrece elegir 1 de 3 baratijas.
+  if (gano && nodo.tipo === 'elite') {
+    const baratijas = sortearOferta(resuelto, 'elite');
+    if (baratijas.baratijas.length > 0) return { ...resuelto, oferta: baratijas };
+  }
+  return resuelto;
+}
+
+// La semilla depende del nodo y del tipo de oferta, así que continuar la
+// partida no cambia lo que se ofrece.
+function sortearOferta(partida: Partida, tipo: Oferta['tipo']): Oferta {
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 31 + partida.visitados.length * 7 + (tipo === 'elite' ? 1 : 2));
+  return { tipo, baratijas: sortearBaratijas(aleatorio, partida.baratijas) };
+}
+
+// Elegir la recompensa del élite: se queda con esa y la oferta se cierra.
+export function elegirBaratija(partida: Partida, id: string): Partida {
+  if (partida.oferta?.tipo !== 'elite' || !partida.oferta.baratijas.includes(id)) {
+    throw new Error(`${id} no está entre las baratijas a elegir`);
+  }
+  return { ...partida, baratijas: [...partida.baratijas, id], oferta: null };
+}
+
+// Se puede comprar si está a la venta y alcanza el oro sin quedar en 0
+// (con 0 de oro la partida se terminaría).
+export function puedeComprar(partida: Partida, id: string): boolean {
+  return partida.oferta?.tipo === 'vendedor' && partida.oferta.baratijas.includes(id) && partida.oro > buscarBaratija(id).precio;
+}
+
+export function comprarBaratija(partida: Partida, id: string): Partida {
+  if (!puedeComprar(partida, id)) throw new Error(`No se puede comprar ${id}`);
+  const oferta = partida.oferta!;
+  return {
+    ...partida,
+    oro: partida.oro - buscarBaratija(id).precio,
+    baratijas: [...partida.baratijas, id],
+    oferta: { ...oferta, baratijas: oferta.baratijas.filter((b) => b !== id) },
+  };
+}
+
+// Saltear la recompensa del élite o irse del vendedor.
+export function cerrarOferta(partida: Partida): Partida {
+  return { ...partida, oferta: null };
 }
 
 export function enBancarrota(partida: Partida): boolean {

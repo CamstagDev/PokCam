@@ -5,7 +5,8 @@
 
 import { barajar, crearAleatorio, enteroEntre, type Aleatorio } from '../juego/aleatorio.ts';
 
-export type TipoNodo = 'inicio' | 'combate' | 'elite' | 'tienda' | 'evento' | 'descanso' | 'jefe';
+// 'vendedor' es el vendedor de baratijas; 'tienda' la de cartas (por hacer).
+export type TipoNodo = 'inicio' | 'combate' | 'elite' | 'tienda' | 'vendedor' | 'evento' | 'descanso' | 'jefe';
 
 export interface Nodo {
   id: string; // 'p3-1' = piso 3, columna 1
@@ -75,10 +76,11 @@ function elegirTipo(piso: number, ultimo: number, aleatorio: Aleatorio): TipoNod
   if (piso === ultimo - 1) return 'descanso'; // siempre se descansa antes del jefe
   if (piso === 1) return 'combate'; // el primer paso siempre es un combate fácil
   const tirada = aleatorio();
-  if (tirada < 0.45) return 'combate';
-  if (tirada < 0.6) return 'evento';
-  if (tirada < 0.72) return 'tienda';
-  if (tirada < 0.85) return 'descanso';
+  if (tirada < 0.42) return 'combate';
+  if (tirada < 0.54) return 'evento';
+  if (tirada < 0.64) return 'tienda';
+  if (tirada < 0.74) return 'vendedor';
+  if (tirada < 0.86) return 'descanso';
   return 'elite';
 }
 

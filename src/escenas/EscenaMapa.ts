@@ -3,24 +3,26 @@
 // y los dos siguientes. Arrastrando (o con la rueda) se baja a mirar el
 // camino ya hecho, pero nunca se puede subir más allá de esos dos pisos.
 // Los nodos a los que se puede ir laten. Tocar uno avanza: si es un
-// combate abre la mesa, y el resto (tienda, evento, descanso) por ahora
-// solo avanza. Cada vez que se elige un nodo la partida se guarda, y al
+// combate abre la mesa, el vendedor abre su tienda de baratijas, y el
+// resto (tienda, evento, descanso) por ahora solo avanza. Cada vez que se elige un nodo la partida se guarda, y al
 // volver al mapa la cámara sube suave hasta el piso nuevo.
 
 import Phaser from 'phaser';
-import { TIPOS_DE_COMBATE, avanzar, nivelDeRiesgo, nodoActual, nodosDisponibles, type Partida } from '../juego/partida.ts';
+import { avanzar, nivelDeRiesgo, nodoActual, nodosDisponibles, type Partida } from '../juego/partida.ts';
 import { buscarNodo, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton } from './boton.ts';
+import { mostrarBotonesInventario } from './inventario.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
-import { jugarPartida, partidaActual } from './sesion.ts';
+import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
 
 const ICONOS: Record<TipoNodo, string> = {
   inicio: '⌂',
   combate: '♠',
   elite: '♛',
   tienda: '$',
+  vendedor: '✦',
   evento: '?',
   descanso: '☕',
   jefe: '☠',
@@ -103,6 +105,7 @@ export class EscenaMapa extends Phaser.Scene {
     crearBoton(this, 90, 50, 'Menú', COLORES.borde, () => this.scene.start('menu'), 130).setDepth(41);
     mostrarOro(this, partida.oro);
     mostrarRiesgo(this, nivelDeRiesgo(partida));
+    mostrarBotonesInventario(this, () => partidaActual(this));
     const barra = this.children.list.filter((objeto) => !mundo.includes(objeto));
 
     const camara = this.cameras.main;
@@ -148,11 +151,9 @@ export class EscenaMapa extends Phaser.Scene {
   }
 
   private ir(partida: Partida, nodo: Nodo): void {
-    jugarPartida(this, avanzar(partida, nodo.id));
-    if (TIPOS_DE_COMBATE.includes(nodo.tipo)) {
-      this.scene.start('mesa', { tipo: nodo.tipo });
-    } else {
-      this.scene.restart();
-    }
+    const siguiente = avanzar(partida, nodo.id);
+    jugarPartida(this, siguiente);
+    if (siguiente.combatePendiente || siguiente.oferta) irAPartida(this, siguiente);
+    else this.scene.restart();
   }
 }

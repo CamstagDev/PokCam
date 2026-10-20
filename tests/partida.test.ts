@@ -4,6 +4,7 @@ import { TAMANO_MANO, crearCombate, descartar, jugar } from '../src/juego/combat
 import { crearMazo } from '../src/juego/cartas.ts';
 import {
   avanzar,
+  cerrarOferta,
   crearPartida,
   enBancarrota,
   nivelDeRiesgo,
@@ -15,7 +16,7 @@ import {
 describe('partida', () => {
   it('se recorre desde el inicio hasta el jefe', () => {
     let partida = crearPartida(7);
-    while (nodosDisponibles(partida).length > 0) partida = resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true);
+    while (nodosDisponibles(partida).length > 0) partida = cerrarOferta(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
     expect(partida.visitados).toHaveLength(partida.mapa.pisos.length);
     expect(partida.nodoActual).toBe(partida.mapa.pisos.at(-1)![0]!.id);
   });
@@ -29,7 +30,7 @@ describe('partida', () => {
     let partida = crearPartida(7);
     expect(nivelDeRiesgo(partida)).toBe(0);
     while (nodosDisponibles(partida).length > 0) {
-      partida = resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true);
+      partida = cerrarOferta(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
       const { piso, tipo } = partida.mapa.pisos.flat().find((n) => n.id === partida.nodoActual)!;
       expect(nivelDeRiesgo(partida)).toBe(piso);
       const base = { elite: 500, jefe: 800 }[tipo as 'elite' | 'jefe'] ?? 300;
@@ -64,7 +65,7 @@ describe('partida', () => {
 
   it('al jefe perdido hay que volver a enfrentarlo', () => {
     let partida = crearPartida(7);
-    while (nodosDisponibles(partida).length > 0) partida = resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true);
+    while (nodosDisponibles(partida).length > 0) partida = cerrarOferta(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
     const conJefe = { ...partida, combatePendiente: true };
     expect(resolverCombate(conJefe, false).combatePendiente).toBe(true);
   });

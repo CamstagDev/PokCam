@@ -14,9 +14,10 @@ import type { TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton, crearBotonRedondo, type Boton, type BotonRedondo } from './boton.ts';
 import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
+import { mostrarBotonesInventario } from './inventario.ts';
 import { mostrarOro, type Marcador } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
-import { jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
+import { irAPartida, jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
 
 const ANCHO_CARTA = 110;
 const ALTO_CARTA = 154;
@@ -54,7 +55,7 @@ export class EscenaMesa extends Phaser.Scene {
     // El oro entra en la semilla para que reintentar al jefe (con menos oro)
     // reparta otras cartas; continuar la misma partida reparte las mismas.
     const aleatorio = crearAleatorio(partida.mapa.semilla + partida.visitados.length + partida.oro);
-    this.combate = crearCombate(aleatorio, { objetivo: objetivoDelCombate(partida), mazo: partida.mazo });
+    this.combate = crearCombate(aleatorio, { objetivo: objetivoDelCombate(partida), mazo: partida.mazo, baratijas: partida.baratijas });
 
     const { width } = this.scale;
     this.marcador = this.add.text(40, 30, '', estiloTexto(24)).setLineSpacing(8);
@@ -71,6 +72,7 @@ export class EscenaMesa extends Phaser.Scene {
       ), 130);
     this.oro = mostrarOro(this, partida.oro);
     mostrarRiesgo(this, nivelDeRiesgo(partida));
+    mostrarBotonesInventario(this, () => partidaActual(this));
     this.actualizar();
   }
 
@@ -190,7 +192,7 @@ export class EscenaMesa extends Phaser.Scene {
     } else if (partida.combatePendiente) {
       crearBoton(this, width / 2, height / 2 + 60, 'Reintentar', COLORES.acento, () => this.scene.restart({ tipo: this.tipo }));
     } else {
-      crearBoton(this, width / 2, height / 2 + 60, 'Seguir', COLORES.acento, () => this.scene.start('mapa'));
+      crearBoton(this, width / 2, height / 2 + 60, 'Seguir', COLORES.acento, () => irAPartida(this, partida));
     }
   }
 }

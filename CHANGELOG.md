@@ -42,3 +42,9 @@ la versión nueva (ver scripts/nueva-version.mjs).
   ver el camino hecho. Al avanzar, la cámara sube sola al piso nuevo.
 - Mesa: dos botones redondos entre "Jugar mano" y "Descartar" ordenan
   la mano por valor o por palo; el orden se mantiene al robar.
+- Baratijas: objetos que cambian las reglas de la partida. Al vencer a
+  un élite se elige 1 de 3 (o se saltea), y el nuevo nodo del vendedor
+  de baratijas (✦) las vende por oro, sin dejar que el oro llegue a 0.
+  Hay 6 de ejemplo; se agregan más en src/juego/baratijas.ts.
+- Botones "Baratijas" y "Mazo" abajo a la izquierda en el mapa, la mesa
+  y las pantallas de baratijas, para ver las que se tienen y el mazo.

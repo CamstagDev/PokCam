@@ -22,7 +22,7 @@ describe('guardado', () => {
     let partida = crearPartida(7);
     partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
     guardar(almacen, 1, partida, 1234);
-    expect(cargar(almacen, 1)).toEqual({ version: 3, guardadoEn: 1234, partida });
+    expect(cargar(almacen, 1)).toEqual({ version: 4, guardadoEn: 1234, partida });
     expect(cargar(almacen, 0)).toBeNull();
   });
 
@@ -64,6 +64,13 @@ describe('guardado', () => {
     const { oro: _, ...vieja } = crearPartida(3);
     almacen.setItem('pokcam.ranura.0', JSON.stringify({ version: 1, guardadoEn: 5, partida: vieja }));
     expect(cargar(almacen, 0)?.partida.oro).toBe(300);
+  });
+
+  it('las partidas de antes de las baratijas cargan sin baratijas', () => {
+    const almacen = almacenDePrueba();
+    const { baratijas: _, oferta: __, ...vieja } = crearPartida(3);
+    almacen.setItem('pokcam.ranura.0', JSON.stringify({ version: 3, guardadoEn: 5, partida: vieja }));
+    expect(cargar(almacen, 0)?.partida).toMatchObject({ baratijas: [], oferta: null });
   });
 
   it('guarda el mazo de la partida tal como está', () => {
