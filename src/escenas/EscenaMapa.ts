@@ -36,6 +36,7 @@ const ARRIBA = 170; // dónde queda en pantalla el piso más alto a la vista
 const ABAJO = 130; // margen bajo el piso del inicio
 const BARRA = 100; // alto de la barra fija de arriba (título, menú, oro)
 const ARRASTRE_MINIMO = 10; // por debajo de esto, soltar sobre un nodo es tocarlo
+const ESPERA_AL_ENTRAR = 1000; // ms sin aceptar toques en los nodos al abrir el mapa
 
 // Dónde quedó la cámara la última vez, para subir desde ahí al volver.
 interface VistaMapa {
@@ -78,6 +79,9 @@ export class EscenaMapa extends Phaser.Scene {
     }
 
     let arrastrado = 0;
+    let agarre: { y: number; scroll: number } | undefined;
+    let listo = false;
+    this.time.delayedCall(ESPERA_AL_ENTRAR, () => (listo = true));
     const disponibles = new Set(nodosDisponibles(partida).map((n) => n.id));
     for (const fila of partida.mapa.pisos) {
       for (const nodo of fila) {
@@ -92,7 +96,9 @@ export class EscenaMapa extends Phaser.Scene {
         if (disponibles.has(nodo.id)) {
           this.tweens.add({ targets: circulo, scale: 1.12, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
           circulo.setInteractive({ useHandCursor: true }).on('pointerup', () => {
-            if (arrastrado < ARRASTRE_MINIMO) this.ir(partida, nodo);
+            // Solo cuenta si el toque empezó en el mapa (no es el final del
+            // clic que lo abrió) y pasó un momento desde que apareció.
+            if (listo && agarre && arrastrado < ARRASTRE_MINIMO) this.ir(partida, nodo);
           });
         }
       }
@@ -129,7 +135,6 @@ export class EscenaMapa extends Phaser.Scene {
     this.registry.set('vistaMapa', { semilla: partida.mapa.semilla, scrollY: scrollMinimo } satisfies VistaMapa);
 
     // Arrastrar con el ratón o el dedo, y la rueda.
-    let agarre: { y: number; scroll: number } | undefined;
     this.input.setDefaultCursor('grab');
     this.input.on('pointerdown', (puntero: Phaser.Input.Pointer) => {
       subida?.stop();

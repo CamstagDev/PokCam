@@ -6,6 +6,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- El mapa ya no toma como elegido un nodo con el mismo clic que lo abrió
+  (por ejemplo al sobrescribir una ranura): los nodos responden después
+  de un segundo y solo a toques que empiezan en el mapa.
+
 - Nivel de riesgo: es el piso del mapa en el que se está (el inicio es
   el 0) y se ve arriba, junto al oro. Cada nivel sube 100 el objetivo de
   los combates (300 / 500 / 800 de base para combate / élite / jefe).
