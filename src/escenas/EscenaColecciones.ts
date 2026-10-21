@@ -6,7 +6,7 @@
 import Phaser from 'phaser';
 import { CATALOGO, DATOS_RAREZA, RAREZAS } from '../juego/baratijas.ts';
 import { leerColeccion } from '../juego/guardado.ts';
-import { crearBoton } from './boton.ts';
+import { crearBotonRedondo } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { fichaDeBaratija } from './inventario.ts';
 import { almacen } from './sesion.ts';
@@ -21,7 +21,7 @@ export class EscenaColecciones extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
+    const { width } = this.scale;
     const coleccion = leerColeccion(almacen);
     // De común a legendaria.
     const todas = [...CATALOGO].sort((a, b) => RAREZAS.indexOf(a.rareza) - RAREZAS.indexOf(b.rareza));
@@ -42,7 +42,8 @@ export class EscenaColecciones extends Phaser.Scene {
       }
     });
 
-    crearBoton(this, width / 2, height - 60, 'Volver', COLORES.borde, () => this.scene.start('menu'));
+    // Arriba a la derecha, para no tapar la última fila de baratijas.
+    crearBotonRedondo(this, width - 60, 56, '←', 'Volver', () => this.scene.start('menu'));
   }
 
   // La silueta del icono en negro, sin nombre ni descripción.

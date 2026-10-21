@@ -6,6 +6,9 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- En Colecciones, el botón "Volver" de abajo tapaba la última fila de
+  baratijas: ahora es una flecha arriba a la derecha.
+
 - El mapa ya no toma como elegido un nodo con el mismo clic que lo abrió
   (por ejemplo al sobrescribir una ranura): los nodos responden después
   de un segundo y solo a toques que empiezan en el mapa.
