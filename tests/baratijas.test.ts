@@ -499,13 +499,13 @@ describe('set TOC TOC TOC', () => {
     expect(con(41)).toBe(0); // no baja de 0
   });
 
-  it('con el set completo los bonos valen el doble y los castigos no cambian', () => {
+  it('con el set completo los bonos y los castigos valen el doble', () => {
     const ambos = ['estetico', 'simetrico'];
     expect(fichasDe8(ambos, mazoDe('picas', 'picas'))).toBe(12);
-    expect(fichasDe8(ambos, mazoDe('picas', 'corazones'))).toBe(4);
+    expect(fichasDe8(ambos, mazoDe('picas', 'corazones'))).toBe(2);
     const base = puntuar([carta('picas-8')]).fichas;
     expect(puntuar([carta('picas-8')], efectosDe(ambos), { mazo: [], restantes: 20 }).fichas).toBe(base + 40);
-    expect(puntuar([carta('picas-8')], efectosDe(ambos), { mazo: [], restantes: 11 }).fichas).toBe(base - 11);
+    expect(puntuar([carta('picas-8')], efectosDe(ambos), { mazo: [], restantes: 5 }).fichas).toBe(base - 10);
   });
 
   it('en combate miran el mazo de la partida y las cartas por robar', () => {

@@ -129,25 +129,26 @@ export interface Baratija extends Efectos {
 }
 
 // Estético: con cartas rojas y negras en el mazo, las fichas de cada carta
-// a la mitad; con un solo color, igual; con un solo palo, ×(1 + 0,25 ×
-// potencia). La potencia solo agranda el bono, no el castigo.
+// ×0,5 elevado a la potencia; con un solo color, igual; con un solo palo,
+// ×(1 + 0,25 × potencia).
 function estetico(potencia: number): (fichas: number, carta: Carta, mesa: Mesa) => number {
   return (fichas, _carta, { mazo }) => {
     if (mazo.length === 0) return fichas;
     const palos = new Set(mazo.map((c) => c.palo));
     const colores = new Set(mazo.map((c) => (c.palo === 'corazones' || c.palo === 'diamantes' ? 'rojo' : 'negro')));
-    if (colores.size > 1) return Math.round(fichas / 2);
+    if (colores.size > 1) return Math.round(fichas / 2 ** potencia);
     if (palos.size > 1) return fichas;
     return Math.round(fichas * (1 + 0.25 * potencia));
   };
 }
 
 // Simétrico: con un número par de cartas por robar, la mano suma ese número
-// × potencia a sus fichas; con uno impar, se lo resta (sin bajar de 0).
+// × potencia a sus fichas; con uno impar, le resta ese número × potencia
+// (sin bajar de 0).
 function simetrico(potencia: number): (mano: ManoPuntuada, mesa: Mesa) => ManoPuntuada {
   return (mano, { restantes }) => ({
     ...mano,
-    fichas: restantes % 2 === 0 ? mano.fichas + restantes * potencia : Math.max(0, mano.fichas - restantes),
+    fichas: restantes % 2 === 0 ? mano.fichas + restantes * potencia : Math.max(0, mano.fichas - restantes * potencia),
   });
 }
 
@@ -317,7 +318,7 @@ export const CONJUNTOS: readonly Conjunto[] = [
   {
     id: 'toc-toc-toc',
     nombre: 'TOC TOC TOC',
-    bonos: [{ descripcion: 'Los bonos de las baratijas del set valen el doble (los castigos no cambian).', potencia: true }],
+    bonos: [{ descripcion: 'Los bonos y los castigos de las baratijas del set valen el doble.', potencia: true }],
   },
 ];
 

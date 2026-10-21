@@ -6,8 +6,8 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
-- Set TOC TOC TOC: con el set completo, los bonos de sus baratijas valen
-  el doble (los castigos no cambian). Trae dos baratijas infrecuentes:
+- Set TOC TOC TOC: con el set completo, los bonos y los castigos de sus
+  baratijas valen el doble. Trae dos baratijas infrecuentes:
   Estético (mazo de un solo palo: cartas ×1,25 de fichas; de un solo
   color: igual; con rojas y negras: ×0,5) y Simétrico (si quedan por
   robar un número par de cartas, la mano suma esa cantidad de fichas; si
