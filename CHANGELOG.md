@@ -66,3 +66,12 @@ la versión nueva (ver scripts/nueva-version.mjs).
   tienen, el mazo y las fichas y el multiplicador de cada mano.
 - Ranuras: una ✕ en la esquina de cada ranura ocupada la borra, tras
   confirmar (reemplaza al botón Borrar).
+- Baratija legendaria De zero a héroe: al conseguirla se elige cuántas
+  de las raras propias (de 1 a las que se tengan) se vuelven comunes al
+  azar; tras el doble de combates, esas se vuelven legendarias al azar.
+  "Baratijas" muestra cuántos combates faltan.
+- Ranuras: botones Exportar (guarda la partida y la colección en un
+  .json) e Importar (abre uno en esa ranura, confirmando si está
+  ocupada). partidas-de-prueba/todo-desbloqueado.json es una partida
+  para probar: colección completa, 99 999 de oro y empieza en un
+  vendedor (se regenera con `npm run partida:prueba`).

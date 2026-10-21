@@ -3,17 +3,18 @@
 //               pasa a cambio de oro.
 //   'vendedor'  el vendedor de baratijas: se compran con oro las que
 //               alcancen, y "Pasar" vuelve al mapa.
-// La partida se guarda después de cada elección o compra.
+// Si una baratija recién conseguida pide un número, antes se muestra esa
+// pregunta. La partida se guarda después de cada elección o compra.
 
 import Phaser from 'phaser';
 import { buscarBaratija, precioDe } from '../juego/baratijas.ts';
-import { ORO_POR_PASAR, cerrarOferta, comprarBaratija, elegirBaratija, nivelDeRiesgo, puedeComprar, type Partida } from '../juego/partida.ts';
+import { ORO_POR_PASAR, cerrarOferta, comprarBaratija, elegirBaratija, nivelDeRiesgo, puedeComprar, responderEleccion, type Partida } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { fichaDeBaratija, mostrarBotonesInventario } from './inventario.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
-import { jugarPartida, partidaActual } from './sesion.ts';
+import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
 
 const ANCHO = 300;
 const ALTO = 190;
@@ -25,22 +26,25 @@ export class EscenaBaratijas extends Phaser.Scene {
 
   create(): void {
     const partida = partidaActual(this);
+    const { width, height } = this.scale;
+    mostrarOro(this, partida.oro);
+    mostrarRiesgo(this, nivelDeRiesgo(partida));
+    mostrarBotonesInventario(this, () => partidaActual(this));
+    if (partida.eleccion) {
+      this.preguntar(partida);
+      return;
+    }
     const oferta = partida.oferta;
     if (!oferta) {
       this.scene.start('mapa');
       return;
     }
-    const { width, height } = this.scale;
     const esElite = oferta.tipo === 'elite';
 
     this.add.text(width / 2, 140, esElite ? 'Elige una baratija' : 'Vendedor de baratijas', estiloTexto(40)).setOrigin(0.5);
     this.add
       .text(width / 2, 190, esElite ? 'Recompensa por vencer al élite' : 'Paga con oro lo que quieras llevarte', estiloTexto(22, COLORES.textoSuave))
       .setOrigin(0.5);
-    mostrarOro(this, partida.oro);
-    mostrarRiesgo(this, nivelDeRiesgo(partida));
-    mostrarBotonesInventario(this, () => partidaActual(this));
-
     if (oferta.baratijas.length === 0) {
       this.add.text(width / 2, height / 2, 'Ya no queda nada a la venta.', estiloTexto(26, COLORES.textoSuave)).setOrigin(0.5);
     }
@@ -64,8 +68,22 @@ export class EscenaBaratijas extends Phaser.Scene {
     crearBoton(this, width - 150, height - 60, pasar, COLORES.borde, () => this.guardarYSeguir(cerrarOferta(partida)), 240);
   }
 
+  // La baratija recién conseguida y un botón por cada número posible.
+  private preguntar(partida: Partida): void {
+    const { width, height } = this.scale;
+    const { baratija: id, maximo } = partida.eleccion!;
+    const baratija = buscarBaratija(id);
+    this.add.text(width / 2, 140, baratija.pregunta?.texto ?? 'Elige un número', estiloTexto(32)).setOrigin(0.5);
+    fichaDeBaratija(this, width / 2, height / 2 - 30, baratija, ANCHO, ALTO);
+    const separacion = 80;
+    for (let numero = 1; numero <= maximo; numero++) {
+      const x = width / 2 + (numero - (maximo + 1) / 2) * separacion;
+      crearBoton(this, x, height / 2 + 130, String(numero), COLORES.acento, () => this.guardarYSeguir(responderEleccion(partida, numero)), 64);
+    }
+  }
+
   private guardarYSeguir(partida: Partida): void {
     jugarPartida(this, partida);
-    this.scene.start('mapa');
+    irAPartida(this, partida);
   }
 }

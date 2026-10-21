@@ -47,9 +47,9 @@ export function terminarPartida(escena: Phaser.Scene): void {
 
 // La escena en la que sigue una partida al continuarla o al salir de un
 // combate: la mesa si hay un combate pendiente, la de baratijas si hay una
-// oferta sin cerrar, y si no el mapa.
+// oferta o una elección sin cerrar, y si no el mapa.
 export function irAPartida(escena: Phaser.Scene, partida: Partida): void {
   if (partida.combatePendiente) escena.scene.start('mesa', { tipo: buscarNodo(partida.mapa, partida.nodoActual).tipo });
-  else if (partida.oferta) escena.scene.start('baratijas');
+  else if (partida.eleccion || partida.oferta) escena.scene.start('baratijas');
   else escena.scene.start('mapa');
 }

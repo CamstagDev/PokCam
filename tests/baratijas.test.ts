@@ -21,6 +21,7 @@ import {
   nodoActual,
   puedeComprar,
   resolverCombate,
+  responderEleccion,
   type Partida,
 } from '../src/juego/partida.ts';
 import { puntuar } from '../src/juego/puntuacion.ts';
@@ -145,6 +146,44 @@ describe('Subsidio', () => {
     const partida = { ...partidaEn('elite'), baratijas: ['subsidio'] };
     expect(resolverCombate(partida, true).oro).toBe(300 + 100 + 50);
     expect(resolverCombate(partida, false).oro).toBe(300 - 100 + 50);
+  });
+});
+
+describe('De zero a héroe', () => {
+  // Una partida en el vendedor con De zero a héroe a la venta.
+  function conDeZero(baratijas: string[]): Partida {
+    const partida = { ...partidaEn('vendedor', 5000), baratijas };
+    return { ...partida, oferta: { tipo: 'vendedor' as const, baratijas: ['de-zero-a-heroe'] } };
+  }
+  const rarasDe = (p: Partida) => p.baratijas.filter((id) => buscarBaratija(id).rareza === 'rara');
+
+  it('al comprarla pide un número de 1 a las raras que se tienen', () => {
+    const partida = comprarBaratija(conDeZero(['diversidad', 'subsidio']), 'de-zero-a-heroe');
+    expect(partida.eleccion).toEqual({ baratija: 'de-zero-a-heroe', maximo: 1 });
+    expect(() => avanzar(partida, nodoActual(partida).siguientes[0]!)).toThrow();
+    expect(() => responderEleccion(partida, 2)).toThrow();
+  });
+
+  it('sin raras no pide nada', () => {
+    expect(comprarBaratija(conDeZero(['subsidio']), 'de-zero-a-heroe').eleccion).toBeNull();
+  });
+
+  it('vuelve comunes las raras elegidas y, tras el doble de combates, legendarias', () => {
+    let partida = responderEleccion(comprarBaratija(conDeZero(['diversidad']), 'de-zero-a-heroe'), 1);
+    expect(partida.eleccion).toBeNull();
+    expect(rarasDe(partida)).toEqual([]);
+    const comun = partida.baratijas[0]!;
+    expect(buscarBaratija(comun).rareza).toBe('comun');
+    expect(partida.transformaciones).toEqual([{ ids: [comun], combatesRestantes: 2, hacia: 'legendaria' }]);
+
+    partida = resolverCombate(partida, true);
+    expect(partida.transformaciones[0]?.combatesRestantes).toBe(1);
+    expect(partida.baratijas[0]).toBe(comun);
+    partida = resolverCombate(partida, false);
+    expect(partida.transformaciones).toEqual([]);
+    // No hay otra legendaria libre, así que sale la mejor rareza que quede.
+    expect(partida.baratijas[0]).not.toBe(comun);
+    expect(partida.baratijas).toContain('de-zero-a-heroe');
   });
 });
 

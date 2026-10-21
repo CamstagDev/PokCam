@@ -16,7 +16,8 @@
     "instalador:windows": "npm run build && electron-builder --win --publish never",
     "android:sync": "npm run build && cap sync android",
     "android:apk": "npm run android:sync && node scripts/gradle.mjs assembleDebug",
-    "version:nueva": "node scripts/nueva-version.mjs"
+    "version:nueva": "node scripts/nueva-version.mjs",
+    "partida:prueba": "node --experimental-strip-types scripts/partida-de-prueba.ts"
   },
   "main": "electron/main.js",
   "author": "CamstagDev",

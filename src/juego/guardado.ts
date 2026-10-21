@@ -10,7 +10,7 @@ import { crearMazo } from './cartas.ts';
 import { ORO_INICIAL, type Partida } from './partida.ts';
 
 export const RANURAS = 3;
-const VERSION = 5;
+const VERSION = 6;
 const PREFIJO = 'pokcam.ranura.';
 
 export interface Almacen {
@@ -46,7 +46,12 @@ export function guardar(almacen: Almacen, ranura: number, partida: Partida, ahor
 
 export function cargar(almacen: Almacen, ranura: number): Guardado | null {
   const texto = almacen.getItem(clave(ranura));
-  if (texto === null) return null;
+  return texto === null ? null : leerGuardado(texto);
+}
+
+// Un guardado en texto (de una ranura o de un archivo exportado), llevado
+// a la versión actual; null si no se puede leer.
+export function leerGuardado(texto: string): Guardado | null {
   try {
     const guardado = JSON.parse(texto) as Guardado;
     if (!guardado?.partida?.mapa) return null;
@@ -55,7 +60,8 @@ export function cargar(almacen: Almacen, ranura: number): Guardado | null {
     // Las de la versión 1 son de antes del oro: siguen con el inicial. Las
     // de antes de la 3 no guardaban el mazo: siguen con el de 52 cartas; las
     // de antes de la 4 son de antes de las baratijas, y las de antes de la 5
-    // de antes de las rarezas.
+    // de antes de las rarezas, y las de antes de la 6 de antes de las
+    // baratijas que piden un número.
     const partida = { ...guardado.partida };
     if (version < 2) partida.oro = ORO_INICIAL;
     if (version < 3) partida.mazo = crearMazo();
@@ -64,6 +70,10 @@ export function cargar(almacen: Almacen, ranura: number): Guardado | null {
       partida.oferta = null;
     }
     if (version < 5) partida.probabilidades = PROBABILIDADES_INICIALES;
+    if (version < 6) {
+      partida.eleccion = null;
+      partida.transformaciones = [];
+    }
     return { ...guardado, version: VERSION, partida };
   } catch {
     return null;
@@ -104,4 +114,32 @@ export function agregarAColeccion(almacen: Almacen, ids: readonly string[]): voi
   const coleccion = leerColeccion(almacen);
   const nuevas = ids.filter((id) => !coleccion.includes(id));
   if (nuevas.length > 0) almacen.setItem(CLAVE_COLECCION, JSON.stringify([...coleccion, ...nuevas]));
+}
+
+// Exportar e importar: el guardado de una ranura como archivo JSON, con la
+// colección para que al importarlo en otro equipo también se desbloquee.
+export interface Exportado extends Guardado {
+  coleccion?: string[];
+}
+
+export function exportarRanura(almacen: Almacen, ranura: number): string | null {
+  const guardado = cargar(almacen, ranura);
+  if (!guardado) return null;
+  const exportado: Exportado = { ...guardado, coleccion: leerColeccion(almacen) };
+  return JSON.stringify(exportado, null, 2);
+}
+
+// Devuelve false (sin tocar nada) si el texto no es un guardado válido.
+export function importarRanura(almacen: Almacen, ranura: number, texto: string): boolean {
+  const guardado = leerGuardado(texto);
+  if (!guardado) return false;
+  guardar(almacen, ranura, guardado.partida, guardado.guardadoEn);
+  try {
+    const { coleccion } = JSON.parse(texto) as Exportado;
+    if (Array.isArray(coleccion)) agregarAColeccion(almacen, coleccion.filter((id) => typeof id === 'string'));
+  } catch {
+    // ya se leyó bien arriba
+  }
+  agregarAColeccion(almacen, guardado.partida.baratijas);
+  return true;
 }

@@ -2,7 +2,17 @@
 // mazo y sus baratijas.
 
 import { crearAleatorio } from './aleatorio.ts';
-import { PROBABILIDADES_INICIALES, aplicar, baratijasDe, buscarBaratija, precioDe, sortearBaratijas, type Probabilidades } from './baratijas.ts';
+import {
+  PROBABILIDADES_INICIALES,
+  aplicar,
+  baratijasDe,
+  buscarBaratija,
+  precioDe,
+  sortearBaratijas,
+  sortearDeRareza,
+  type Probabilidades,
+  type Transformacion,
+} from './baratijas.ts';
 import { crearMazo, type Carta } from './cartas.ts';
 import { buscarNodo, generarMapa, type Mapa, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 
@@ -36,6 +46,10 @@ export interface Partida {
   // Las de cada rareza al ofrecer baratijas, sin contar lo que cambien las
   // baratijas (ver probabilidadesDeRareza).
   probabilidades: Probabilidades;
+  // Una baratija recién conseguida que espera que el jugador elija un
+  // número (de 1 a maximo) antes de seguir.
+  eleccion: { baratija: string; maximo: number } | null;
+  transformaciones: Transformacion[];
 }
 
 export interface Oferta {
@@ -46,7 +60,7 @@ export interface Oferta {
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, eleccion: null, transformaciones: [] };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -57,6 +71,7 @@ export function nodosDisponibles(partida: Partida): Nodo[] {
 export function avanzar(partida: Partida, id: string): Partida {
   if (partida.combatePendiente) throw new Error(`Falta ganar el combate de ${partida.nodoActual}`);
   if (partida.oferta) throw new Error('Falta cerrar la oferta de baratijas');
+  if (partida.eleccion) throw new Error('Falta responder la elección de una baratija');
   if (!nodosDisponibles(partida).some((n) => n.id === id)) {
     throw new Error(`Desde ${partida.nodoActual} no se puede ir a ${id}`);
   }
@@ -76,6 +91,7 @@ export function resolverCombate(partida: Partida, gano: boolean): Partida {
     ...partida,
     oro: partida.oro + (gano ? aplicar(baratijas, 'alGanarCombate', oro) : -aplicar(baratijas, 'alPerderCombate', oro)),
     combatePendiente: !gano && nodo.tipo === 'jefe',
+    ...avanzarTransformaciones(partida),
   };
   // Vencer a un élite ofrece elegir 1 de 3 baratijas.
   if (gano && nodo.tipo === 'elite') {
@@ -83,6 +99,26 @@ export function resolverCombate(partida: Partida, gano: boolean): Partida {
     if (baratijas.baratijas.length > 0) return { ...resuelto, oferta: baratijas };
   }
   return resuelto;
+}
+
+// Cada combate descuenta uno a cada transformación; las que llegan a 0
+// cambian sus baratijas (si el jugador todavía las tiene) por otras al azar.
+function avanzarTransformaciones(partida: Partida): Pick<Partida, 'baratijas' | 'transformaciones'> {
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 17 + partida.visitados.length * 5 + partida.oro);
+  let baratijas = [...partida.baratijas];
+  const pendientes: Transformacion[] = [];
+  for (const t of partida.transformaciones) {
+    if (t.combatesRestantes > 1) {
+      pendientes.push({ ...t, combatesRestantes: t.combatesRestantes - 1 });
+      continue;
+    }
+    for (const id of t.ids) {
+      if (!baratijas.includes(id)) continue;
+      const nueva = sortearDeRareza(aleatorio, t.hacia, baratijas);
+      if (nueva) baratijas = baratijas.map((b) => (b === id ? nueva : b));
+    }
+  }
+  return { baratijas, transformaciones: pendientes };
 }
 
 // La semilla depende del nodo y del tipo de oferta, así que continuar la
@@ -105,7 +141,27 @@ export function elegirBaratija(partida: Partida, id: string): Partida {
   if (partida.oferta?.tipo !== 'elite' || !partida.oferta.baratijas.includes(id)) {
     throw new Error(`${id} no está entre las baratijas a elegir`);
   }
-  return { ...partida, baratijas: [...partida.baratijas, id], oferta: null };
+  return conseguir({ ...partida, oferta: null }, id);
+}
+
+// Suma la baratija; si pide un número y hay de dónde elegir, la partida
+// queda esperando la respuesta (ver responderEleccion).
+function conseguir(partida: Partida, id: string): Partida {
+  const baratijas = [...partida.baratijas, id];
+  const pregunta = buscarBaratija(id).pregunta;
+  const maximo = pregunta ? pregunta.maximo(baratijas) : 0;
+  return { ...partida, baratijas, eleccion: maximo >= 1 ? { baratija: id, maximo } : null };
+}
+
+export function responderEleccion(partida: Partida, numero: number): Partida {
+  const eleccion = partida.eleccion;
+  if (!eleccion || !Number.isInteger(numero) || numero < 1 || numero > eleccion.maximo) {
+    throw new Error(`No se puede elegir ${numero}`);
+  }
+  const efecto = buscarBaratija(eleccion.baratija).alElegirNumero;
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 13 + partida.visitados.length * 3 + numero);
+  const cambio = efecto ? efecto({ baratijas: partida.baratijas, transformaciones: partida.transformaciones }, numero, aleatorio) : partida;
+  return { ...partida, baratijas: cambio.baratijas, transformaciones: cambio.transformaciones, eleccion: null };
 }
 
 // Se puede comprar si está a la venta y alcanza el oro sin quedar en 0
@@ -117,12 +173,12 @@ export function puedeComprar(partida: Partida, id: string): boolean {
 export function comprarBaratija(partida: Partida, id: string): Partida {
   if (!puedeComprar(partida, id)) throw new Error(`No se puede comprar ${id}`);
   const oferta = partida.oferta!;
-  return {
+  const pagada = {
     ...partida,
     oro: partida.oro - precioDe(buscarBaratija(id)),
-    baratijas: [...partida.baratijas, id],
     oferta: { ...oferta, baratijas: oferta.baratijas.filter((b) => b !== id) },
   };
+  return conseguir(pagada, id);
 }
 
 // Pasar: irse del vendedor, o dejar la recompensa del élite a cambio de

@@ -2,13 +2,16 @@
 //   'nueva'      se elige dónde empezar; si la ranura está ocupada se pide
 //                confirmar antes de sobrescribirla.
 //   'continuar'  se elige qué partida seguir.
-// En los dos, la ✕ de una ranura ocupada la borra (tras confirmar).
+// En los dos, la ✕ de una ranura ocupada la borra (tras confirmar), y
+// debajo de cada ranura se puede exportar su partida a un archivo o
+// importar una desde un archivo.
 
 import Phaser from 'phaser';
-import { RANURAS, borrar, cargar, resumirTodas, type Resumen } from '../juego/guardado.ts';
+import { RANURAS, borrar, cargar, exportarRanura, importarRanura, resumirTodas, type Resumen } from '../juego/guardado.ts';
 import { crearPartida } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
-import { confirmar } from './confirmar.ts';
+import { abrirArchivo, descargar } from './archivos.ts';
+import { avisar, confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { almacen, irAPartida, jugarPartida } from './sesion.ts';
 
@@ -62,6 +65,12 @@ export class EscenaRanuras extends Phaser.Scene {
       fondo.on('pointerout', () => fondo.setFillStyle(COLORES.panel));
     }
 
+    const yBotones = y + ALTO_RANURA / 2 + 45;
+    if (resumen) {
+      crearBoton(this, x - 80, yBotones, 'Exportar', COLORES.borde, () => this.exportar(ranura), 150);
+    }
+    crearBoton(this, resumen ? x + 80 : x, yBotones, 'Importar', COLORES.borde, () => this.importar(ranura, resumen !== null), 150);
+
     // Una ✕ en la esquina de cada ranura ocupada la borra, tras confirmar.
     if (resumen) {
       const esquina = this.add
@@ -77,6 +86,24 @@ export class EscenaRanuras extends Phaser.Scene {
           this.scene.restart();
         }),
       );
+    }
+  }
+
+  private exportar(ranura: number): void {
+    const texto = exportarRanura(almacen, ranura);
+    if (texto) descargar(`pokcam-ranura-${ranura + 1}.json`, texto);
+  }
+
+  private importar(ranura: number, ocupada: boolean): void {
+    const leer = () =>
+      abrirArchivo((texto) => {
+        if (importarRanura(almacen, ranura, texto)) this.scene.restart();
+        else avisar(this, 'Ese archivo no es una partida de PokCam que se pueda abrir.');
+      });
+    if (ocupada) {
+      confirmar(this, `La ranura ${ranura + 1} ya tiene una partida.\n¿Reemplazarla por la del archivo?`, 'Reemplazar', COLORES.multi, leer);
+    } else {
+      leer();
     }
   }
 

@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { RANURAS, agregarAColeccion, borrar, cargar, guardar, leerColeccion, resumirTodas, type Almacen } from '../src/juego/guardado.ts';
+import {
+  RANURAS,
+  agregarAColeccion,
+  borrar,
+  cargar,
+  exportarRanura,
+  guardar,
+  importarRanura,
+  leerColeccion,
+  resumirTodas,
+  type Almacen } from '../src/juego/guardado.ts';
 import { avanzar, crearPartida, nodosDisponibles } from '../src/juego/partida.ts';
 
 function almacenDePrueba(): Almacen & { datos: Map<string, string> } {
@@ -22,7 +32,7 @@ describe('guardado', () => {
     let partida = crearPartida(7);
     partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
     guardar(almacen, 1, partida, 1234);
-    expect(cargar(almacen, 1)).toEqual({ version: 5, guardadoEn: 1234, partida });
+    expect(cargar(almacen, 1)).toEqual({ version: 6, guardadoEn: 1234, partida });
     expect(cargar(almacen, 0)).toBeNull();
   });
 
@@ -100,7 +110,42 @@ describe('guardado', () => {
     expect(leerColeccion(almacen)).toEqual(['materialista', 'diversidad']);
   });
 
+  it('exportar e importar pasa la partida y la colección a otra ranura', () => {
+    const origen = almacenDePrueba();
+    const partida = { ...crearPartida(4), baratijas: ['subsidio'] };
+    guardar(origen, 0, partida, 77);
+    agregarAColeccion(origen, ['diversidad']);
+    const texto = exportarRanura(origen, 0)!;
+
+    const destino = almacenDePrueba();
+    expect(importarRanura(destino, 2, texto)).toBe(true);
+    expect(cargar(destino, 2)).toEqual({ version: 6, guardadoEn: 77, partida });
+    expect(leerColeccion(destino).sort()).toEqual(['diversidad', 'subsidio']);
+  });
+
+  it('importar un archivo que no es una partida no toca nada', () => {
+    const almacen = almacenDePrueba();
+    expect(importarRanura(almacen, 0, '{"hola": 1}')).toBe(false);
+    expect(importarRanura(almacen, 0, 'no es json')).toBe(false);
+    expect(cargar(almacen, 0)).toBeNull();
+  });
+
+  it('exportar una ranura vacía no da nada', () => {
+    expect(exportarRanura(almacenDePrueba(), 1)).toBeNull();
+  });
+
   it('no existe una cuarta ranura', () => {
     expect(() => guardar(almacenDePrueba(), RANURAS, crearPartida(1))).toThrow();
+  });
+});
+
+describe('partida de prueba', () => {
+  it('partidas-de-prueba/todo-desbloqueado.json se puede importar', async () => {
+    const { readFileSync } = await import('node:fs');
+    const texto = readFileSync(new URL('../partidas-de-prueba/todo-desbloqueado.json', import.meta.url), 'utf8');
+    const datos = new Map<string, string>();
+    const almacen = { getItem: (c: string) => datos.get(c) ?? null, setItem: (c: string, v: string) => void datos.set(c, v), removeItem: (c: string) => void datos.delete(c) };
+    expect(importarRanura(almacen, 0, texto)).toBe(true);
+    expect(cargar(almacen, 0)?.partida.oro).toBe(99_999);
   });
 });

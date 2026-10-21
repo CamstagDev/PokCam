@@ -15,6 +15,10 @@
 //   alPerderCombate   el oro que quita un combate perdido
 //   alSortearRareza   la probabilidad de cada rareza al ofrecer baratijas
 //
+// Una baratija también puede pedir un número al conseguirla (`pregunta`)
+// y usarlo para cambiar las baratijas del jugador (`alElegirNumero`), por
+// ejemplo dejando transformaciones que se cumplen tras unos combates.
+//
 // Si hace falta que una baratija toque algo más, se agrega aquí un efecto
 // nuevo y se llama desde la regla correspondiente.
 
@@ -55,6 +59,19 @@ export interface ManoPuntuada {
   multi: number;
 }
 
+// Baratijas del jugador que se vuelven otras de la rareza `hacia` cuando
+// pasan `combatesRestantes` combates (ganados o perdidos).
+export interface Transformacion {
+  ids: string[];
+  combatesRestantes: number;
+  hacia: Rareza;
+}
+
+export interface CambioDeBaratijas {
+  baratijas: string[];
+  transformaciones: Transformacion[];
+}
+
 export interface Baratija {
   id: string;
   nombre: string;
@@ -67,6 +84,8 @@ export interface Baratija {
   alGanarCombate?(oro: number): number;
   alPerderCombate?(oro: number): number;
   alSortearRareza?(probabilidades: Probabilidades): Probabilidades;
+  pregunta?: { texto: string; maximo(tiene: readonly string[]): number };
+  alElegirNumero?(cambio: CambioDeBaratijas, numero: number, aleatorio: Aleatorio): CambioDeBaratijas;
 }
 
 // Las fichas de las cartas de un palo ×1,5 y las de otro a la mitad,
@@ -125,6 +144,28 @@ export const CATALOGO: readonly Baratija[] = [
     icono: '🎨',
     alPuntuar: (mano) => (new Set(mano.cartasJugadas.map((c) => c.palo)).size === 4 ? { ...mano, multi: mano.multi * 4 } : mano),
   },
+  {
+    id: 'de-zero-a-heroe',
+    nombre: 'De zero a héroe',
+    descripcion: 'Al conseguirla, eliges cuántas de tus raras se vuelven comunes al azar. Tras el doble de combates, esas pasan a legendarias.',
+    rareza: 'legendaria',
+    icono: '🦸',
+    pregunta: {
+      texto: '¿Cuántas de tus baratijas raras se vuelven comunes?',
+      maximo: (tiene) => baratijasDe(tiene).filter((b) => b.rareza === 'rara').length,
+    },
+    alElegirNumero: ({ baratijas, transformaciones }, numero, aleatorio) => {
+      const raras = barajar(baratijasDe(baratijas).filter((b) => b.rareza === 'rara'), aleatorio).slice(0, numero);
+      let nuevas = [...baratijas];
+      const comunes: string[] = [];
+      for (const rara of raras) {
+        const comun = sortearDeRareza(aleatorio, 'comun', nuevas);
+        nuevas = comun ? nuevas.map((id) => (id === rara.id ? comun : id)) : nuevas.filter((id) => id !== rara.id);
+        if (comun) comunes.push(comun);
+      }
+      return { baratijas: nuevas, transformaciones: [...transformaciones, { ids: comunes, combatesRestantes: numero * 2, hacia: 'legendaria' }] };
+    },
+  },
 ];
 
 export const BARATIJAS_POR_OFERTA = 3;
@@ -164,17 +205,22 @@ export function sortearBaratijas(
 ): string[] {
   const elegidas: string[] = [];
   for (let lugar = 0; lugar < cuantas; lugar++) {
-    const rareza = RAREZAS.indexOf(sortearRareza(aleatorio, probabilidades));
-    const orden = [...RAREZAS.slice(0, rareza + 1).reverse(), ...RAREZAS.slice(rareza + 1)];
-    for (const buscada of orden) {
-      const libres = CATALOGO.filter((b) => b.rareza === buscada && !tiene.includes(b.id) && !elegidas.includes(b.id));
-      if (libres.length > 0) {
-        elegidas.push(barajar(libres, aleatorio)[0]!.id);
-        break;
-      }
-    }
+    const id = sortearDeRareza(aleatorio, sortearRareza(aleatorio, probabilidades), [...tiene, ...elegidas]);
+    if (id) elegidas.push(id);
   }
   return elegidas;
+}
+
+// Una baratija al azar de esa rareza que no esté en `excluir`; si no queda
+// ninguna, de las rarezas de abajo y después de las de arriba.
+export function sortearDeRareza(aleatorio: Aleatorio, rareza: Rareza, excluir: readonly string[]): string | null {
+  const indice = RAREZAS.indexOf(rareza);
+  const orden = [...RAREZAS.slice(0, indice + 1).reverse(), ...RAREZAS.slice(indice + 1)];
+  for (const buscada of orden) {
+    const libres = CATALOGO.filter((b) => b.rareza === buscada && !excluir.includes(b.id));
+    if (libres.length > 0) return barajar(libres, aleatorio)[0]!.id;
+  }
+  return null;
 }
 
 // Las fichas que suma una carta que puntúa, con lo que cambien las baratijas.

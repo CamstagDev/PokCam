@@ -51,6 +51,12 @@ function verBaratijas(escena: Phaser.Scene, partida: Partida): void {
     const x = width / 2 + ((i % porFila) - (enFila - 1) / 2) * (ancho + 20);
     const y = 210 + fila * (alto + 20);
     capa.add(fichaDeBaratija(escena, x, y, baratija, ancho, alto));
+    // Las que esperan transformarse dicen en cuántos combates.
+    const espera = partida.transformaciones.find((t) => t.ids.includes(baratija.id));
+    if (espera) {
+      const aviso = `→ ${DATOS_RAREZA[espera.hacia].nombre} en ${espera.combatesRestantes} combate${espera.combatesRestantes === 1 ? '' : 's'}`;
+      capa.add(escena.add.text(x, y + alto / 2 - 14, aviso, estiloTexto(15, COLOR_RAREZA[espera.hacia])).setOrigin(0.5, 1));
+    }
   });
 }
 

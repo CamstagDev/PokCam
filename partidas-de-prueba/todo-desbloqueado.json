@@ -1,0 +1,538 @@
+{
+  "version": 6,
+  "guardadoEn": 1792551322702,
+  "partida": {
+    "mapa": {
+      "semilla": 20261021,
+      "pisos": [
+        [
+          {
+            "id": "p0-1",
+            "piso": 0,
+            "columna": 1,
+            "tipo": "inicio",
+            "siguientes": [
+              "p1-1",
+              "p1-0",
+              "p1-2",
+              "p1-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p1-0",
+            "piso": 1,
+            "columna": 0,
+            "tipo": "vendedor",
+            "siguientes": [
+              "p2-0"
+            ]
+          },
+          {
+            "id": "p1-1",
+            "piso": 1,
+            "columna": 1,
+            "tipo": "elite",
+            "siguientes": [
+              "p2-0"
+            ]
+          },
+          {
+            "id": "p1-2",
+            "piso": 1,
+            "columna": 2,
+            "tipo": "combate",
+            "siguientes": [
+              "p2-3"
+            ]
+          },
+          {
+            "id": "p1-3",
+            "piso": 1,
+            "columna": 3,
+            "tipo": "combate",
+            "siguientes": [
+              "p2-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p2-0",
+            "piso": 2,
+            "columna": 0,
+            "tipo": "vendedor",
+            "siguientes": [
+              "p3-0",
+              "p3-1"
+            ]
+          },
+          {
+            "id": "p2-3",
+            "piso": 2,
+            "columna": 3,
+            "tipo": "combate",
+            "siguientes": [
+              "p3-3",
+              "p3-2"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p3-0",
+            "piso": 3,
+            "columna": 0,
+            "tipo": "combate",
+            "siguientes": [
+              "p4-1",
+              "p4-2"
+            ]
+          },
+          {
+            "id": "p3-1",
+            "piso": 3,
+            "columna": 1,
+            "tipo": "tienda",
+            "siguientes": [
+              "p4-1"
+            ]
+          },
+          {
+            "id": "p3-2",
+            "piso": 3,
+            "columna": 2,
+            "tipo": "elite",
+            "siguientes": [
+              "p4-2"
+            ]
+          },
+          {
+            "id": "p3-3",
+            "piso": 3,
+            "columna": 3,
+            "tipo": "combate",
+            "siguientes": [
+              "p4-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p4-1",
+            "piso": 4,
+            "columna": 1,
+            "tipo": "tienda",
+            "siguientes": [
+              "p5-0"
+            ]
+          },
+          {
+            "id": "p4-2",
+            "piso": 4,
+            "columna": 2,
+            "tipo": "combate",
+            "siguientes": [
+              "p5-2"
+            ]
+          },
+          {
+            "id": "p4-3",
+            "piso": 4,
+            "columna": 3,
+            "tipo": "descanso",
+            "siguientes": [
+              "p5-3",
+              "p5-2"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p5-0",
+            "piso": 5,
+            "columna": 0,
+            "tipo": "combate",
+            "siguientes": [
+              "p6-0"
+            ]
+          },
+          {
+            "id": "p5-2",
+            "piso": 5,
+            "columna": 2,
+            "tipo": "combate",
+            "siguientes": [
+              "p6-1",
+              "p6-3"
+            ]
+          },
+          {
+            "id": "p5-3",
+            "piso": 5,
+            "columna": 3,
+            "tipo": "tienda",
+            "siguientes": [
+              "p6-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p6-0",
+            "piso": 6,
+            "columna": 0,
+            "tipo": "combate",
+            "siguientes": [
+              "p7-0"
+            ]
+          },
+          {
+            "id": "p6-1",
+            "piso": 6,
+            "columna": 1,
+            "tipo": "combate",
+            "siguientes": [
+              "p7-1",
+              "p7-0"
+            ]
+          },
+          {
+            "id": "p6-3",
+            "piso": 6,
+            "columna": 3,
+            "tipo": "combate",
+            "siguientes": [
+              "p7-1",
+              "p7-0"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p7-0",
+            "piso": 7,
+            "columna": 0,
+            "tipo": "descanso",
+            "siguientes": [
+              "p8-1"
+            ]
+          },
+          {
+            "id": "p7-1",
+            "piso": 7,
+            "columna": 1,
+            "tipo": "descanso",
+            "siguientes": [
+              "p8-1"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p8-1",
+            "piso": 8,
+            "columna": 1,
+            "tipo": "jefe",
+            "siguientes": []
+          }
+        ]
+      ],
+      "columnas": 4
+    },
+    "nodoActual": "p0-1",
+    "visitados": [
+      "p0-1"
+    ],
+    "combatePendiente": false,
+    "oro": 99999,
+    "mazo": [
+      {
+        "id": "picas-2",
+        "palo": "picas",
+        "rango": 2
+      },
+      {
+        "id": "picas-3",
+        "palo": "picas",
+        "rango": 3
+      },
+      {
+        "id": "picas-4",
+        "palo": "picas",
+        "rango": 4
+      },
+      {
+        "id": "picas-5",
+        "palo": "picas",
+        "rango": 5
+      },
+      {
+        "id": "picas-6",
+        "palo": "picas",
+        "rango": 6
+      },
+      {
+        "id": "picas-7",
+        "palo": "picas",
+        "rango": 7
+      },
+      {
+        "id": "picas-8",
+        "palo": "picas",
+        "rango": 8
+      },
+      {
+        "id": "picas-9",
+        "palo": "picas",
+        "rango": 9
+      },
+      {
+        "id": "picas-10",
+        "palo": "picas",
+        "rango": 10
+      },
+      {
+        "id": "picas-11",
+        "palo": "picas",
+        "rango": 11
+      },
+      {
+        "id": "picas-12",
+        "palo": "picas",
+        "rango": 12
+      },
+      {
+        "id": "picas-13",
+        "palo": "picas",
+        "rango": 13
+      },
+      {
+        "id": "picas-14",
+        "palo": "picas",
+        "rango": 14
+      },
+      {
+        "id": "corazones-2",
+        "palo": "corazones",
+        "rango": 2
+      },
+      {
+        "id": "corazones-3",
+        "palo": "corazones",
+        "rango": 3
+      },
+      {
+        "id": "corazones-4",
+        "palo": "corazones",
+        "rango": 4
+      },
+      {
+        "id": "corazones-5",
+        "palo": "corazones",
+        "rango": 5
+      },
+      {
+        "id": "corazones-6",
+        "palo": "corazones",
+        "rango": 6
+      },
+      {
+        "id": "corazones-7",
+        "palo": "corazones",
+        "rango": 7
+      },
+      {
+        "id": "corazones-8",
+        "palo": "corazones",
+        "rango": 8
+      },
+      {
+        "id": "corazones-9",
+        "palo": "corazones",
+        "rango": 9
+      },
+      {
+        "id": "corazones-10",
+        "palo": "corazones",
+        "rango": 10
+      },
+      {
+        "id": "corazones-11",
+        "palo": "corazones",
+        "rango": 11
+      },
+      {
+        "id": "corazones-12",
+        "palo": "corazones",
+        "rango": 12
+      },
+      {
+        "id": "corazones-13",
+        "palo": "corazones",
+        "rango": 13
+      },
+      {
+        "id": "corazones-14",
+        "palo": "corazones",
+        "rango": 14
+      },
+      {
+        "id": "treboles-2",
+        "palo": "treboles",
+        "rango": 2
+      },
+      {
+        "id": "treboles-3",
+        "palo": "treboles",
+        "rango": 3
+      },
+      {
+        "id": "treboles-4",
+        "palo": "treboles",
+        "rango": 4
+      },
+      {
+        "id": "treboles-5",
+        "palo": "treboles",
+        "rango": 5
+      },
+      {
+        "id": "treboles-6",
+        "palo": "treboles",
+        "rango": 6
+      },
+      {
+        "id": "treboles-7",
+        "palo": "treboles",
+        "rango": 7
+      },
+      {
+        "id": "treboles-8",
+        "palo": "treboles",
+        "rango": 8
+      },
+      {
+        "id": "treboles-9",
+        "palo": "treboles",
+        "rango": 9
+      },
+      {
+        "id": "treboles-10",
+        "palo": "treboles",
+        "rango": 10
+      },
+      {
+        "id": "treboles-11",
+        "palo": "treboles",
+        "rango": 11
+      },
+      {
+        "id": "treboles-12",
+        "palo": "treboles",
+        "rango": 12
+      },
+      {
+        "id": "treboles-13",
+        "palo": "treboles",
+        "rango": 13
+      },
+      {
+        "id": "treboles-14",
+        "palo": "treboles",
+        "rango": 14
+      },
+      {
+        "id": "diamantes-2",
+        "palo": "diamantes",
+        "rango": 2
+      },
+      {
+        "id": "diamantes-3",
+        "palo": "diamantes",
+        "rango": 3
+      },
+      {
+        "id": "diamantes-4",
+        "palo": "diamantes",
+        "rango": 4
+      },
+      {
+        "id": "diamantes-5",
+        "palo": "diamantes",
+        "rango": 5
+      },
+      {
+        "id": "diamantes-6",
+        "palo": "diamantes",
+        "rango": 6
+      },
+      {
+        "id": "diamantes-7",
+        "palo": "diamantes",
+        "rango": 7
+      },
+      {
+        "id": "diamantes-8",
+        "palo": "diamantes",
+        "rango": 8
+      },
+      {
+        "id": "diamantes-9",
+        "palo": "diamantes",
+        "rango": 9
+      },
+      {
+        "id": "diamantes-10",
+        "palo": "diamantes",
+        "rango": 10
+      },
+      {
+        "id": "diamantes-11",
+        "palo": "diamantes",
+        "rango": 11
+      },
+      {
+        "id": "diamantes-12",
+        "palo": "diamantes",
+        "rango": 12
+      },
+      {
+        "id": "diamantes-13",
+        "palo": "diamantes",
+        "rango": 13
+      },
+      {
+        "id": "diamantes-14",
+        "palo": "diamantes",
+        "rango": 14
+      }
+    ],
+    "baratijas": [],
+    "oferta": {
+      "tipo": "vendedor",
+      "baratijas": [
+        "diversidad",
+        "de-zero-a-heroe",
+        "subsidio"
+      ]
+    },
+    "probabilidades": {
+      "infrecuente": 0.25,
+      "rara": 0.1,
+      "legendaria": 0.05
+    },
+    "eleccion": null,
+    "transformaciones": []
+  },
+  "coleccion": [
+    "materialista",
+    "altruista",
+    "flower-power",
+    "grass-mower",
+    "subsidio",
+    "diversidad",
+    "de-zero-a-heroe"
+  ]
+}
