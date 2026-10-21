@@ -7,6 +7,8 @@
 // opcional y recibe el valor de antes para devolver el de después:
 //
 //   alEmpezarCombate  manos y descartes con los que empieza cada combate
+//   alContarCarta     las fichas que suma cada carta que puntúa (recibe
+//                     también la carta)
 //   alPuntuar         fichas y multiplicador de cada mano jugada
 //   alGanarCombate    el oro que da un combate ganado
 //
@@ -36,63 +38,20 @@ export interface Baratija {
   precio: number; // en oro, en el vendedor
   icono: string; // un símbolo o emoji para dibujarla
   alEmpezarCombate?(inicio: InicioDeCombate): InicioDeCombate;
+  alContarCarta?(fichas: number, carta: Carta): number;
   alPuntuar?(mano: ManoPuntuada): ManoPuntuada;
   alGanarCombate?(oro: number): number;
 }
 
-// Unas pocas de ejemplo, una por cada efecto, para que la recompensa del
-// élite y el vendedor tengan qué mostrar. Se pueden cambiar o quitar.
 export const CATALOGO: readonly Baratija[] = [
   {
-    id: 'dado-cargado',
-    nombre: 'Dado cargado',
-    descripcion: '+4 de multiplicador en cada mano.',
+    id: 'materialista',
+    nombre: 'Materialista',
+    descripcion: 'Las cartas de ♥ valen la mitad de fichas y las de ♦, 1,5 veces más.',
     precio: 150,
-    icono: '🎲',
-    alPuntuar: (mano) => ({ ...mano, multi: mano.multi + 4 }),
-  },
-  {
-    id: 'ficha-de-casino',
-    nombre: 'Ficha de casino',
-    descripcion: '+30 fichas en cada mano.',
-    precio: 120,
-    icono: '🪙',
-    alPuntuar: (mano) => ({ ...mano, fichas: mano.fichas + 30 }),
-  },
-  {
-    id: 'corazon-de-cristal',
-    nombre: 'Corazón de cristal',
-    descripcion: '+3 de multiplicador por cada ♥ que puntúa.',
-    precio: 140,
-    icono: '💎',
-    alPuntuar: (mano) => ({
-      ...mano,
-      multi: mano.multi + 3 * mano.cartasQuePuntuan.filter((c) => c.palo === 'corazones').length,
-    }),
-  },
-  {
-    id: 'guante-de-mago',
-    nombre: 'Guante de mago',
-    descripcion: '+1 mano en cada combate.',
-    precio: 200,
-    icono: '🧤',
-    alEmpezarCombate: (inicio) => ({ ...inicio, manos: inicio.manos + 1 }),
-  },
-  {
-    id: 'papelera',
-    nombre: 'Papelera',
-    descripcion: '+1 descarte en cada combate.',
-    precio: 130,
-    icono: '🗑',
-    alEmpezarCombate: (inicio) => ({ ...inicio, descartes: inicio.descartes + 1 }),
-  },
-  {
-    id: 'alcancia',
-    nombre: 'Alcancía',
-    descripcion: '+50 de oro al ganar un combate.',
-    precio: 160,
-    icono: '🐷',
-    alGanarCombate: (oro) => oro + 50,
+    icono: '💰',
+    alContarCarta: (fichas, carta) =>
+      carta.palo === 'corazones' ? Math.round(fichas / 2) : carta.palo === 'diamantes' ? Math.round(fichas * 1.5) : fichas,
   },
 ];
 
@@ -114,6 +73,11 @@ export function baratijasDe(ids: readonly string[]): Baratija[] {
 export function sortearBaratijas(aleatorio: Aleatorio, tiene: readonly string[], cuantas = BARATIJAS_POR_OFERTA): string[] {
   const libres = CATALOGO.filter((b) => !tiene.includes(b.id)).map((b) => b.id);
   return barajar(libres, aleatorio).slice(0, cuantas);
+}
+
+// Las fichas que suma una carta que puntúa, con lo que cambien las baratijas.
+export function fichasConBaratijas(fichas: number, carta: Carta, baratijas: readonly Baratija[]): number {
+  return baratijas.reduce((actual, b) => (b.alContarCarta ? b.alContarCarta(actual, carta) : actual), fichas);
 }
 
 // Aplica en orden el efecto `efecto` de cada baratija que lo tenga.

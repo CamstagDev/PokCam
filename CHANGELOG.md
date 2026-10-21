@@ -49,6 +49,11 @@ la versión nueva (ver scripts/nueva-version.mjs).
 - Baratijas: objetos que cambian las reglas de la partida. Al vencer a
   un élite se elige 1 de 3 (o se saltea), y el nuevo nodo del vendedor
   de baratijas (✦) las vende por oro, sin dejar que el oro llegue a 0.
-  Hay 6 de ejemplo; se agregan más en src/juego/baratijas.ts.
-- Botones "Baratijas" y "Mazo" abajo a la izquierda en el mapa, la mesa
-  y las pantallas de baratijas, para ver las que se tienen y el mazo.
+  Por ahora hay una, Materialista: las cartas de ♥ dan la mitad de
+  fichas y las de ♦, 1,5 veces más. Se agregan más en
+  src/juego/baratijas.ts.
+- Botones "Baratijas", "Mazo" y "Manos" abajo a la izquierda en el
+  mapa, la mesa y las pantallas de baratijas, para ver las que se
+  tienen, el mazo y las fichas y el multiplicador de cada mano.
+- Ranuras: una ✕ en la esquina de cada ranura ocupada la borra, tras
+  confirmar (reemplaza al botón Borrar).

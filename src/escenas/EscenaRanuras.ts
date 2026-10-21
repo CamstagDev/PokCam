@@ -1,7 +1,8 @@
 // Las 3 ranuras de guardado, en dos modos:
 //   'nueva'      se elige dónde empezar; si la ranura está ocupada se pide
 //                confirmar antes de sobrescribirla.
-//   'continuar'  se elige qué partida seguir, o se borra una.
+//   'continuar'  se elige qué partida seguir.
+// En los dos, la ✕ de una ranura ocupada la borra (tras confirmar).
 
 import Phaser from 'phaser';
 import { RANURAS, borrar, cargar, resumirTodas, type Resumen } from '../juego/guardado.ts';
@@ -61,8 +62,16 @@ export class EscenaRanuras extends Phaser.Scene {
       fondo.on('pointerout', () => fondo.setFillStyle(COLORES.panel));
     }
 
-    if (this.modo === 'continuar' && resumen) {
-      crearBoton(this, x, y + ALTO_RANURA / 2 + 50, 'Borrar', COLORES.multi, () =>
+    // Una ✕ en la esquina de cada ranura ocupada la borra, tras confirmar.
+    if (resumen) {
+      const esquina = this.add
+        .container(x + ANCHO_RANURA / 2 - 2, y - ALTO_RANURA / 2 + 2, [
+          this.add.circle(0, 0, 18, COLORES.multi).setStrokeStyle(3, COLORES.fondo),
+          this.add.text(0, 0, '✕', estiloTexto(18)).setOrigin(0.5),
+        ])
+        .setSize(36, 36)
+        .setInteractive({ useHandCursor: true });
+      esquina.on('pointerdown', () =>
         confirmar(this, `¿Borrar la partida de la ranura ${ranura + 1}?\nNo se puede deshacer.`, 'Borrar', COLORES.multi, () => {
           borrar(almacen, ranura);
           this.scene.restart();

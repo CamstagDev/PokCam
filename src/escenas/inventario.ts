@@ -1,10 +1,11 @@
-// Los dos botones redondos de abajo a la izquierda, presentes en el mapa,
-// la mesa, el vendedor y la recompensa del élite: uno muestra las
-// baratijas del jugador y el otro su mazo.
+// Los tres botones redondos de abajo a la izquierda, presentes en el mapa,
+// la mesa, el vendedor y la recompensa del élite: muestran las baratijas
+// del jugador, su mazo y lo que vale cada mano de póker.
 
 import Phaser from 'phaser';
 import { baratijasDe, type Baratija } from '../juego/baratijas.ts';
 import { PALOS, SIMBOLO_PALO, nombreRango, ordenarMano, type Carta } from '../juego/cartas.ts';
+import { MANOS, type TipoMano } from '../juego/manos.ts';
 import type { Partida } from '../juego/partida.ts';
 import { crearBotonRedondo } from './boton.ts';
 import { abrirCapa } from './capa.ts';
@@ -17,6 +18,7 @@ export function mostrarBotonesInventario(escena: Phaser.Scene, partida: () => Pa
   return [
     crearBotonRedondo(escena, 50, y, '✦', 'Baratijas', () => verBaratijas(escena, partida())),
     crearBotonRedondo(escena, 120, y, '▤', 'Mazo', () => verMazo(escena, partida())),
+    crearBotonRedondo(escena, 190, y, '≡', 'Manos', () => verManos(escena)),
   ].map((boton) => boton.setDepth(60));
 }
 
@@ -83,4 +85,34 @@ function cartaChica(escena: Phaser.Scene, x: number, y: number, carta: Carta, an
   const rango = escena.add.text(-ancho / 2 + 6, -alto / 2 + 4, nombreRango(carta.rango), estiloTexto(18, color));
   const simbolo = escena.add.text(0, 10, SIMBOLO_PALO[carta.palo], estiloTexto(30, color)).setOrigin(0.5);
   return escena.add.container(x, y, [fondo, rango, simbolo]);
+}
+
+// De la mejor mano a la peor. Cuando las manos se puedan mejorar o haya
+// manos especiales, se leerán de la partida y aparecerán aquí.
+const ORDEN_MANOS: readonly TipoMano[] = ['escaleraColor', 'poker', 'full', 'color', 'escalera', 'trio', 'doblePar', 'par', 'cartaAlta'];
+
+function verManos(escena: Phaser.Scene): void {
+  const { width } = escena.scale;
+  const capa = abrirCapa(escena, 'Manos de póker');
+  const ancho = 640;
+  ORDEN_MANOS.forEach((tipo, i) => {
+    const { nombre, fichas, multi } = MANOS[tipo];
+    const y = 135 + i * 54;
+    capa.add([
+      escena.add.rectangle(width / 2, y, ancho, 46, COLORES.panel).setStrokeStyle(2, COLORES.borde),
+      escena.add.text(width / 2 - ancho / 2 + 24, y, nombre, estiloTexto(22)).setOrigin(0, 0.5),
+      ficha(escena, width / 2 + 150, y, String(fichas), COLORES.fichas),
+      escena.add.text(width / 2 + 205, y, '×', estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5),
+      ficha(escena, width / 2 + 260, y, String(multi), COLORES.multi),
+    ]);
+  });
+  capa.add([
+    escena.add.text(width / 2 + 150, 98, 'Fichas', estiloTexto(16, COLORES.textoSuave)).setOrigin(0.5),
+    escena.add.text(width / 2 + 260, 98, 'Multi', estiloTexto(16, COLORES.textoSuave)).setOrigin(0.5),
+  ]);
+}
+
+function ficha(escena: Phaser.Scene, x: number, y: number, texto: string, color: number): Phaser.GameObjects.Container {
+  const fondo = escena.add.graphics().fillStyle(color).fillRoundedRect(-40, -16, 80, 32, 8);
+  return escena.add.container(x, y, [fondo, escena.add.text(0, 0, texto, estiloTexto(20)).setOrigin(0.5)]);
 }
