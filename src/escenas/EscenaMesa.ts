@@ -9,9 +9,10 @@ import { crearAleatorio } from '../juego/aleatorio.ts';
 import { SIMBOLO_PALO, nombreRango, ordenarMano, type Carta, type Orden } from '../juego/cartas.ts';
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
 import { MANOS, evaluarMano } from '../juego/manos.ts';
-import { enBancarrota, nivelDeRiesgo, objetivoDelCombate, resolverCombate } from '../juego/partida.ts';
+import { apostar, enBancarrota, maximoApostable, nivelDeRiesgo, objetivoDelCombate, resolverCombate } from '../juego/partida.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton, crearBotonRedondo, type Boton, type BotonRedondo } from './boton.ts';
+import { preguntarApuesta } from './apuesta.ts';
 import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { mostrarBotonesInventario } from './inventario.ts';
@@ -35,6 +36,8 @@ export class EscenaMesa extends Phaser.Scene {
   private botonDescartar!: Boton;
   private botonMenu!: Boton;
   private oro!: Marcador;
+  // Mientras se espera la apuesta no se puede tocar la mano.
+  private bloqueada = false;
   private orden: Orden | null = null;
   private botonesOrden = new Map<Orden, BotonRedondo>();
 
@@ -48,6 +51,7 @@ export class EscenaMesa extends Phaser.Scene {
     this.cartas.clear();
     this.orden = null;
     this.botonesOrden.clear();
+    this.bloqueada = false;
   }
 
   create(): void {
@@ -74,6 +78,28 @@ export class EscenaMesa extends Phaser.Scene {
     mostrarRiesgo(this, nivelDeRiesgo(partida));
     mostrarBotonesInventario(this, () => partidaActual(this));
     this.actualizar();
+    this.pedirApuesta();
+  }
+
+  // Si todavía no se apostó en este combate: la mesa queda quieta 2
+  // segundos (se ven las cartas) y después se pregunta cuánto apostar. Sin
+  // oro para apostar, se apuesta 0 sin preguntar.
+  private pedirApuesta(): void {
+    const partida = partidaActual(this);
+    if (partida.apuesta !== null) return;
+    const maximo = maximoApostable(partida);
+    if (maximo === 0) {
+      jugarPartida(this, apostar(partida, 0));
+      return;
+    }
+    this.bloqueada = true;
+    this.time.delayedCall(2000, () =>
+      preguntarApuesta(this, maximo, (cantidad) => {
+        jugarPartida(this, apostar(partidaActual(this), cantidad));
+        this.bloqueada = false;
+        this.actualizar();
+      }),
+    );
   }
 
   private accion(hacer: (combate: Combate, ids: string[]) => Combate): void {
@@ -96,6 +122,7 @@ export class EscenaMesa extends Phaser.Scene {
       `Objetivo: ${c.objetivo}`,
       `Puntos: ${c.puntos}`,
       `Manos: ${c.manosRestantes}   Descartes: ${c.descartesRestantes}`,
+      ...(partidaActual(this).apuesta ? [`Apuesta: ${partidaActual(this).apuesta}`] : []),
     ]);
     // Con cartas elegidas se anticipa qué mano se jugaría (solo el nombre);
     // sin elegir, queda el resultado de la última jugada.
@@ -148,7 +175,7 @@ export class EscenaMesa extends Phaser.Scene {
   }
 
   private ordenar(orden: Orden): void {
-    if (this.combate.estado !== 'jugando') return;
+    if (this.combate.estado !== 'jugando' || this.bloqueada) return;
     this.orden = orden;
     for (const [cual, boton] of this.botonesOrden) boton.marcar(cual === orden);
     this.combate = { ...this.combate, mano: ordenarMano(this.combate.mano, orden) };
@@ -156,7 +183,7 @@ export class EscenaMesa extends Phaser.Scene {
   }
 
   private alternar(id: string): void {
-    if (this.combate.estado !== 'jugando') return;
+    if (this.combate.estado !== 'jugando' || this.bloqueada) return;
     if (this.elegidas.has(id)) this.elegidas.delete(id);
     else if (this.elegidas.size < MAX_CARTAS_JUGADAS) this.elegidas.add(id);
     this.actualizar();

@@ -13,11 +13,16 @@ import {
 } from '../src/juego/baratijas.ts';
 import type { Carta } from '../src/juego/cartas.ts';
 import {
+  apostar,
   avanzar,
   cerrarOferta,
   comprarBaratija,
+  costoDelPaso,
   crearPartida,
   elegirBaratija,
+  enBancarrota,
+  limiteDeDeuda,
+  maximoApostable,
   nodoActual,
   puedeComprar,
   resolverCombate,
@@ -90,9 +95,13 @@ describe('rarezas', () => {
 
   it('si no queda ninguna de la rareza sorteada, se busca en otra', () => {
     const soloRaras = { infrecuente: 0, rara: 1, legendaria: 0 };
-    const rara = CATALOGO.find((b) => b.rareza === 'rara')!.id;
-    expect(sortearBaratijas(crearAleatorio(1), [], soloRaras, 1)).toEqual([rara]);
-    expect(sortearBaratijas(crearAleatorio(1), [rara], soloRaras, 1)).toHaveLength(1);
+    const raras = CATALOGO.filter((b) => b.rareza === 'rara').map((b) => b.id);
+    const [sorteada] = sortearBaratijas(crearAleatorio(1), [], soloRaras, 1);
+    expect(raras).toContain(sorteada);
+    // Sin raras libres, sale de otra rareza.
+    const [otra] = sortearBaratijas(crearAleatorio(1), raras, soloRaras, 1);
+    expect(otra).toBeDefined();
+    expect(raras).not.toContain(otra);
   });
 
   it('el precio sale de la rareza', () => {
@@ -184,6 +193,67 @@ describe('De zero a héroe', () => {
     // No hay otra legendaria libre, así que sale la mejor rareza que quede.
     expect(partida.baratijas[0]).not.toBe(comun);
     expect(partida.baratijas).toContain('de-zero-a-heroe');
+  });
+});
+
+describe('apuestas', () => {
+  const enCombate = (oro: number, baratijas: string[] = []) => {
+    const partida = { ...crearPartida(7), oro, baratijas };
+    return avanzar(partida, nodoActual(partida).siguientes[0]!); // el piso 1 es combate
+  };
+
+  it('se puede apostar hasta la mitad del oro', () => {
+    expect(maximoApostable(enCombate(301))).toBe(150);
+    expect(() => apostar(enCombate(300), 151)).toThrow();
+    expect(apostar(enCombate(300), 150).apuesta).toBe(150);
+  });
+
+  it('All In deja apostar todo', () => {
+    expect(maximoApostable(enCombate(300, ['all-in']))).toBe(300);
+  });
+
+  it('ganar suma lo apostado y perder lo resta; después se vuelve a preguntar', () => {
+    const conApuesta = apostar(enCombate(300), 100);
+    const ganado = resolverCombate(conApuesta, true);
+    expect(ganado.oro).toBe(300 + 100 + 100);
+    expect(ganado.apuesta).toBeNull();
+    expect(resolverCombate(conApuesta, false).oro).toBe(300 - 100 - 100);
+  });
+
+  it('en deuda no se puede apostar', () => {
+    expect(maximoApostable(enCombate(-50, ['tarjeta-de-credito']))).toBe(0);
+  });
+});
+
+describe('Tarjeta de crédito', () => {
+  // Una partida en el piso 3 (riesgo 3), con la tarjeta.
+  function enPiso3(oro: number, baratijas = ['tarjeta-de-credito']): Partida {
+    let partida = crearPartida(7);
+    for (let i = 0; i < 3; i++) partida = cerrarOferta(resolverCombate(avanzar(partida, nodoActual(partida).siguientes[0]!), true));
+    return { ...partida, oro, baratijas };
+  }
+
+  it('sin la tarjeta, 0 de oro es bancarrota', () => {
+    expect(enBancarrota(enPiso3(0, []))).toBe(true);
+  });
+
+  it('con la tarjeta se puede deber hasta riesgo × 100', () => {
+    expect(limiteDeDeuda(enPiso3(0))).toBe(300);
+    expect(enBancarrota(enPiso3(-300))).toBe(false);
+    expect(enBancarrota(enPiso3(-301))).toBe(true);
+  });
+
+  it('en deuda, cada paso cuesta riesgo × 10 % de la deuda', () => {
+    const partida = enPiso3(-200);
+    expect(costoDelPaso(partida)).toBe(60);
+    expect(avanzar(partida, nodoActual(partida).siguientes[0]!).oro).toBe(-260);
+    expect(costoDelPaso(enPiso3(50))).toBe(0);
+  });
+
+  it('deja comprar quedando en deuda dentro del límite', () => {
+    const partida = { ...enPiso3(100), oferta: { tipo: 'vendedor' as const, baratijas: ['subsidio'] } };
+    expect(puedeComprar(partida, 'subsidio')).toBe(true); // queda en −100
+    expect(puedeComprar({ ...partida, baratijas: [] }, 'subsidio')).toBe(false);
   });
 });
 

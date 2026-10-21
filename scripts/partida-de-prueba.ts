@@ -18,7 +18,7 @@ primero!.tipo = 'vendedor';
 segundo!.tipo = 'elite';
 
 const exportado: Exportado = {
-  version: 6,
+  version: 7,
   guardadoEn: Date.now(),
   partida: { ...partida, oro: 99_999, oferta: { tipo: 'vendedor', baratijas: ['diversidad', 'de-zero-a-heroe', 'subsidio'] } },
   coleccion: CATALOGO.map((b) => b.id),

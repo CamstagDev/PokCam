@@ -8,14 +8,15 @@
 // volver al mapa la cámara sube suave hasta el piso nuevo.
 
 import Phaser from 'phaser';
-import { avanzar, nivelDeRiesgo, nodoActual, nodosDisponibles, type Partida } from '../juego/partida.ts';
+import { avanzar, enBancarrota, nivelDeRiesgo, nodoActual, nodosDisponibles, type Partida } from '../juego/partida.ts';
 import { buscarNodo, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton } from './boton.ts';
+import { avisar } from './confirmar.ts';
 import { mostrarBotonesInventario } from './inventario.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
-import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
+import { irAPartida, jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
 
 const ICONOS: Record<TipoNodo, string> = {
   inicio: '⌂',
@@ -157,6 +158,12 @@ export class EscenaMapa extends Phaser.Scene {
 
   private ir(partida: Partida, nodo: Nodo): void {
     const siguiente = avanzar(partida, nodo.id);
+    // En deuda, el paso puede costar más de lo que queda por deber.
+    if (enBancarrota(siguiente)) {
+      terminarPartida(this);
+      avisar(this, 'Las deudas te hundieron.\nFin de la partida.', () => this.scene.start('menu'));
+      return;
+    }
     jugarPartida(this, siguiente);
     if (siguiente.combatePendiente || siguiente.oferta) irAPartida(this, siguiente);
     else this.scene.restart();

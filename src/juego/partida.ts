@@ -50,6 +50,9 @@ export interface Partida {
   // número (de 1 a maximo) antes de seguir.
   eleccion: { baratija: string; maximo: number } | null;
   transformaciones: Transformacion[];
+  // Lo apostado en el combate en curso; null mientras no se eligió. Se
+  // guarda para que salir y volver al combate no permita cambiarla.
+  apuesta: number | null;
 }
 
 export interface Oferta {
@@ -60,7 +63,7 @@ export interface Oferta {
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, eleccion: null, transformaciones: [] };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, eleccion: null, transformaciones: [], apuesta: null };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -76,7 +79,7 @@ export function avanzar(partida: Partida, id: string): Partida {
     throw new Error(`Desde ${partida.nodoActual} no se puede ir a ${id}`);
   }
   const tipo = buscarNodo(partida.mapa, id).tipo;
-  const siguiente = { ...partida, nodoActual: id, visitados: [...partida.visitados, id], combatePendiente: TIPOS_DE_COMBATE.includes(tipo) };
+  const siguiente = { ...partida, oro: partida.oro - costoDelPaso(partida), nodoActual: id, visitados: [...partida.visitados, id], combatePendiente: TIPOS_DE_COMBATE.includes(tipo) };
   return tipo === 'vendedor' ? { ...siguiente, oferta: sortearOferta(siguiente, 'vendedor') } : siguiente;
 }
 
@@ -87,10 +90,12 @@ export function resolverCombate(partida: Partida, gano: boolean): Partida {
   const nodo = nodoActual(partida);
   const oro = ORO_POR_COMBATE[nodo.tipo] ?? 0;
   const baratijas = baratijasDe(partida.baratijas);
+  const apuesta = partida.apuesta ?? 0;
   const resuelto = {
     ...partida,
-    oro: partida.oro + (gano ? aplicar(baratijas, 'alGanarCombate', oro) : -aplicar(baratijas, 'alPerderCombate', oro)),
+    oro: partida.oro + (gano ? aplicar(baratijas, 'alGanarCombate', oro) + apuesta : -aplicar(baratijas, 'alPerderCombate', oro) - apuesta),
     combatePendiente: !gano && nodo.tipo === 'jefe',
+    apuesta: null,
     ...avanzarTransformaciones(partida),
   };
   // Vencer a un élite ofrece elegir 1 de 3 baratijas.
@@ -164,10 +169,11 @@ export function responderEleccion(partida: Partida, numero: number): Partida {
   return { ...partida, baratijas: cambio.baratijas, transformaciones: cambio.transformaciones, eleccion: null };
 }
 
-// Se puede comprar si está a la venta y alcanza el oro sin quedar en 0
-// (con 0 de oro la partida se terminaría).
+// Se puede comprar si está a la venta y pagarla no deja la partida en
+// bancarrota.
 export function puedeComprar(partida: Partida, id: string): boolean {
-  return partida.oferta?.tipo === 'vendedor' && partida.oferta.baratijas.includes(id) && partida.oro > precioDe(buscarBaratija(id));
+  if (partida.oferta?.tipo !== 'vendedor' || !partida.oferta.baratijas.includes(id)) return false;
+  return !enBancarrota({ ...partida, oro: partida.oro - precioDe(buscarBaratija(id)) });
 }
 
 export function comprarBaratija(partida: Partida, id: string): Partida {
@@ -188,8 +194,48 @@ export function cerrarOferta(partida: Partida): Partida {
   return { ...partida, oro: partida.oro + oro, oferta: null };
 }
 
+// Sin deuda permitida, la partida se pierde con 0 de oro o menos; con
+// ella, al deber más que el límite.
 export function enBancarrota(partida: Partida): boolean {
-  return partida.oro <= 0;
+  return permiteDeuda(partida) ? partida.oro < -limiteDeDeuda(partida) : partida.oro <= 0;
+}
+
+export function permiteDeuda(partida: Partida): boolean {
+  return baratijasDe(partida.baratijas).some((b) => b.alLimitarDeuda);
+}
+
+export function limiteDeDeuda(partida: Partida): number {
+  const riesgo = nivelDeRiesgo(partida);
+  return baratijasDe(partida.baratijas).reduce((limite, b) => (b.alLimitarDeuda ? b.alLimitarDeuda(limite, riesgo) : limite), 0);
+}
+
+// Lo que cuesta avanzar un nodo: nada, salvo en deuda con una baratija que
+// cobre por moverse.
+export function costoDelPaso(partida: Partida): number {
+  if (partida.oro >= 0) return 0;
+  const riesgo = nivelDeRiesgo(partida);
+  return baratijasDe(partida.baratijas).reduce(
+    (costo, b) => (b.alMoverseEnDeuda ? b.alMoverseEnDeuda(costo, -partida.oro, riesgo) : costo),
+    0,
+  );
+}
+
+// Apuestas: al empezar cada combate se puede apostar oro, hasta la mitad
+// del que se tiene (o lo que permitan las baratijas). Ganar el combate
+// suma lo apostado y perderlo lo resta.
+export const FRACCION_APOSTABLE = 0.5;
+
+export function maximoApostable(partida: Partida): number {
+  const fraccion = aplicar(baratijasDe(partida.baratijas), 'alLimitarApuesta', FRACCION_APOSTABLE);
+  return Math.max(0, Math.floor(partida.oro * fraccion));
+}
+
+export function apostar(partida: Partida, cantidad: number): Partida {
+  if (!partida.combatePendiente) throw new Error('Solo se apuesta al empezar un combate');
+  if (!Number.isInteger(cantidad) || cantidad < 0 || cantidad > maximoApostable(partida)) {
+    throw new Error(`No se pueden apostar ${cantidad}`);
+  }
+  return { ...partida, apuesta: cantidad };
 }
 
 // El nivel de riesgo es el piso en el que está el jugador (el inicio es el

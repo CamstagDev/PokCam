@@ -14,6 +14,11 @@
 //   alGanarCombate    el oro que da un combate ganado
 //   alPerderCombate   el oro que quita un combate perdido
 //   alSortearRareza   la probabilidad de cada rareza al ofrecer baratijas
+//   alLimitarApuesta  la parte del oro que se puede apostar (0,5 = 50 %)
+//   alLimitarDeuda    cuánto oro se puede deber sin perder (recibe también
+//                     el nivel de riesgo); tenerlo permite la deuda
+//   alMoverseEnDeuda  lo que cuesta cada paso en el mapa mientras se debe
+//                     oro (recibe también la deuda y el nivel de riesgo)
 //
 // Una baratija también puede pedir un número al conseguirla (`pregunta`)
 // y usarlo para cambiar las baratijas del jugador (`alElegirNumero`), por
@@ -84,6 +89,9 @@ export interface Baratija {
   alGanarCombate?(oro: number): number;
   alPerderCombate?(oro: number): number;
   alSortearRareza?(probabilidades: Probabilidades): Probabilidades;
+  alLimitarApuesta?(fraccion: number): number;
+  alLimitarDeuda?(limite: number, riesgo: number): number;
+  alMoverseEnDeuda?(costo: number, deuda: number, riesgo: number): number;
   pregunta?: { texto: string; maximo(tiene: readonly string[]): number };
   alElegirNumero?(cambio: CambioDeBaratijas, numero: number, aleatorio: Aleatorio): CambioDeBaratijas;
 }
@@ -143,6 +151,24 @@ export const CATALOGO: readonly Baratija[] = [
     rareza: 'rara',
     icono: '🎨',
     alPuntuar: (mano) => (new Set(mano.cartasJugadas.map((c) => c.palo)).size === 4 ? { ...mano, multi: mano.multi * 4 } : mano),
+  },
+  {
+    id: 'all-in',
+    nombre: 'All In',
+    descripcion: 'Puedes apostar todo tu oro al empezar un combate, no solo la mitad.',
+    rareza: 'rara',
+    icono: '🎰',
+    alLimitarApuesta: () => 1,
+  },
+  {
+    id: 'tarjeta-de-credito',
+    nombre: 'Tarjeta de crédito',
+    descripcion:
+      'Puedes quedar en deuda hasta riesgo × 100 de oro sin perder. Mientras debas, cada paso en el mapa cuesta riesgo × 10 % de la deuda.',
+    rareza: 'legendaria',
+    icono: '💳',
+    alLimitarDeuda: (limite, riesgo) => Math.max(limite, riesgo * 100),
+    alMoverseEnDeuda: (costo, deuda, riesgo) => costo + Math.ceil((deuda * riesgo * 10) / 100),
   },
   {
     id: 'de-zero-a-heroe',
@@ -229,7 +255,7 @@ export function fichasConBaratijas(fichas: number, carta: Carta, baratijas: read
 }
 
 // Aplica en orden el efecto `efecto` de cada baratija que lo tenga.
-export function aplicar<E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza'>(
+export function aplicar<E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza' | 'alLimitarApuesta'>(
   baratijas: readonly Baratija[],
   efecto: E,
   valor: Parameters<NonNullable<Baratija[E]>>[0],

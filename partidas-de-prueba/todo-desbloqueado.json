@@ -1,6 +1,6 @@
 {
-  "version": 6,
-  "guardadoEn": 1792551322702,
+  "version": 7,
+  "guardadoEn": 1792554483199,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -524,7 +524,8 @@
       "legendaria": 0.05
     },
     "eleccion": null,
-    "transformaciones": []
+    "transformaciones": [],
+    "apuesta": null
   },
   "coleccion": [
     "materialista",
@@ -533,6 +534,8 @@
     "grass-mower",
     "subsidio",
     "diversidad",
+    "all-in",
+    "tarjeta-de-credito",
     "de-zero-a-heroe"
   ]
 }
