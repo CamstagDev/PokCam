@@ -18,6 +18,7 @@ import {
   maximoApostable,
   nivelDeRiesgo,
   objetivoDelCombate,
+  preverApuesta,
   puedeApostarBaratijas,
   resolverCombate,
   totalApostado,
@@ -107,6 +108,8 @@ export class EscenaMesa extends Phaser.Scene {
       maximo: maximoApostable(partida),
       baratijas: puedeApostarBaratijas(partida) ? baratijasDe(partida.baratijas) : [],
       notas: notasDeApuesta(partida),
+      oro: partida.oro,
+      prever: (cantidad: number, baratijas: string[]) => preverApuesta(partida, cantidad, baratijas),
     };
     this.bloqueada = true;
     this.time.delayedCall(1000, () =>

@@ -6,6 +6,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- La ventana de la apuesta muestra con cuánto oro quedarías si ganas y
+  si pierdes el combate, con todo lo que cambian tus baratijas (y avisa
+  si perder termina la partida).
+
 - La recompensa de un élite ya no se puede pasar: hay que elegir una
   baratija, salvo con la nueva baratija común No gracias, que trae de
   vuelta el botón "Pasar" (+300 de oro).

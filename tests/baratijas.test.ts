@@ -20,6 +20,7 @@ import { crearMazo, type Carta } from '../src/juego/cartas.ts';
 import { crearCombate, jugar } from '../src/juego/combate.ts';
 import {
   apostar,
+  preverApuesta,
   avanzar,
   cerrarOferta,
   comprarBaratija,
@@ -217,6 +218,22 @@ describe('apuestas', () => {
     const partida = { ...crearPartida(7), oro, baratijas };
     return avanzar(partida, nodoActual(partida).siguientes[0]!); // el piso 1 es combate
   };
+
+  it('prevé el oro al ganar y al perder, con las baratijas', () => {
+    expect(preverApuesta(enCombate(300), 100)).toEqual({
+      ganar: { oro: 500, terminaPartida: false },
+      perder: { oro: 100, terminaPartida: false },
+    });
+    // Subsidio: +50 en cada combate, ganado o perdido.
+    const conSubsidio = preverApuesta(enCombate(300, ['subsidio']), 100);
+    expect(conSubsidio.ganar.oro).toBe(550);
+    expect(conSubsidio.perder.oro).toBe(150);
+    // Perder todo lo apostable con All In deja la partida en bancarrota.
+    expect(preverApuesta(enCombate(300, ['all-in']), 300).perder).toEqual({ oro: -100, terminaPartida: true });
+    // Coincide con lo que pasa al resolver el combate de verdad.
+    const apostada = apostar(enCombate(300, ['subsidio']), 100);
+    expect(resolverCombate(apostada, false).oro).toBe(conSubsidio.perder.oro);
+  });
 
   it('se puede apostar hasta la mitad del oro', () => {
     expect(maximoApostable(enCombate(301))).toBe(150);

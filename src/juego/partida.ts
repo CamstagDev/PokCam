@@ -381,6 +381,23 @@ export function apostar(partida: Partida, cantidad: number, baratijas: readonly 
   return { ...partida, apuesta: cantidad, baratijasApostadas: [...baratijas] };
 }
 
+// Cómo quedaría el oro con esa apuesta si se gana o se pierde el combate,
+// con todo lo que cambian las baratijas (lo mismo que resolverCombate).
+// `terminaPartida` avisa si ese resultado deja la partida en bancarrota.
+export interface Prevision {
+  oro: number;
+  terminaPartida: boolean;
+}
+
+export function preverApuesta(partida: Partida, cantidad: number, baratijas: readonly string[] = []): { ganar: Prevision; perder: Prevision } {
+  const apostada = apostar(partida, cantidad, baratijas);
+  const prever = (gano: boolean): Prevision => {
+    const resuelta = resolverCombate(apostada, gano);
+    return { oro: resuelta.oro, terminaPartida: enBancarrota(resuelta) };
+  };
+  return { ganar: prever(true), perder: prever(false) };
+}
+
 // Todo lo apostado en el combate en curso, contando las baratijas.
 export function totalApostado(partida: Partida): number {
   return (partida.apuesta ?? 0) + valorDeBaratijas(partida.baratijasApostadas);

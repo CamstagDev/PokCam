@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { valorDeVenta, type Baratija } from '../juego/baratijas.ts';
+import type { Prevision } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 
@@ -10,17 +11,21 @@ export interface OpcionesApuesta {
   baratijas: readonly Baratija[];
   // Lo que cambian los bonos de set y la racha, si tocan las apuestas.
   notas: readonly string[];
+  oro: number; // el que tiene ahora
+  // El oro con el que se quedaría al ganar y al perder con esa apuesta.
+  prever(cantidad: number, baratijas: string[]): { ganar: Prevision; perder: Prevision };
 }
 
 const ANCHO_FICHA = 96;
 const POR_FILA = 6;
 
 // La pregunta de la apuesta al empezar un combate: cuánto oro apostar, de 0
-// a `maximo`, con botones de ±10 y ±100, y qué baratijas, tocándolas. Tapa
-// la mesa hasta que se elige.
+// a `maximo`, con botones de ±10 y ±100, y qué baratijas, tocándolas.
+// Debajo se ve cómo queda el oro al ganar y al perder. Tapa la mesa hasta
+// que se elige.
 export function preguntarApuesta(
   escena: Phaser.Scene,
-  { maximo, baratijas, notas }: OpcionesApuesta,
+  { maximo, baratijas, notas, oro, prever }: OpcionesApuesta,
   alElegir: (cantidad: number, baratijas: string[]) => void,
 ): void {
   const { width, height } = escena.scale;
@@ -35,7 +40,7 @@ export function preguntarApuesta(
     .setOrigin(0.5, 0);
   // Lo que ocupan las notas además de las dos primeras líneas.
   const altoNota = Math.max(0, explicacion.height - 40);
-  const alto = (filas > 0 ? 490 + (filas - 1) * 76 : 400) + altoNota;
+  const alto = (filas > 0 ? 540 + (filas - 1) * 76 : 450) + altoNota;
   const arriba = height / 2 - alto / 2;
   explicacion.setY(arriba + 90);
   let cantidad = 0;
@@ -47,10 +52,19 @@ export function preguntarApuesta(
   const yValor = arriba + 170 + altoNota;
   const valor = escena.add.text(width / 2, yValor, '0', estiloTexto(52, COLORES.oro)).setOrigin(0.5);
 
+  // Debajo de los botones: cómo queda el oro si se gana y si se pierde.
+  const yPrevision = yValor + 135;
+  const siGanas = escena.add.text(width / 2, yPrevision - 14, '', estiloTexto(20, COLORES.acento)).setOrigin(0.5);
+  const siPierdes = escena.add.text(width / 2, yPrevision + 14, '', estiloTexto(20, COLORES.multi)).setOrigin(0.5);
+  const diferencia = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`);
+  const describir = (p: Prevision) => (p.terminaPartida ? `fin de la partida (${diferencia(p.oro - oro)})` : `${p.oro} de oro (${diferencia(p.oro - oro)})`);
   const total = () => cantidad + baratijas.filter((b) => elegidas.has(b.id)).reduce((suma, b) => suma + valorDeVenta(b), 0);
   const refrescar = () => {
     valor.setText(elegidas.size > 0 ? `${cantidad} + baratijas = ${total()}` : String(cantidad));
     apostar.activar(total() > 0);
+    const { ganar, perder } = prever(cantidad, [...elegidas]);
+    siGanas.setText(`Si ganas: ${describir(ganar)}`);
+    siPierdes.setText(`Si pierdes: ${describir(perder)}${elegidas.size > 0 ? ' y las baratijas' : ''}`);
   };
   const cambiar = (delta: number) => {
     cantidad = Phaser.Math.Clamp(cantidad + delta, 0, maximo);
@@ -65,7 +79,7 @@ export function preguntarApuesta(
 
   // Cada baratija es una ficha con su icono y su valor; tocarla la suma o
   // la quita de la apuesta.
-  const yFichas = yValor + 175;
+  const yFichas = yValor + 225;
   const fichas = baratijas.map((baratija, i) => {
     const fila = Math.floor(i / POR_FILA);
     const enFila = Math.min(POR_FILA, baratijas.length - fila * POR_FILA);
@@ -93,9 +107,9 @@ export function preguntarApuesta(
   const yBotones = arriba + alto - 50;
   const noApostar = crearBoton(escena, width / 2 - 130, yBotones, 'No apostar', COLORES.borde, () => cerrar(0, []), 220);
   const apostar = crearBoton(escena, width / 2 + 130, yBotones, 'Apostar', COLORES.oro, () => cerrar(cantidad, [...elegidas]), 220);
-  apostar.activar(false);
+  refrescar();
 
   const capa = escena.add
-    .container(0, 0, [velo, panel, titulo, explicacion, valor, ...pasos, ...leyenda, ...fichas, noApostar, apostar])
+    .container(0, 0, [velo, panel, titulo, explicacion, valor, ...pasos, siGanas, siPierdes, ...leyenda, ...fichas, noApostar, apostar])
     .setDepth(150);
 }
