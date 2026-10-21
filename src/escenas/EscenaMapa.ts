@@ -10,7 +10,7 @@
 
 import Phaser from 'phaser';
 import { avanzar, enBancarrota, nivelDeRiesgo, nodoActual, nodosDisponibles, type Partida } from '../juego/partida.ts';
-import { buscarNodo, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
+import { DATOS_NODO, buscarNodo, type Nodo } from '../mapa/mapa.ts';
 import { crearBoton } from './boton.ts';
 import { avisar } from './confirmar.ts';
 import { mostrarBotonesInventario } from './inventario.ts';
@@ -20,18 +20,6 @@ import { mostrarRiesgo } from './riesgo.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { irAPartida, jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
 
-const ICONOS: Record<TipoNodo, string> = {
-  inicio: '⌂',
-  combate: '♠',
-  elite: '♛',
-  tienda: '$',
-  vendedor: '✦',
-  eliminador: '✂',
-  manoNegra: '✋',
-  evento: '?',
-  descanso: '☕',
-  jefe: '☠',
-};
 
 const PISOS_A_LA_VISTA = 2; // pisos por encima del actual que se ven
 const ENTRE_PISOS = 210; // distancia vertical entre pisos
@@ -96,7 +84,7 @@ export class EscenaMapa extends Phaser.Scene {
         const visitado = partida.visitados.includes(nodo.id);
         const relleno = actual ? COLORES.acento : visitado ? COLORES.borde : COLORES.panel;
         const circulo = this.add.circle(x, y, RADIO, relleno).setStrokeStyle(4, disponibles.has(nodo.id) ? COLORES.acento : COLORES.borde);
-        this.add.text(x, y, ICONOS[nodo.tipo], estiloTexto(46, visitado && !actual ? COLORES.textoSuave : COLORES.texto)).setOrigin(0.5);
+        this.add.text(x, y, DATOS_NODO[nodo.tipo].icono, estiloTexto(46, visitado && !actual ? COLORES.textoSuave : COLORES.texto)).setOrigin(0.5);
 
         if (disponibles.has(nodo.id)) {
           this.tweens.add({ targets: circulo, scale: 1.12, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });

@@ -126,16 +126,35 @@ export function agregarAColeccion(almacen: Almacen, ids: readonly string[]): voi
   if (nuevas.length > 0) almacen.setItem(CLAVE_COLECCION, JSON.stringify([...coleccion, ...nuevas]));
 }
 
+// Los tipos de nodo visitados alguna vez, para la colección de nodos.
+const CLAVE_NODOS = 'pokcam.coleccion.nodos';
+
+export function leerNodosVistos(almacen: Almacen): string[] {
+  try {
+    const tipos = JSON.parse(almacen.getItem(CLAVE_NODOS) ?? '[]') as unknown;
+    return Array.isArray(tipos) ? tipos.filter((tipo): tipo is string => typeof tipo === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function agregarNodosVistos(almacen: Almacen, tipos: readonly string[]): void {
+  const vistos = leerNodosVistos(almacen);
+  const nuevos = [...new Set(tipos)].filter((tipo) => !vistos.includes(tipo));
+  if (nuevos.length > 0) almacen.setItem(CLAVE_NODOS, JSON.stringify([...vistos, ...nuevos]));
+}
+
 // Exportar e importar: el guardado de una ranura como archivo JSON, con la
 // colección para que al importarlo en otro equipo también se desbloquee.
 export interface Exportado extends Guardado {
   coleccion?: string[];
+  nodos?: string[]; // los tipos de nodo vistos
 }
 
 export function exportarRanura(almacen: Almacen, ranura: number): string | null {
   const guardado = cargar(almacen, ranura);
   if (!guardado) return null;
-  const exportado: Exportado = { ...guardado, coleccion: leerColeccion(almacen) };
+  const exportado: Exportado = { ...guardado, coleccion: leerColeccion(almacen), nodos: leerNodosVistos(almacen) };
   return JSON.stringify(exportado, null, 2);
 }
 
@@ -145,8 +164,9 @@ export function importarRanura(almacen: Almacen, ranura: number, texto: string):
   if (!guardado) return false;
   guardar(almacen, ranura, guardado.partida, guardado.guardadoEn);
   try {
-    const { coleccion } = JSON.parse(texto) as Exportado;
+    const { coleccion, nodos } = JSON.parse(texto) as Exportado;
     if (Array.isArray(coleccion)) agregarAColeccion(almacen, coleccion.filter((id) => typeof id === 'string'));
+    if (Array.isArray(nodos)) agregarNodosVistos(almacen, nodos.filter((tipo) => typeof tipo === 'string'));
   } catch {
     // ya se leyó bien arriba
   }

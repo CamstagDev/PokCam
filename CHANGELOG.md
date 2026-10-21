@@ -6,6 +6,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Colecciones tiene pestañas: Baratijas y Nodos. La de nodos muestra cada
+  tipo de nodo del mapa y qué hace; los que nunca se visitaron se ven en
+  sombra. Exportar una ranura también lleva los nodos vistos.
+
 - Baratija legendaria Crypto monedas: cada paso por el mapa deja una
   predicción (sube o baja) que se cumple dos pasos después, moviendo el
   oro de 0 a 200 % (casi siempre menos de 100 %). Debajo del oro se ven

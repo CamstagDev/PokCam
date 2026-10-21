@@ -7,7 +7,9 @@ import {
   exportarRanura,
   guardar,
   importarRanura,
+  agregarNodosVistos,
   leerColeccion,
+  leerNodosVistos,
   resumirTodas,
   type Almacen } from '../src/juego/guardado.ts';
 import { avanzar, crearPartida, nodosDisponibles } from '../src/juego/partida.ts';
@@ -115,12 +117,22 @@ describe('guardado', () => {
     const partida = { ...crearPartida(4), baratijas: ['subsidio'] };
     guardar(origen, 0, partida, 77);
     agregarAColeccion(origen, ['diversidad']);
+    agregarNodosVistos(origen, ['combate', 'vendedor']);
     const texto = exportarRanura(origen, 0)!;
 
     const destino = almacenDePrueba();
     expect(importarRanura(destino, 2, texto)).toBe(true);
     expect(cargar(destino, 2)).toEqual({ version: 11, guardadoEn: 77, partida });
     expect(leerColeccion(destino).sort()).toEqual(['diversidad', 'subsidio']);
+    expect(leerNodosVistos(destino).sort()).toEqual(['combate', 'vendedor']);
+  });
+
+  it('los nodos vistos se suman sin repetir', () => {
+    const almacen = almacenDePrueba();
+    expect(leerNodosVistos(almacen)).toEqual([]);
+    agregarNodosVistos(almacen, ['combate', 'combate', 'elite']);
+    agregarNodosVistos(almacen, ['elite', 'jefe']);
+    expect(leerNodosVistos(almacen)).toEqual(['combate', 'elite', 'jefe']);
   });
 
   it('importar un archivo que no es una partida no toca nada', () => {

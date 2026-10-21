@@ -1,6 +1,6 @@
 {
   "version": 11,
-  "guardadoEn": 1792613188351,
+  "guardadoEn": 1792614583696,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -560,5 +560,17 @@
     "tarjeta-de-credito",
     "crypto-monedas",
     "de-zero-a-heroe"
+  ],
+  "nodos": [
+    "inicio",
+    "combate",
+    "elite",
+    "vendedor",
+    "eliminador",
+    "manoNegra",
+    "tienda",
+    "evento",
+    "descanso",
+    "jefe"
   ]
 }

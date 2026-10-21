@@ -1,6 +1,6 @@
 // Genera partidas-de-prueba/todo-desbloqueado.json, una partida para
 // importar desde "Importar" en las ranuras y probar cosas:
-//   - la colección completa (todas las baratijas desbloqueadas)
+//   - la colección completa (todas las baratijas y los nodos desbloqueados)
 //   - 99 999 de oro
 //   - empieza en el vendedor con Crypto monedas, Simétrico y No gracias
 //   - en el piso 1 hay un vendedor, un élite, un eliminador y la mano negra
@@ -11,6 +11,7 @@ import { writeFileSync } from 'node:fs';
 import { CATALOGO } from '../src/juego/baratijas.ts';
 import type { Exportado } from '../src/juego/guardado.ts';
 import { crearPartida } from '../src/juego/partida.ts';
+import { DATOS_NODO } from '../src/mapa/mapa.ts';
 
 const partida = crearPartida(20261021);
 const [primero, segundo, tercero, cuarto] = partida.mapa.pisos[1]!;
@@ -24,6 +25,7 @@ const exportado: Exportado = {
   guardadoEn: Date.now(),
   partida: { ...partida, oro: 99_999, oferta: { tipo: 'vendedor', baratijas: ['crypto-monedas', 'simetrico', 'no-gracias'] } },
   coleccion: CATALOGO.map((b) => b.id),
+  nodos: Object.keys(DATOS_NODO),
 };
 writeFileSync(new URL('../partidas-de-prueba/todo-desbloqueado.json', import.meta.url), JSON.stringify(exportado, null, 2) + '\n');
 console.log('Listo: partidas-de-prueba/todo-desbloqueado.json');

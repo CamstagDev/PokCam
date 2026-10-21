@@ -10,6 +10,20 @@ import { barajar, crearAleatorio, enteroEntre, type Aleatorio } from '../juego/a
 // sube el nivel de una mano de póker.
 export type TipoNodo = 'inicio' | 'combate' | 'elite' | 'tienda' | 'vendedor' | 'eliminador' | 'manoNegra' | 'evento' | 'descanso' | 'jefe';
 
+// Cómo se ve y qué hace cada tipo de nodo (en el mapa y en la colección).
+export const DATOS_NODO: Record<TipoNodo, { nombre: string; icono: string; descripcion: string }> = {
+  inicio: { nombre: 'Inicio', icono: '⌂', descripcion: 'Donde empieza cada partida.' },
+  combate: { nombre: 'Combate', icono: '♠', descripcion: 'Una mesa de póker: llega al objetivo antes de quedarte sin manos. Ganas o pierdes oro.' },
+  elite: { nombre: 'Élite', icono: '♛', descripcion: 'Un combate más difícil. Al ganarlo eliges una baratija de recompensa.' },
+  vendedor: { nombre: 'Vendedor de baratijas', icono: '✦', descripcion: 'Compra, vende y vuelve a tirar baratijas.' },
+  eliminador: { nombre: 'El eliminador', icono: '✂', descripcion: 'Ruleta rusa de baratijas o eliminar una carta del mazo.' },
+  manoNegra: { nombre: 'La mano negra', icono: '✋', descripcion: 'Sube un nivel a una de 3 manos de póker.' },
+  tienda: { nombre: 'Tienda', icono: '$', descripcion: 'La tienda de cartas. Próximamente: por ahora solo se pasa.' },
+  evento: { nombre: 'Evento', icono: '?', descripcion: 'Algo inesperado. Próximamente: por ahora solo se pasa.' },
+  descanso: { nombre: 'Descanso', icono: '☕', descripcion: 'Un respiro antes de seguir. Siempre hay uno antes del jefe.' },
+  jefe: { nombre: 'Jefe', icono: '☠', descripcion: 'El último combate. Si lo pierdes, vuelves a enfrentarlo mientras te quede oro.' },
+};
+
 export interface Nodo {
   id: string; // 'p3-1' = piso 3, columna 1
   piso: number;
