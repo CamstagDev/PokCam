@@ -1,6 +1,6 @@
 {
   "version": 11,
-  "guardadoEn": 1792620918166,
+  "guardadoEn": 1792624746456,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -85,7 +85,7 @@
             "id": "p3-2",
             "piso": 3,
             "columna": 2,
-            "tipo": "combate",
+            "tipo": "vendedor",
             "siguientes": [
               "p4-3",
               "p4-0"
@@ -95,7 +95,7 @@
             "id": "p3-3",
             "piso": 3,
             "columna": 3,
-            "tipo": "descanso",
+            "tipo": "elite",
             "siguientes": [
               "p4-3"
             ]
@@ -106,7 +106,7 @@
             "id": "p4-0",
             "piso": 4,
             "columna": 0,
-            "tipo": "combate",
+            "tipo": "eliminador",
             "siguientes": [
               "p5-0",
               "p5-1"
@@ -116,7 +116,7 @@
             "id": "p4-3",
             "piso": 4,
             "columna": 3,
-            "tipo": "elite",
+            "tipo": "combate",
             "siguientes": [
               "p5-3",
               "p5-2"
@@ -147,7 +147,7 @@
             "id": "p5-2",
             "piso": 5,
             "columna": 2,
-            "tipo": "eliminador",
+            "tipo": "combate",
             "siguientes": [
               "p6-2"
             ]
@@ -156,7 +156,7 @@
             "id": "p5-3",
             "piso": 5,
             "columna": 3,
-            "tipo": "combate",
+            "tipo": "tienda",
             "siguientes": [
               "p6-3"
             ]
@@ -167,7 +167,7 @@
             "id": "p6-0",
             "piso": 6,
             "columna": 0,
-            "tipo": "combate",
+            "tipo": "descanso",
             "siguientes": [
               "p7-1"
             ]
@@ -176,7 +176,7 @@
             "id": "p6-1",
             "piso": 6,
             "columna": 1,
-            "tipo": "combate",
+            "tipo": "evento",
             "siguientes": [
               "p7-1"
             ]
@@ -185,7 +185,7 @@
             "id": "p6-2",
             "piso": 6,
             "columna": 2,
-            "tipo": "combate",
+            "tipo": "eliminador",
             "siguientes": [
               "p7-2",
               "p7-1"
@@ -195,7 +195,7 @@
             "id": "p6-3",
             "piso": 6,
             "columna": 3,
-            "tipo": "descanso",
+            "tipo": "elite",
             "siguientes": [
               "p7-2"
             ]
@@ -216,7 +216,7 @@
             "id": "p7-2",
             "piso": 7,
             "columna": 2,
-            "tipo": "descanso",
+            "tipo": "vendedor",
             "siguientes": [
               "p8-2",
               "p8-3"
@@ -228,7 +228,7 @@
             "id": "p8-0",
             "piso": 8,
             "columna": 0,
-            "tipo": "elite",
+            "tipo": "vendedor",
             "siguientes": [
               "p9-0"
             ]
@@ -237,7 +237,7 @@
             "id": "p8-1",
             "piso": 8,
             "columna": 1,
-            "tipo": "eliminador",
+            "tipo": "tienda",
             "siguientes": [
               "p9-1"
             ]
@@ -246,7 +246,7 @@
             "id": "p8-2",
             "piso": 8,
             "columna": 2,
-            "tipo": "descanso",
+            "tipo": "combate",
             "siguientes": [
               "p9-2"
             ]
@@ -255,7 +255,7 @@
             "id": "p8-3",
             "piso": 8,
             "columna": 3,
-            "tipo": "manoNegra",
+            "tipo": "descanso",
             "siguientes": [
               "p9-3"
             ]
@@ -266,7 +266,7 @@
             "id": "p9-0",
             "piso": 9,
             "columna": 0,
-            "tipo": "eliminador",
+            "tipo": "tienda",
             "siguientes": [
               "p10-0"
             ]
@@ -284,7 +284,7 @@
             "id": "p9-2",
             "piso": 9,
             "columna": 2,
-            "tipo": "combate",
+            "tipo": "vendedor",
             "siguientes": [
               "p10-1"
             ]
@@ -304,7 +304,7 @@
             "id": "p10-0",
             "piso": 10,
             "columna": 0,
-            "tipo": "combate",
+            "tipo": "manoNegra",
             "siguientes": [
               "p11-1"
             ]
@@ -313,7 +313,7 @@
             "id": "p10-1",
             "piso": 10,
             "columna": 1,
-            "tipo": "combate",
+            "tipo": "tienda",
             "siguientes": [
               "p11-1",
               "p11-2"
@@ -323,7 +323,7 @@
             "id": "p10-3",
             "piso": 10,
             "columna": 3,
-            "tipo": "eliminador",
+            "tipo": "combate",
             "siguientes": [
               "p11-3"
             ]
@@ -344,7 +344,7 @@
             "id": "p11-2",
             "piso": 11,
             "columna": 2,
-            "tipo": "tienda",
+            "tipo": "combate",
             "siguientes": [
               "p12-2"
             ]
@@ -353,7 +353,7 @@
             "id": "p11-3",
             "piso": 11,
             "columna": 3,
-            "tipo": "combate",
+            "tipo": "eliminador",
             "siguientes": [
               "p12-2"
             ]
@@ -364,7 +364,7 @@
             "id": "p12-0",
             "piso": 12,
             "columna": 0,
-            "tipo": "combate",
+            "tipo": "descanso",
             "siguientes": [
               "p13-0"
             ]
@@ -373,7 +373,7 @@
             "id": "p12-1",
             "piso": 12,
             "columna": 1,
-            "tipo": "elite",
+            "tipo": "tienda",
             "siguientes": [
               "p13-0"
             ]
@@ -382,7 +382,7 @@
             "id": "p12-2",
             "piso": 12,
             "columna": 2,
-            "tipo": "elite",
+            "tipo": "combate",
             "siguientes": [
               "p13-2",
               "p13-3"
@@ -394,7 +394,7 @@
             "id": "p13-0",
             "piso": 13,
             "columna": 0,
-            "tipo": "vendedor",
+            "tipo": "descanso",
             "siguientes": [
               "p14-0"
             ]
@@ -423,7 +423,7 @@
             "id": "p14-0",
             "piso": 14,
             "columna": 0,
-            "tipo": "elite",
+            "tipo": "combate",
             "siguientes": [
               "p15-0"
             ]
@@ -432,7 +432,7 @@
             "id": "p14-1",
             "piso": 14,
             "columna": 1,
-            "tipo": "descanso",
+            "tipo": "eliminador",
             "siguientes": [
               "p15-0"
             ]
@@ -453,7 +453,7 @@
             "id": "p15-0",
             "piso": 15,
             "columna": 0,
-            "tipo": "combate",
+            "tipo": "vendedor",
             "siguientes": [
               "p16-1"
             ]
@@ -462,7 +462,7 @@
             "id": "p15-3",
             "piso": 15,
             "columna": 3,
-            "tipo": "tienda",
+            "tipo": "vendedor",
             "siguientes": [
               "p16-3"
             ]
@@ -473,7 +473,7 @@
             "id": "p16-1",
             "piso": 16,
             "columna": 1,
-            "tipo": "manoNegra",
+            "tipo": "descanso",
             "siguientes": [
               "p17-1",
               "p17-3"
@@ -483,7 +483,7 @@
             "id": "p16-3",
             "piso": 16,
             "columna": 3,
-            "tipo": "manoNegra",
+            "tipo": "combate",
             "siguientes": [
               "p17-3"
             ]
@@ -834,7 +834,7 @@
       "tipo": "vendedor",
       "baratijas": [
         "crypto-monedas",
-        "simetrico",
+        "broker",
         "no-gracias"
       ]
     },
@@ -871,6 +871,7 @@
     "grass-mower",
     "subsidio",
     "no-gracias",
+    "broker",
     "diversidad",
     "all-in",
     "tasador",

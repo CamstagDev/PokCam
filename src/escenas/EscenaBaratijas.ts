@@ -20,6 +20,7 @@ import {
   puedePasarRecompensa,
   puedeVolverATirar,
   responderEleccion,
+  puedeVenderBaratijas,
   venderBaratija,
   volverATirar,
   type Partida,
@@ -83,8 +84,10 @@ export class EscenaBaratijas extends Phaser.Scene {
     });
 
     if (!esElite) {
-      crearBoton(this, width / 2 - 150, height - 60, 'Vender baratijas', COLORES.borde, () => this.verVenta(partidaActual(this)), 260);
-      const tirar = crearBoton(this, width / 2 + 150, height - 60, `Volver a tirar · ${costoDeTirada(partida)}`, COLORES.oro, () => {
+      // Vender solo aparece con el Bróker; si no, el botón de tirar va al centro.
+      const vende = puedeVenderBaratijas(partida);
+      if (vende) crearBoton(this, width / 2 - 150, height - 60, 'Vender baratijas', COLORES.borde, () => this.verVenta(partidaActual(this)), 260);
+      const tirar = crearBoton(this, vende ? width / 2 + 150 : width / 2, height - 60, `Volver a tirar · ${costoDeTirada(partida)}`, COLORES.oro, () => {
         jugarPartida(this, volverATirar(partidaActual(this)));
         this.scene.restart();
       }, 280);

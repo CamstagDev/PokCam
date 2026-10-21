@@ -6,6 +6,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Baratija infrecuente nueva, Bróker 📈: deja venderle tus baratijas al
+  vendedor por la mitad de su precio. Sin ella, el botón "Vender baratijas"
+  ya no aparece. El Tasador sigue apostando baratijas sin necesitarla.
+
 - Nodos del mapa: fuera de los pisos fijos, el 40 % son combates y el 60 %
   restante se reparte por igual entre élite, vendedor, tienda de cartas,
   eliminador, mano negra, evento y descanso (cerca de 8,6 % cada uno).

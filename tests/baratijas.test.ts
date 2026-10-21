@@ -48,6 +48,7 @@ import {
   resolverCombate,
   responderEleccion,
   totalApostado,
+  puedeVenderBaratijas,
   venderBaratija,
   volverATirar,
   type Partida,
@@ -387,16 +388,27 @@ describe('vender y volver a tirar en el vendedor', () => {
   });
 
   it('vender paga la mitad del precio y quita la baratija', () => {
-    const vendida = venderBaratija(enVendedor(100, ['diversidad', 'materialista']), 'diversidad');
+    const vendida = venderBaratija(enVendedor(100, ['diversidad', 'materialista', 'broker']), 'diversidad');
     expect(valorDeVenta(buscarBaratija('diversidad'))).toBe(250);
     expect(vendida.oro).toBe(350);
-    expect(vendida.baratijas).toEqual(['materialista']);
+    expect(vendida.baratijas).toEqual(['materialista', 'broker']);
     expect(() => venderBaratija(vendida, 'diversidad')).toThrow();
     expect(() => venderBaratija({ ...vendida, oferta: null }, 'materialista')).toThrow();
   });
 
+  it('sin el Bróker no se puede vender; se puede vender el propio Bróker', () => {
+    const sin = enVendedor(100, ['diversidad']);
+    expect(puedeVenderBaratijas(sin)).toBe(false);
+    expect(() => venderBaratija(sin, 'diversidad')).toThrow();
+    const con = enVendedor(100, ['diversidad', 'broker']);
+    expect(puedeVenderBaratijas(con)).toBe(true);
+    const sinBroker = venderBaratija(con, 'broker');
+    expect(sinBroker.oro).toBe(100 + valorDeVenta(buscarBaratija('broker')));
+    expect(puedeVenderBaratijas(sinBroker)).toBe(false);
+  });
+
   it('vender quita la baratija de su transformación pendiente', () => {
-    const partida = { ...enVendedor(0, ['subsidio', 'altruista']), transformaciones: [{ ids: ['subsidio', 'altruista'], combatesRestantes: 2, hacia: 'legendaria' as const }] };
+    const partida = { ...enVendedor(0, ['subsidio', 'altruista', 'broker']), transformaciones: [{ ids: ['subsidio', 'altruista'], combatesRestantes: 2, hacia: 'legendaria' as const }] };
     expect(venderBaratija(partida, 'subsidio').transformaciones[0]!.ids).toEqual(['altruista']);
   });
 

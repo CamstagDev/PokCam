@@ -256,9 +256,14 @@ export function comprarBaratija(partida: Partida, id: string): Partida {
   return conseguir(pagada, id);
 }
 
-// Venderle al vendedor una baratija propia, por la mitad de su precio.
+// Venderle al vendedor una baratija propia, por la mitad de su precio
+// (solo con el Bróker).
+export function puedeVenderBaratijas(partida: Partida): boolean {
+  return partida.oferta?.tipo === 'vendedor' && efectosDe(partida.baratijas).some((e) => e.venderBaratijas);
+}
+
 export function venderBaratija(partida: Partida, id: string): Partida {
-  if (partida.oferta?.tipo !== 'vendedor') throw new Error('Solo se vende en el vendedor');
+  if (!puedeVenderBaratijas(partida)) throw new Error('Solo se vende en el vendedor, con el Bróker');
   if (!partida.baratijas.includes(id)) throw new Error(`No tienes ${id}`);
   return { ...quitarBaratijas(partida, [id]), oro: partida.oro + valorDeVenta(buscarBaratija(id)) };
 }

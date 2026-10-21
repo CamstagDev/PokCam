@@ -28,6 +28,7 @@
 //   apuestaBaratijas  si es true, las baratijas también se pueden apostar
 //   pasarRecompensa   si es true, se puede pasar la recompensa de un élite
 //   cripto            si es true, el oro se vuelve cripto (ver partida.ts)
+//   venderBaratijas   si es true, se le pueden vender baratijas al vendedor
 //
 // Una baratija puede pertenecer a un set (`conjunto`, el id de uno de
 // CONJUNTOS). Cada set da bonos según cuántas de sus baratijas se tengan;
@@ -116,6 +117,7 @@ export interface Efectos {
   apuestaBaratijas?: boolean;
   pasarRecompensa?: boolean; // deja pasar la recompensa de un élite
   cripto?: boolean; // el oro sube o baja según predicciones (ver partida.ts)
+  venderBaratijas?: boolean; // deja vender baratijas al vendedor
 }
 
 export interface Baratija extends Efectos {
@@ -211,6 +213,14 @@ export const CATALOGO: readonly Baratija[] = [
     rareza: 'comun',
     icono: '🙅',
     pasarRecompensa: true,
+  },
+  {
+    id: 'broker',
+    nombre: 'Bróker',
+    descripcion: 'Puedes venderle tus baratijas al vendedor por la mitad de su precio.',
+    rareza: 'infrecuente',
+    icono: '📈',
+    venderBaratijas: true,
   },
   {
     id: 'diversidad',
