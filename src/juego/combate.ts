@@ -5,6 +5,7 @@
 import { barajar, type Aleatorio } from './aleatorio.ts';
 import { aplicar, efectosDe } from './baratijas.ts';
 import type { Carta } from './cartas.ts';
+import type { Niveles } from './manos.ts';
 import { puntuar, type Puntuacion } from './puntuacion.ts';
 
 export const TAMANO_MANO = 8;
@@ -21,6 +22,7 @@ export interface Combate {
   ultimaJugada: Puntuacion | null;
   baratijas: readonly string[]; // ids de las del jugador, que cambian la puntuación
   mazo: readonly Carta[]; // el de la partida entero, que algunas baratijas miran
+  niveles?: Partial<Niveles>; // los de las manos en la partida (sin dato, nivel 1)
 }
 
 export interface OpcionesCombate {
@@ -29,11 +31,12 @@ export interface OpcionesCombate {
   manos?: number;
   descartes?: number;
   baratijas?: readonly string[]; // ids
+  niveles?: Partial<Niveles>;
 }
 
 export function crearCombate(
   aleatorio: Aleatorio,
-  { objetivo, mazo, manos = 4, descartes = 3, baratijas = [] }: OpcionesCombate,
+  { objetivo, mazo, manos = 4, descartes = 3, baratijas = [], niveles }: OpcionesCombate,
 ): Combate {
   const pila = barajar(mazo, aleatorio);
   const inicio = aplicar(efectosDe(baratijas), 'alEmpezarCombate', { manos, descartes });
@@ -48,13 +51,14 @@ export function crearCombate(
     ultimaJugada: null,
     baratijas,
     mazo,
+    niveles,
   });
 }
 
 export function jugar(combate: Combate, ids: readonly string[]): Combate {
   const cartas = elegidas(combate, ids, MAX_CARTAS_JUGADAS);
   if (combate.manosRestantes === 0) throw new Error('No quedan manos');
-  const jugada = puntuar(cartas, efectosDe(combate.baratijas), { mazo: combate.mazo, restantes: combate.pila.length });
+  const jugada = puntuar(cartas, efectosDe(combate.baratijas), { mazo: combate.mazo, restantes: combate.pila.length }, combate.niveles);
   const puntos = combate.puntos + jugada.total;
   const manosRestantes = combate.manosRestantes - 1;
   const estado = puntos >= combate.objetivo ? 'ganado' : manosRestantes === 0 ? 'perdido' : 'jugando';

@@ -5,7 +5,7 @@
 import Phaser from 'phaser';
 import { DATOS_RAREZA, RAREZAS, baratijasDe, buscarConjunto, probabilidadComun, type Baratija, type Rareza } from '../juego/baratijas.ts';
 import { PALOS, SIMBOLO_PALO, nombreRango, ordenarMano, type Carta } from '../juego/cartas.ts';
-import { MANOS, type TipoMano } from '../juego/manos.ts';
+import { datosDeMano, type TipoMano } from '../juego/manos.ts';
 import { probabilidadesDeRareza, type Partida } from '../juego/partida.ts';
 import { crearBotonRedondo } from './boton.ts';
 import { abrirCapa } from './capa.ts';
@@ -18,7 +18,7 @@ export function mostrarBotonesInventario(escena: Phaser.Scene, partida: () => Pa
   return [
     crearBotonRedondo(escena, 50, y, '✦', 'Baratijas', () => verBaratijas(escena, partida())),
     crearBotonRedondo(escena, 120, y, '▤', 'Mazo', () => verMazo(escena, partida())),
-    crearBotonRedondo(escena, 190, y, '≡', 'Manos', () => verManos(escena)),
+    crearBotonRedondo(escena, 190, y, '≡', 'Manos', () => verManos(escena, partida())),
   ].map((boton) => boton.setDepth(60));
 }
 
@@ -119,20 +119,21 @@ function cartaChica(escena: Phaser.Scene, x: number, y: number, carta: Carta, an
   return escena.add.container(x, y, [fondo, rango, simbolo]);
 }
 
-// De la mejor mano a la peor. Cuando las manos se puedan mejorar o haya
-// manos especiales, se leerán de la partida y aparecerán aquí.
+// De la mejor mano a la peor, con el nivel de cada una en la partida.
 const ORDEN_MANOS: readonly TipoMano[] = ['escaleraColor', 'poker', 'full', 'color', 'escalera', 'trio', 'doblePar', 'par', 'cartaAlta'];
 
-function verManos(escena: Phaser.Scene): void {
+function verManos(escena: Phaser.Scene, partida: Partida): void {
   const { width } = escena.scale;
   const capa = abrirCapa(escena, 'Manos de póker');
   const ancho = 640;
   ORDEN_MANOS.forEach((tipo, i) => {
-    const { nombre, fichas, multi } = MANOS[tipo];
+    const nivel = partida.niveles[tipo];
+    const { nombre, fichas, multi } = datosDeMano(tipo, nivel);
     const y = 135 + i * 54;
     capa.add([
       escena.add.rectangle(width / 2, y, ancho, 46, COLORES.panel).setStrokeStyle(2, COLORES.borde),
       escena.add.text(width / 2 - ancho / 2 + 24, y, nombre, estiloTexto(22)).setOrigin(0, 0.5),
+      escena.add.text(width / 2 + 40, y, `Nv. ${nivel}`, estiloTexto(18, nivel > 1 ? COLORES.oro : COLORES.textoSuave)).setOrigin(0.5),
       ficha(escena, width / 2 + 150, y, String(fichas), COLORES.fichas),
       escena.add.text(width / 2 + 205, y, '×', estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5),
       ficha(escena, width / 2 + 260, y, String(multi), COLORES.multi),

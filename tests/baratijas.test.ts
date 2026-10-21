@@ -25,7 +25,10 @@ import {
   cerrarOferta,
   comprarBaratija,
   costoDeEliminar,
+  costoDeMejorar,
   eliminarCarta,
+  mejorarMano,
+  puedeMejorarMano,
   girarRuleta,
   puedeEliminarCarta,
   puedeGirarRuleta,
@@ -55,7 +58,7 @@ const carta = (id: string): Carta => {
 
 // Una partida parada en el nodo del tipo pedido (se fuerza el tipo del nodo
 // del piso 1 para no depender de cómo salió el mapa).
-function partidaEn(tipo: 'elite' | 'vendedor' | 'eliminador', oro = 300): Partida {
+function partidaEn(tipo: 'elite' | 'vendedor' | 'eliminador' | 'manoNegra', oro = 300): Partida {
   const partida = crearPartida(7);
   const destino = partida.mapa.pisos[1]![0]!;
   destino.tipo = tipo;
@@ -580,5 +583,36 @@ describe('el eliminador', () => {
     expect(sinRey.oro).toBe(290);
     expect(puedeEliminarCarta(sinRey, 'picas-2')).toBe(false);
     expect(puedeEliminarCarta(partida, 'no-existe')).toBe(false);
+  });
+});
+
+describe('la mano negra y los niveles de las manos', () => {
+  it('al llegar sortea 3 manos distintas, siempre las mismas', () => {
+    const partida = partidaEn('manoNegra');
+    expect(partida.oferta?.tipo).toBe('manoNegra');
+    expect(new Set(partida.oferta?.manos).size).toBe(3);
+    expect(partidaEn('manoNegra').oferta?.manos).toEqual(partida.oferta?.manos);
+  });
+
+  it('la primera mejora cuesta 100 y cada nivel de más suma 100', () => {
+    const partida = partidaEn('manoNegra', 1000);
+    expect(costoDeMejorar(partida)).toBe(100);
+    const tipo = partida.oferta!.manos![0]!;
+    const mejorada = mejorarMano(partida, tipo);
+    expect(mejorada.niveles[tipo]).toBe(2);
+    expect(mejorada.oro).toBe(900);
+    expect(costoDeMejorar(mejorada)).toBe(200);
+    expect(costoDeMejorar({ ...mejorada, niveles: { ...mejorada.niveles, par: 4 } })).toBe(500);
+    // Una vez por visita, y solo una de las sorteadas.
+    expect(puedeMejorarMano(mejorada, partida.oferta!.manos![1]!)).toBe(false);
+    const otra = (['cartaAlta', 'par', 'doblePar', 'trio'] as const).find((t) => !partida.oferta!.manos!.includes(t))!;
+    expect(puedeMejorarMano(partida, otra)).toBe(false);
+    expect(puedeMejorarMano({ ...partida, oro: 100 }, tipo)).toBe(false);
+  });
+
+  it('cada nivel suma fichas y multiplicador a la mano', () => {
+    const par = [carta('picas-8'), carta('corazones-8')];
+    expect(puntuar(par, [], undefined, { par: 3 })).toMatchObject({ fichas: 10 + 30 + 16, multi: 2 + 2 });
+    expect(puntuar(par).fichas).toBe(10 + 16);
   });
 });

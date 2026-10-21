@@ -1,6 +1,6 @@
 {
-  "version": 9,
-  "guardadoEn": 1792594381886,
+  "version": 10,
+  "guardadoEn": 1792609501997,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -51,7 +51,7 @@
             "id": "p1-3",
             "piso": 1,
             "columna": 3,
-            "tipo": "combate",
+            "tipo": "manoNegra",
             "siguientes": [
               "p2-3"
             ]
@@ -527,7 +527,18 @@
     "transformaciones": [],
     "apuesta": null,
     "baratijasApostadas": [],
-    "racha": 0
+    "racha": 0,
+    "niveles": {
+      "cartaAlta": 1,
+      "par": 1,
+      "doblePar": 1,
+      "trio": 1,
+      "escalera": 1,
+      "color": 1,
+      "full": 1,
+      "poker": 1,
+      "escaleraColor": 1
+    }
   },
   "coleccion": [
     "materialista",

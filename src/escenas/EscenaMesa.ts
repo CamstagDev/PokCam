@@ -72,7 +72,7 @@ export class EscenaMesa extends Phaser.Scene {
     // El oro entra en la semilla para que reintentar al jefe (con menos oro)
     // reparta otras cartas; continuar la misma partida reparte las mismas.
     const aleatorio = crearAleatorio(partida.mapa.semilla + partida.visitados.length + partida.oro);
-    this.combate = crearCombate(aleatorio, { objetivo: objetivoDelCombate(partida), mazo: partida.mazo, baratijas: partida.baratijas });
+    this.combate = crearCombate(aleatorio, { objetivo: objetivoDelCombate(partida), mazo: partida.mazo, baratijas: partida.baratijas, niveles: partida.niveles });
 
     const { width } = this.scale;
     this.marcador = this.add.text(40, 30, '', estiloTexto(24)).setLineSpacing(8);

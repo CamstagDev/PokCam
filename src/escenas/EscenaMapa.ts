@@ -26,6 +26,7 @@ const ICONOS: Record<TipoNodo, string> = {
   tienda: '$',
   vendedor: '✦',
   eliminador: '✂',
+  manoNegra: '✋',
   evento: '?',
   descanso: '☕',
   jefe: '☠',

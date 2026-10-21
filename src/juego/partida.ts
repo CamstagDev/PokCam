@@ -16,6 +16,7 @@ import {
   valorDeVenta,
 } from './baratijas.ts';
 import { crearMazo, fichasDeCarta, type Carta } from './cartas.ts';
+import { TIPOS_DE_MANO, nivelesIniciales, type Niveles, type TipoMano } from './manos.ts';
 import { buscarNodo, generarMapa, type Mapa, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 
 export const TIPOS_DE_COMBATE: readonly TipoNodo[] = ['combate', 'elite', 'jefe'];
@@ -60,6 +61,7 @@ export interface Partida {
   baratijasApostadas: string[];
   // Combates seguidos con el mismo resultado: +n ganados, −n perdidos.
   racha: number;
+  niveles: Niveles; // el de cada mano de póker, desde 1
 }
 
 // La oferta del nodo en el que está el jugador, hasta que la cierre:
@@ -67,19 +69,21 @@ export interface Partida {
 //   'vendedor'    comprar, vender o volver a tirar baratijas
 //   'eliminador'  la ruleta rusa y eliminar una carta (cada servicio una
 //                 vez por visita; `usados` dice cuáles ya se usaron)
+//   'manoNegra'   subir un nivel una de las `manos` (una vez por visita)
 export interface Oferta {
-  tipo: 'elite' | 'vendedor' | 'eliminador';
+  tipo: 'elite' | 'vendedor' | 'eliminador' | 'manoNegra';
   baratijas: string[]; // ids
   tiradas?: number; // las veces que se volvió a tirar el vendedor
   usados?: Servicio[];
+  manos?: TipoMano[];
 }
 
-export type Servicio = 'ruleta' | 'eliminar';
+export type Servicio = 'ruleta' | 'eliminar' | 'mejorar';
 
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0 };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0, niveles: nivelesIniciales() };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -98,6 +102,7 @@ export function avanzar(partida: Partida, id: string): Partida {
   const siguiente = { ...partida, oro: partida.oro - costoDelPaso(partida), nodoActual: id, visitados: [...partida.visitados, id], combatePendiente: TIPOS_DE_COMBATE.includes(tipo) };
   if (tipo === 'vendedor') return { ...siguiente, oferta: sortearOferta(siguiente, 'vendedor') };
   if (tipo === 'eliminador') return { ...siguiente, oferta: { tipo: 'eliminador', baratijas: [], usados: [] } };
+  if (tipo === 'manoNegra') return { ...siguiente, oferta: { tipo: 'manoNegra', baratijas: [], usados: [], manos: sortearManos(siguiente) } };
   return siguiente;
 }
 
@@ -277,7 +282,8 @@ export const BARATIJAS_EN_RULETA = 6;
 
 function puedeUsar(partida: Partida, servicio: Servicio, costo: number): boolean {
   const oferta = partida.oferta;
-  if (oferta?.tipo !== 'eliminador' || oferta.usados?.includes(servicio)) return false;
+  const tipo = servicio === 'mejorar' ? 'manoNegra' : 'eliminador';
+  if (oferta?.tipo !== tipo || oferta.usados?.includes(servicio)) return false;
   return !enBancarrota({ ...partida, oro: partida.oro - costo });
 }
 
@@ -401,6 +407,32 @@ export function preverApuesta(partida: Partida, cantidad: number, baratijas: rea
 // Todo lo apostado en el combate en curso, contando las baratijas.
 export function totalApostado(partida: Partida): number {
   return (partida.apuesta ?? 0) + valorDeBaratijas(partida.baratijasApostadas);
+}
+
+// La mano negra: al llegar se sortean MANOS_EN_MANO_NEGRA manos y se puede
+// subir un nivel a una de ellas por 100 × (la suma de los niveles − los
+// tipos de mano + 1): la primera mejora cuesta 100, la segunda 200…
+export const MANOS_EN_MANO_NEGRA = 3;
+export const ORO_POR_MEJORA = 100;
+
+function sortearManos(partida: Partida): TipoMano[] {
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 23 + partida.visitados.length * 13);
+  return barajar(TIPOS_DE_MANO, aleatorio).slice(0, MANOS_EN_MANO_NEGRA);
+}
+
+export function costoDeMejorar(partida: Partida): number {
+  const suma = TIPOS_DE_MANO.reduce((total, tipo) => total + partida.niveles[tipo], 0);
+  return ORO_POR_MEJORA * Math.max(1, suma - TIPOS_DE_MANO.length + 1);
+}
+
+export function puedeMejorarMano(partida: Partida, tipo: TipoMano): boolean {
+  return !!partida.oferta?.manos?.includes(tipo) && puedeUsar(partida, 'mejorar', costoDeMejorar(partida));
+}
+
+export function mejorarMano(partida: Partida, tipo: TipoMano): Partida {
+  if (!puedeMejorarMano(partida, tipo)) throw new Error(`No se puede mejorar ${tipo}`);
+  const pagada = usar(partida, 'mejorar', costoDeMejorar(partida));
+  return { ...pagada, niveles: { ...partida.niveles, [tipo]: partida.niveles[tipo] + 1 } };
 }
 
 // El nivel de riesgo es el piso en el que está el jugador (el inicio es el

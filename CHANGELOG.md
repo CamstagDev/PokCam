@@ -6,6 +6,12 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Las manos de póker tienen nivel: cada nivel suma fichas y multiplicador
+  (como en Balatro), y la pantalla de Manos muestra el nivel de cada una.
+- Nodo nuevo, la mano negra (✋): sortea 3 manos y deja subir un nivel a
+  una de ellas por 100 × (la suma de los niveles − los tipos de mano + 1),
+  así que la primera mejora cuesta 100, la segunda 200…
+
 - La ventana de la apuesta muestra con cuánto oro quedarías si ganas y
   si pierdes el combate, con todo lo que cambian tus baratijas (y avisa
   si perder termina la partida).

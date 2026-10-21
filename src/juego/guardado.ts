@@ -7,10 +7,11 @@
 
 import { PROBABILIDADES_INICIALES } from './baratijas.ts';
 import { crearMazo } from './cartas.ts';
+import { nivelesIniciales } from './manos.ts';
 import { ORO_INICIAL, type Partida } from './partida.ts';
 
 export const RANURAS = 3;
-const VERSION = 9;
+const VERSION = 10;
 const PREFIJO = 'pokcam.ranura.';
 
 export interface Almacen {
@@ -63,7 +64,8 @@ export function leerGuardado(texto: string): Guardado | null {
     // de antes de las rarezas, y las de antes de la 6 de antes de las
     // baratijas que piden un número; las de antes de la 7, de antes de las
     // apuestas, las de antes de la 8, de antes de apostar
-    // baratijas, y las de antes de la 9, de antes de contar la racha.
+    // baratijas, las de antes de la 9, de antes de contar la
+    // racha, y las de antes de la 10, de antes de los niveles de las manos.
     const partida = { ...guardado.partida };
     if (version < 2) partida.oro = ORO_INICIAL;
     if (version < 3) partida.mazo = crearMazo();
@@ -79,6 +81,7 @@ export function leerGuardado(texto: string): Guardado | null {
     if (version < 7) partida.apuesta = null;
     if (version < 8) partida.baratijasApostadas = [];
     if (version < 9) partida.racha = 0;
+    if (version < 10) partida.niveles = nivelesIniciales();
     return { ...guardado, version: VERSION, partida };
   } catch {
     return null;

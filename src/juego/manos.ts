@@ -21,7 +21,10 @@ export interface DatosMano {
   multi: number; // multiplicador base
 }
 
-// Valores iniciales; las mejoras de la partida los irán subiendo.
+export const TIPOS_DE_MANO: readonly TipoMano[] = ['cartaAlta', 'par', 'doblePar', 'trio', 'escalera', 'color', 'full', 'poker', 'escaleraColor'];
+
+// Valores en el nivel 1; cada nivel de más suma MEJORA_POR_NIVEL (ver
+// datosDeMano). Los niveles de cada mano los guarda la partida.
 export const MANOS: Record<TipoMano, DatosMano> = {
   cartaAlta: { nombre: 'Carta alta', fichas: 5, multi: 1 },
   par: { nombre: 'Par', fichas: 10, multi: 2 },
@@ -33,6 +36,32 @@ export const MANOS: Record<TipoMano, DatosMano> = {
   poker: { nombre: 'Póker', fichas: 60, multi: 7 },
   escaleraColor: { nombre: 'Escalera de color', fichas: 100, multi: 8 },
 };
+
+// Lo que suma cada nivel de una mano, como en Balatro.
+export const MEJORA_POR_NIVEL: Record<TipoMano, { fichas: number; multi: number }> = {
+  cartaAlta: { fichas: 10, multi: 1 },
+  par: { fichas: 15, multi: 1 },
+  doblePar: { fichas: 20, multi: 1 },
+  trio: { fichas: 20, multi: 2 },
+  escalera: { fichas: 30, multi: 3 },
+  color: { fichas: 15, multi: 2 },
+  full: { fichas: 25, multi: 2 },
+  poker: { fichas: 30, multi: 3 },
+  escaleraColor: { fichas: 40, multi: 4 },
+};
+
+export type Niveles = Record<TipoMano, number>;
+
+export function nivelesIniciales(): Niveles {
+  return Object.fromEntries(TIPOS_DE_MANO.map((tipo) => [tipo, 1])) as Niveles;
+}
+
+// Nombre, fichas y multiplicador de una mano en su nivel.
+export function datosDeMano(tipo: TipoMano, nivel = 1): DatosMano {
+  const { nombre, fichas, multi } = MANOS[tipo];
+  const extra = Math.max(0, nivel - 1);
+  return { nombre, fichas: fichas + extra * MEJORA_POR_NIVEL[tipo].fichas, multi: multi + extra * MEJORA_POR_NIVEL[tipo].multi };
+}
 
 export interface ManoEvaluada {
   tipo: TipoMano;

@@ -6,8 +6,9 @@
 import { barajar, crearAleatorio, enteroEntre, type Aleatorio } from '../juego/aleatorio.ts';
 
 // 'vendedor' es el vendedor de baratijas; 'tienda' la de cartas (por hacer);
-// 'eliminador' quita baratijas (ruleta rusa) o cartas del mazo.
-export type TipoNodo = 'inicio' | 'combate' | 'elite' | 'tienda' | 'vendedor' | 'eliminador' | 'evento' | 'descanso' | 'jefe';
+// 'eliminador' quita baratijas (ruleta rusa) o cartas del mazo; 'manoNegra'
+// sube el nivel de una mano de póker.
+export type TipoNodo = 'inicio' | 'combate' | 'elite' | 'tienda' | 'vendedor' | 'eliminador' | 'manoNegra' | 'evento' | 'descanso' | 'jefe';
 
 export interface Nodo {
   id: string; // 'p3-1' = piso 3, columna 1
@@ -80,7 +81,8 @@ function elegirTipo(piso: number, ultimo: number, aleatorio: Aleatorio): TipoNod
   if (tirada < 0.42) return 'combate';
   if (tirada < 0.48) return 'evento';
   if (tirada < 0.54) return 'eliminador';
-  if (tirada < 0.64) return 'tienda';
+  if (tirada < 0.58) return 'tienda';
+  if (tirada < 0.64) return 'manoNegra';
   if (tirada < 0.74) return 'vendedor';
   if (tirada < 0.86) return 'descanso';
   return 'elite';

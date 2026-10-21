@@ -7,6 +7,7 @@ import { EscenaMesa } from './escenas/EscenaMesa.ts';
 import { EscenaBaratijas } from './escenas/EscenaBaratijas.ts';
 import { EscenaColecciones } from './escenas/EscenaColecciones.ts';
 import { EscenaEliminador } from './escenas/EscenaEliminador.ts';
+import { EscenaManoNegra } from './escenas/EscenaManoNegra.ts';
 import { COLORES } from './escenas/estilo.ts';
 
 // El juego se dibuja siempre en 1280×720 y Phaser lo escala para que
@@ -23,5 +24,5 @@ new Phaser.Game({
     height: 720,
   },
   // La primera es la que arranca: el menú principal.
-  scene: [EscenaMenu, EscenaRanuras, EscenaMapa, EscenaMesa, EscenaBaratijas, EscenaEliminador, EscenaColecciones],
+  scene: [EscenaMenu, EscenaRanuras, EscenaMapa, EscenaMesa, EscenaBaratijas, EscenaEliminador, EscenaManoNegra, EscenaColecciones],
 });

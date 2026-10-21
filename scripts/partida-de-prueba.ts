@@ -3,7 +3,7 @@
 //   - la colección completa (todas las baratijas desbloqueadas)
 //   - 99 999 de oro
 //   - empieza en el vendedor con Estético, Simétrico y No gracias
-//   - en el piso 1 hay un vendedor, un élite y un eliminador
+//   - en el piso 1 hay un vendedor, un élite, un eliminador y la mano negra
 //
 //   npm run partida:prueba
 
@@ -13,13 +13,14 @@ import type { Exportado } from '../src/juego/guardado.ts';
 import { crearPartida } from '../src/juego/partida.ts';
 
 const partida = crearPartida(20261021);
-const [primero, segundo, tercero] = partida.mapa.pisos[1]!;
+const [primero, segundo, tercero, cuarto] = partida.mapa.pisos[1]!;
 primero!.tipo = 'vendedor';
 segundo!.tipo = 'elite';
 tercero!.tipo = 'eliminador';
+cuarto!.tipo = 'manoNegra';
 
 const exportado: Exportado = {
-  version: 9,
+  version: 10,
   guardadoEn: Date.now(),
   partida: { ...partida, oro: 99_999, oferta: { tipo: 'vendedor', baratijas: ['estetico', 'simetrico', 'no-gracias'] } },
   coleccion: CATALOGO.map((b) => b.id),
