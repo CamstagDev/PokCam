@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buscarNodo, generarMapa, type Mapa } from '../src/mapa/mapa.ts';
+import { PISOS_ANTES_DEL_JEFE, buscarNodo, generarMapa, type Mapa } from '../src/mapa/mapa.ts';
 
 const SEMILLAS = Array.from({ length: 200 }, (_, i) => i + 1);
 
@@ -8,6 +8,13 @@ function todos(mapa: Mapa) {
 }
 
 describe('generarMapa', () => {
+  it('tiene de 15 a 20 pisos entre el inicio y el jefe, y salen todas las cantidades', () => {
+    const cantidades = new Set(SEMILLAS.map((semilla) => generarMapa(semilla).pisos.length - 2));
+    expect(Math.min(...cantidades)).toBe(PISOS_ANTES_DEL_JEFE.minimo);
+    expect(Math.max(...cantidades)).toBe(PISOS_ANTES_DEL_JEFE.maximo);
+    expect(cantidades.size).toBe(6);
+  });
+
   it('la misma semilla da el mismo mapa', () => {
     expect(generarMapa(42)).toEqual(generarMapa(42));
     expect(generarMapa(42)).not.toEqual(generarMapa(43));

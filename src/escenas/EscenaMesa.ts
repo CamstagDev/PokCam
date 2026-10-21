@@ -54,6 +54,7 @@ export class EscenaMesa extends Phaser.Scene {
   private bloqueada = false;
   private orden: Orden | null = null;
   private botonesOrden = new Map<Orden, BotonRedondo>();
+  private botonApostar: BotonRedondo | null = null;
 
   constructor() {
     super('mesa');
@@ -65,6 +66,7 @@ export class EscenaMesa extends Phaser.Scene {
     this.cartas.clear();
     this.orden = null;
     this.botonesOrden.clear();
+    this.botonApostar = null;
     this.bloqueada = false;
   }
 
@@ -80,8 +82,8 @@ export class EscenaMesa extends Phaser.Scene {
     this.jugada = this.add.text(width / 2, 250, '', estiloTexto(34)).setOrigin(0.5);
     this.botonJugar = crearBoton(this, width / 2 - 170, 660, 'Jugar mano', COLORES.fichas, () => this.accion(jugar));
     this.botonDescartar = crearBoton(this, width / 2 + 170, 660, 'Descartar', COLORES.multi, () => this.accion(descartar));
-    this.botonesOrden.set('valor', crearBotonRedondo(this, width / 2 - 32, 652, 'A↓', 'Valor', () => this.ordenar('valor')));
-    this.botonesOrden.set('palo', crearBotonRedondo(this, width / 2 + 32, 652, '♠♥', 'Palo', () => this.ordenar('palo')));
+    this.botonesOrden.set('valor', crearBotonRedondo(this, width / 2 - 64, 652, 'A↓', 'Valor', () => this.ordenar('valor')));
+    this.botonesOrden.set('palo', crearBotonRedondo(this, width / 2 + 64, 652, '♠♥', 'Palo', () => this.ordenar('palo')));
     // La partida ya está guardada con este combate pendiente: al continuar
     // se vuelve a él, pero desde el principio.
     this.botonMenu = crearBoton(this, width - 90, 50, 'Menú', COLORES.borde, () =>
@@ -93,19 +95,20 @@ export class EscenaMesa extends Phaser.Scene {
     mostrarRiesgo(this, nivelDeRiesgo(partida));
     mostrarBotonesInventario(this, () => partidaActual(this));
     this.actualizar();
-    this.pedirApuesta();
+    // Mientras no se apostó en este combate, entre Valor y Palo queda el
+    // botón para apostar; desaparece al apostar o al jugar la primera mano
+    // (sin apostar, la apuesta es 0). Sin nada para apostar, no aparece.
+    if (partida.apuesta === null) {
+      if (hayQueApostar(partida)) this.botonApostar = crearBotonRedondo(this, width / 2, 652, '$', 'Apostar', () => this.pedirApuesta());
+      else jugarPartida(this, apostar(partida, 0));
+    }
   }
 
-  // Si todavía no se apostó en este combate: la mesa queda quieta un
-  // segundo (se ven las cartas) y después se pregunta cuánto apostar. Sin
-  // nada para apostar, se apuesta 0 sin preguntar.
+  // La ventana de la apuesta. "No apostar" la cierra sin decidir: el botón
+  // sigue ahí hasta jugar la primera mano.
   private pedirApuesta(): void {
     const partida = partidaActual(this);
-    if (partida.apuesta !== null) return;
-    if (!hayQueApostar(partida)) {
-      jugarPartida(this, apostar(partida, 0));
-      return;
-    }
+    if (partida.apuesta !== null || this.bloqueada || this.combate.estado !== 'jugando') return;
     const opciones = {
       maximo: maximoApostable(partida),
       baratijas: puedeApostarBaratijas(partida) ? baratijasDe(partida.baratijas) : [],
@@ -114,16 +117,21 @@ export class EscenaMesa extends Phaser.Scene {
       prever: (cantidad: number, baratijas: string[]) => preverApuesta(partida, cantidad, baratijas),
     };
     this.bloqueada = true;
-    this.time.delayedCall(1000, () =>
-      preguntarApuesta(this, opciones, (cantidad, baratijas) => {
-        jugarPartida(this, apostar(partidaActual(this), cantidad, baratijas));
-        this.bloqueada = false;
-        this.actualizar();
-      }),
-    );
+    preguntarApuesta(this, opciones, (cantidad, baratijas) => {
+      this.bloqueada = false;
+      if (cantidad > 0 || baratijas.length > 0) this.fijarApuesta(cantidad, baratijas);
+      this.actualizar();
+    });
+  }
+
+  private fijarApuesta(cantidad: number, baratijas: string[]): void {
+    jugarPartida(this, apostar(partidaActual(this), cantidad, baratijas));
+    this.botonApostar?.destroy();
+    this.botonApostar = null;
   }
 
   private accion(hacer: (combate: Combate, ids: string[]) => Combate): void {
+    if (hacer === jugar && partidaActual(this).apuesta === null) this.fijarApuesta(0, []);
     const ids = [...this.elegidas];
     for (const id of ids) this.cartas.get(id)?.destroy();
     for (const id of ids) this.cartas.delete(id);

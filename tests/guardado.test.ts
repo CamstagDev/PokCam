@@ -43,7 +43,7 @@ describe('guardado', () => {
     let partida = crearPartida(7);
     partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
     guardar(almacen, 2, partida, 99);
-    expect(resumirTodas(almacen)).toEqual([null, null, { ranura: 2, guardadoEn: 99, piso: 1, pisos: 9, oro: 300 }]);
+    expect(resumirTodas(almacen)).toEqual([null, null, { ranura: 2, guardadoEn: 99, piso: 1, pisos: partida.mapa.pisos.length, oro: 300 }]);
   });
 
   it('sobrescribir reemplaza la partida de la ranura', () => {

@@ -6,6 +6,13 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Apostar ya no abre una ventana sola al empezar el combate: entre los
+  botones Valor y Palo hay un botón "Apostar", que se puede usar hasta
+  jugar la primera mano (después desaparece y la apuesta queda en 0).
+- La mano negra: al mejorar una mano la ficha se da vuelta mostrando el
+  nivel nuevo y, un segundo después, se sigue sola al mapa.
+- El mapa tiene de 15 a 20 pisos entre el inicio y el jefe (antes 7).
+
 - Colecciones tiene pestañas: Baratijas y Nodos. La de nodos muestra cada
   tipo de nodo del mapa y qué hace; los que nunca se visitaron se ven en
   sombra. Exportar una ranura también lleva los nodos vistos.
@@ -129,9 +136,8 @@ la versión nueva (ver scripts/nueva-version.mjs).
   ocupada). partidas-de-prueba/todo-desbloqueado.json es una partida
   para probar: colección completa, 99 999 de oro y empieza en un
   vendedor (se regenera con `npm run partida:prueba`).
-- Apuestas: al empezar cada combate la mesa queda quieta 1 segundo y
-  se pregunta cuánto apostar (botones < > de 10 y << >> de 100), hasta la mitad del
-  oro. Ganar el combate suma lo apostado y perderlo lo resta.
+- Apuestas: antes de jugar la primera mano de un combate se puede
+  apostar (botones < > de 10 y << >> de 100), hasta la mitad del oro. Ganar el combate suma lo apostado y perderlo lo resta.
 - Baratija rara All In: se puede apostar todo el oro.
 - Baratija legendaria Tarjeta de crédito: se puede quedar en deuda hasta
   riesgo × 100 de oro; mientras se deba, cada paso en el mapa cuesta

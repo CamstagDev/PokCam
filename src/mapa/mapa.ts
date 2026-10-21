@@ -38,13 +38,18 @@ export interface Mapa {
   columnas: number;
 }
 
+// Pisos entre el inicio y el jefe; cada mapa sortea cuántos.
+export const PISOS_ANTES_DEL_JEFE = { minimo: 15, maximo: 20 };
+
 export interface OpcionesMapa {
-  pisos?: number; // contando el inicio y el jefe
+  pisos?: number; // contando el inicio y el jefe; sin darlo, se sortea
   columnas?: number;
 }
 
-export function generarMapa(semilla: number, { pisos = 9, columnas = 4 }: OpcionesMapa = {}): Mapa {
+export function generarMapa(semilla: number, opciones: OpcionesMapa = {}): Mapa {
   const aleatorio = crearAleatorio(semilla);
+  const { columnas = 4 } = opciones;
+  const pisos = opciones.pisos ?? 2 + enteroEntre(aleatorio, PISOS_ANTES_DEL_JEFE.minimo, PISOS_ANTES_DEL_JEFE.maximo);
   const ultimo = pisos - 1;
   const centro = Math.floor((columnas - 1) / 2);
 
