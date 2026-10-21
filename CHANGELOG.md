@@ -78,8 +78,8 @@ la versión nueva (ver scripts/nueva-version.mjs).
   ocupada). partidas-de-prueba/todo-desbloqueado.json es una partida
   para probar: colección completa, 99 999 de oro y empieza en un
   vendedor (se regenera con `npm run partida:prueba`).
-- Apuestas: al empezar cada combate la mesa queda quieta 2 segundos y
-  se pregunta cuánto apostar (botones de ±10 y ±100), hasta la mitad del
+- Apuestas: al empezar cada combate la mesa queda quieta 1 segundo y
+  se pregunta cuánto apostar (botones < > de 10 y << >> de 100), hasta la mitad del
   oro. Ganar el combate suma lo apostado y perderlo lo resta.
 - Baratija rara All In: se puede apostar todo el oro.
 - Baratija legendaria Tarjeta de crédito: se puede quedar en deuda hasta

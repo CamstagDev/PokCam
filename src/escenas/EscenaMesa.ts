@@ -93,7 +93,7 @@ export class EscenaMesa extends Phaser.Scene {
       return;
     }
     this.bloqueada = true;
-    this.time.delayedCall(2000, () =>
+    this.time.delayedCall(1000, () =>
       preguntarApuesta(this, maximo, (cantidad) => {
         jugarPartida(this, apostar(partidaActual(this), cantidad));
         this.bloqueada = false;

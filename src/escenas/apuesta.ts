@@ -25,8 +25,9 @@ export function preguntarApuesta(escena: Phaser.Scene, maximo: number, alElegir:
     valor.setText(String(cantidad));
     apostar.activar(cantidad > 0);
   };
-  const pasos = [-100, -10, 10, 100].map((delta, i) =>
-    crearBoton(escena, width / 2 + (i - 1.5) * 120, centro + 60, delta > 0 ? `+${delta}` : `−${-delta}`, COLORES.borde, () => cambiar(delta), 100),
+  // << resta 100, < resta 10, > suma 10, >> suma 100.
+  const pasos = ([[-100, '<<'], [-10, '<'], [10, '>'], [100, '>>']] as const).map(([delta, etiqueta], i) =>
+    crearBoton(escena, width / 2 + (i - 1.5) * 120, centro + 60, etiqueta, COLORES.borde, () => cambiar(delta), 100),
   );
   const cerrar = (final: number) => {
     capa.destroy();
