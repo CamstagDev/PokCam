@@ -17,6 +17,7 @@ import {
   elegirBaratija,
   nivelDeRiesgo,
   puedeComprar,
+  puedePasarRecompensa,
   puedeVolverATirar,
   responderEleccion,
   venderBaratija,
@@ -89,8 +90,11 @@ export class EscenaBaratijas extends Phaser.Scene {
       if (datos.vender) this.verVenta(partida);
     }
 
-    const pasar = esElite ? `Pasar · +${ORO_POR_PASAR} oro` : 'Pasar';
-    crearBoton(this, width - 150, height - 60, pasar, COLORES.borde, () => this.guardarYSeguir(cerrarOferta(partida)), 240);
+    // La recompensa del élite solo se puede pasar con No gracias.
+    if (!esElite || puedePasarRecompensa(partida)) {
+      const pasar = esElite ? `Pasar · +${ORO_POR_PASAR} oro` : 'Pasar';
+      crearBoton(this, width - 150, height - 60, pasar, COLORES.borde, () => this.guardarYSeguir(cerrarOferta(partida)), 240);
+    }
   }
 
   // Las baratijas del jugador, cada una con lo que paga el vendedor por

@@ -3,7 +3,8 @@
 // y los dos siguientes. Arrastrando (o con la rueda) se baja a mirar el
 // camino ya hecho, pero nunca se puede subir más allá de esos dos pisos.
 // Los nodos a los que se puede ir laten. Tocar uno avanza: si es un
-// combate abre la mesa, el vendedor abre su tienda de baratijas, y el
+// combate abre la mesa, el vendedor abre su tienda de baratijas, el
+// eliminador sus servicios, y el
 // resto (tienda, evento, descanso) por ahora solo avanza. Cada vez que se elige un nodo la partida se guarda, y al
 // volver al mapa la cámara sube suave hasta el piso nuevo.
 
@@ -24,6 +25,7 @@ const ICONOS: Record<TipoNodo, string> = {
   elite: '♛',
   tienda: '$',
   vendedor: '✦',
+  eliminador: '✂',
   evento: '?',
   descanso: '☕',
   jefe: '☠',

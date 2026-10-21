@@ -1,6 +1,6 @@
 {
   "version": 9,
-  "guardadoEn": 1792593193106,
+  "guardadoEn": 1792594381886,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -42,7 +42,7 @@
             "id": "p1-2",
             "piso": 1,
             "columna": 2,
-            "tipo": "combate",
+            "tipo": "eliminador",
             "siguientes": [
               "p2-3"
             ]
@@ -515,7 +515,7 @@
       "baratijas": [
         "estetico",
         "simetrico",
-        "racha"
+        "no-gracias"
       ]
     },
     "probabilidades": {
@@ -535,6 +535,7 @@
     "flower-power",
     "grass-mower",
     "subsidio",
+    "no-gracias",
     "diversidad",
     "all-in",
     "tasador",

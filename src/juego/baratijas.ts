@@ -26,6 +26,7 @@
 //                     también la racha de antes: +n ganados seguidos, −n
 //                     perdidos seguidos)
 //   apuestaBaratijas  si es true, las baratijas también se pueden apostar
+//   pasarRecompensa   si es true, se puede pasar la recompensa de un élite
 //
 // Una baratija puede pertenecer a un set (`conjunto`, el id de uno de
 // CONJUNTOS). Cada set da bonos según cuántas de sus baratijas se tengan;
@@ -112,6 +113,7 @@ export interface Efectos {
   alMoverseEnDeuda?(costo: number, deuda: number, riesgo: number): number;
   alResolverApuesta?(oro: number, racha: number): number;
   apuestaBaratijas?: boolean;
+  pasarRecompensa?: boolean; // deja pasar la recompensa de un élite
 }
 
 export interface Baratija extends Efectos {
@@ -199,6 +201,14 @@ export const CATALOGO: readonly Baratija[] = [
     icono: '🏛',
     alGanarCombate: (oro) => oro + 50,
     alPerderCombate: (oro) => oro - 50,
+  },
+  {
+    id: 'no-gracias',
+    nombre: 'No gracias',
+    descripcion: 'Puedes pasar la recompensa de un élite y llevarte oro en su lugar. Sin ella, hay que elegir.',
+    rareza: 'comun',
+    icono: '🙅',
+    pasarRecompensa: true,
   },
   {
     id: 'diversidad',

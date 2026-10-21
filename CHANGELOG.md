@@ -6,6 +6,14 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- La recompensa de un élite ya no se puede pasar: hay que elegir una
+  baratija, salvo con la nueva baratija común No gracias, que trae de
+  vuelta el botón "Pasar" (+300 de oro).
+- Nodo nuevo, el eliminador (✂), con dos servicios de una vez por visita:
+  Ruleta rusa (100 de oro: entran hasta 6 de tus baratijas al azar y se
+  elimina una) y Eliminar (quitar una carta del mazo por sus fichas × el
+  nivel de riesgo).
+
 - Set TOC TOC TOC: con el set completo, los bonos y los castigos de sus
   baratijas valen el doble. Trae dos baratijas infrecuentes:
   Estético (mazo de un solo palo: cartas ×1,25 de fichas; de un solo

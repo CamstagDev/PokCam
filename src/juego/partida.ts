@@ -1,7 +1,7 @@
 // El estado de una partida: el mapa, por dónde va el jugador, su oro, su
 // mazo y sus baratijas.
 
-import { crearAleatorio } from './aleatorio.ts';
+import { barajar, crearAleatorio } from './aleatorio.ts';
 import {
   PROBABILIDADES_INICIALES,
   aplicar,
@@ -15,7 +15,7 @@ import {
   type Transformacion,
   valorDeVenta,
 } from './baratijas.ts';
-import { crearMazo, type Carta } from './cartas.ts';
+import { crearMazo, fichasDeCarta, type Carta } from './cartas.ts';
 import { buscarNodo, generarMapa, type Mapa, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 
 export const TIPOS_DE_COMBATE: readonly TipoNodo[] = ['combate', 'elite', 'jefe'];
@@ -62,11 +62,19 @@ export interface Partida {
   racha: number;
 }
 
+// La oferta del nodo en el que está el jugador, hasta que la cierre:
+//   'elite'       elegir 1 de las baratijas de recompensa
+//   'vendedor'    comprar, vender o volver a tirar baratijas
+//   'eliminador'  la ruleta rusa y eliminar una carta (cada servicio una
+//                 vez por visita; `usados` dice cuáles ya se usaron)
 export interface Oferta {
-  tipo: 'elite' | 'vendedor';
+  tipo: 'elite' | 'vendedor' | 'eliminador';
   baratijas: string[]; // ids
   tiradas?: number; // las veces que se volvió a tirar el vendedor
+  usados?: Servicio[];
 }
+
+export type Servicio = 'ruleta' | 'eliminar';
 
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
@@ -88,7 +96,9 @@ export function avanzar(partida: Partida, id: string): Partida {
   }
   const tipo = buscarNodo(partida.mapa, id).tipo;
   const siguiente = { ...partida, oro: partida.oro - costoDelPaso(partida), nodoActual: id, visitados: [...partida.visitados, id], combatePendiente: TIPOS_DE_COMBATE.includes(tipo) };
-  return tipo === 'vendedor' ? { ...siguiente, oferta: sortearOferta(siguiente, 'vendedor') } : siguiente;
+  if (tipo === 'vendedor') return { ...siguiente, oferta: sortearOferta(siguiente, 'vendedor') };
+  if (tipo === 'eliminador') return { ...siguiente, oferta: { tipo: 'eliminador', baratijas: [], usados: [] } };
+  return siguiente;
 }
 
 // Suma o resta el oro del combate en curso y resuelve la apuesta. Un
@@ -248,11 +258,67 @@ export function volverATirar(partida: Partida): Partida {
   return { ...pagada, oferta: sortearOferta(pagada, 'vendedor', (partida.oferta!.tiradas ?? 0) + 1) };
 }
 
-// Pasar: irse del vendedor, o dejar la recompensa del élite a cambio de
-// ORO_POR_PASAR.
+// Pasar: irse del vendedor o del eliminador, o dejar la recompensa del
+// élite a cambio de ORO_POR_PASAR (solo con una baratija que lo permita).
 export function cerrarOferta(partida: Partida): Partida {
-  const oro = partida.oferta?.tipo === 'elite' ? ORO_POR_PASAR : 0;
-  return { ...partida, oro: partida.oro + oro, oferta: null };
+  const esElite = partida.oferta?.tipo === 'elite';
+  if (esElite && !puedePasarRecompensa(partida)) throw new Error('Hay que elegir una baratija');
+  return { ...partida, oro: partida.oro + (esElite ? ORO_POR_PASAR : 0), oferta: null };
+}
+
+export function puedePasarRecompensa(partida: Partida): boolean {
+  return efectosDe(partida.baratijas).some((e) => e.pasarRecompensa);
+}
+
+// El eliminador. La ruleta rusa cuesta COSTO_RULETA: muestra hasta
+// BARATIJAS_EN_RULETA baratijas del jugador al azar y elimina una de ellas.
+export const COSTO_RULETA = 100;
+export const BARATIJAS_EN_RULETA = 6;
+
+function puedeUsar(partida: Partida, servicio: Servicio, costo: number): boolean {
+  const oferta = partida.oferta;
+  if (oferta?.tipo !== 'eliminador' || oferta.usados?.includes(servicio)) return false;
+  return !enBancarrota({ ...partida, oro: partida.oro - costo });
+}
+
+function usar(partida: Partida, servicio: Servicio, costo: number): Partida {
+  const oferta = partida.oferta!;
+  return { ...partida, oro: partida.oro - costo, oferta: { ...oferta, usados: [...(oferta.usados ?? []), servicio] } };
+}
+
+export function puedeGirarRuleta(partida: Partida): boolean {
+  return partida.baratijas.length > 0 && puedeUsar(partida, 'ruleta', COSTO_RULETA);
+}
+
+export interface Ruleta {
+  partida: Partida;
+  mostradas: string[]; // las que entraron en la ruleta
+  eliminada: string;
+}
+
+export function girarRuleta(partida: Partida): Ruleta {
+  if (!puedeGirarRuleta(partida)) throw new Error('No se puede girar la ruleta');
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 19 + partida.visitados.length * 11 + partida.oro);
+  const mostradas = barajar(partida.baratijas, aleatorio).slice(0, BARATIJAS_EN_RULETA);
+  const eliminada = mostradas[Math.floor(aleatorio() * mostradas.length)]!;
+  return { partida: quitarBaratijas(usar(partida, 'ruleta', COSTO_RULETA), [eliminada]), mostradas, eliminada };
+}
+
+// Eliminar una carta del mazo cuesta sus fichas × el nivel de riesgo (al
+// menos ×1). El mazo nunca queda vacío.
+export function costoDeEliminar(partida: Partida, carta: Carta): number {
+  return fichasDeCarta(carta) * Math.max(1, nivelDeRiesgo(partida));
+}
+
+export function puedeEliminarCarta(partida: Partida, id: string): boolean {
+  const carta = partida.mazo.find((c) => c.id === id);
+  return !!carta && partida.mazo.length > 1 && puedeUsar(partida, 'eliminar', costoDeEliminar(partida, carta));
+}
+
+export function eliminarCarta(partida: Partida, id: string): Partida {
+  if (!puedeEliminarCarta(partida, id)) throw new Error(`No se puede eliminar ${id}`);
+  const carta = partida.mazo.find((c) => c.id === id)!;
+  return { ...usar(partida, 'eliminar', costoDeEliminar(partida, carta)), mazo: partida.mazo.filter((c) => c.id !== id) };
 }
 
 // Sin deuda permitida, la partida se pierde con 0 de oro o menos; con

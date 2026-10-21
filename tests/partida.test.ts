@@ -13,9 +13,12 @@ import {
   resolverCombate,
 } from '../src/juego/partida.ts';
 
+// Con No gracias, para pasar las recompensas de los élites al recorrer el mapa.
+const conNoGracias = () => ({ ...crearPartida(7), baratijas: ['no-gracias'] });
+
 describe('partida', () => {
   it('se recorre desde el inicio hasta el jefe', () => {
-    let partida = crearPartida(7);
+    let partida = conNoGracias();
     while (nodosDisponibles(partida).length > 0) partida = cerrarOferta(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
     expect(partida.visitados).toHaveLength(partida.mapa.pisos.length);
     expect(partida.nodoActual).toBe(partida.mapa.pisos.at(-1)![0]!.id);
@@ -27,7 +30,7 @@ describe('partida', () => {
   });
 
   it('el nivel de riesgo es el piso, y cada nivel sube 100 el objetivo', () => {
-    let partida = crearPartida(7);
+    let partida = conNoGracias();
     expect(nivelDeRiesgo(partida)).toBe(0);
     while (nodosDisponibles(partida).length > 0) {
       partida = cerrarOferta(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
@@ -64,7 +67,7 @@ describe('partida', () => {
   });
 
   it('al jefe perdido hay que volver a enfrentarlo', () => {
-    let partida = crearPartida(7);
+    let partida = conNoGracias();
     while (nodosDisponibles(partida).length > 0) partida = cerrarOferta(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
     const conJefe = { ...partida, combatePendiente: true };
     expect(resolverCombate(conJefe, false).combatePendiente).toBe(true);

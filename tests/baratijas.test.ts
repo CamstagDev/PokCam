@@ -23,6 +23,11 @@ import {
   avanzar,
   cerrarOferta,
   comprarBaratija,
+  costoDeEliminar,
+  eliminarCarta,
+  girarRuleta,
+  puedeEliminarCarta,
+  puedeGirarRuleta,
   costoDeTirada,
   costoDelPaso,
   crearPartida,
@@ -49,7 +54,7 @@ const carta = (id: string): Carta => {
 
 // Una partida parada en el nodo del tipo pedido (se fuerza el tipo del nodo
 // del piso 1 para no depender de cómo salió el mapa).
-function partidaEn(tipo: 'elite' | 'vendedor', oro = 300): Partida {
+function partidaEn(tipo: 'elite' | 'vendedor' | 'eliminador', oro = 300): Partida {
   const partida = crearPartida(7);
   const destino = partida.mapa.pisos[1]![0]!;
   destino.tipo = tipo;
@@ -239,7 +244,7 @@ describe('apuestas', () => {
 describe('Tarjeta de crédito', () => {
   // Una partida en el piso 3 (riesgo 3), con la tarjeta.
   function enPiso3(oro: number, baratijas = ['tarjeta-de-credito']): Partida {
-    let partida = crearPartida(7);
+    let partida = { ...crearPartida(7), baratijas: ['no-gracias'] };
     for (let i = 0; i < 3; i++) partida = cerrarOferta(resolverCombate(avanzar(partida, nodoActual(partida).siguientes[0]!), true));
     return { ...partida, oro, baratijas };
   }
@@ -295,8 +300,9 @@ describe('recompensa del élite', () => {
     expect(despues.oferta).toBeNull();
   });
 
-  it('pasar da 300 de oro', () => {
-    const partida = resolverCombate(partidaEn('elite'), true);
+  it('pasar solo se puede con No gracias, y da 300 de oro', () => {
+    expect(() => cerrarOferta(resolverCombate(partidaEn('elite'), true))).toThrow();
+    const partida = resolverCombate({ ...partidaEn('elite'), baratijas: ['no-gracias'] }, true);
     expect(cerrarOferta(partida).oro).toBe(partida.oro + 300);
   });
 
@@ -310,7 +316,7 @@ describe('recompensa del élite', () => {
   });
 
   it('no se puede seguir por el mapa sin elegir o saltear', () => {
-    const partida = resolverCombate(partidaEn('elite'), true);
+    const partida = resolverCombate({ ...partidaEn('elite'), baratijas: ['no-gracias'] }, true);
     const siguiente = nodoActual(partida).siguientes[0]!;
     expect(() => avanzar(partida, siguiente)).toThrow();
     expect(() => avanzar(cerrarOferta(partida), siguiente)).not.toThrow();
@@ -515,5 +521,47 @@ describe('set TOC TOC TOC', () => {
     const id = combate.mano[0]!.id;
     // Quedan 44 por robar (52 − 8): par.
     expect(jugar(combate, [id]).puntos).toBe(jugar(sin, [id]).puntos + 44 * jugar(sin, [id]).ultimaJugada!.multi);
+  });
+});
+
+describe('el eliminador', () => {
+  const enEliminador = (oro: number, baratijas: string[]) => ({ ...partidaEn('eliminador'), oro, baratijas });
+
+  it('al llegar ofrece sus servicios y se cierra con Pasar sin oro', () => {
+    const partida = partidaEn('eliminador');
+    expect(partida.oferta).toEqual({ tipo: 'eliminador', baratijas: [], usados: [] });
+    expect(cerrarOferta(partida).oferta).toBeNull();
+    expect(cerrarOferta(partida).oro).toBe(partida.oro);
+  });
+
+  it('la ruleta rusa cuesta 100, muestra hasta 6 baratijas y elimina una de ellas', () => {
+    const tiene = ['materialista', 'altruista', 'flower-power', 'grass-mower', 'subsidio', 'diversidad', 'all-in', 'tasador'];
+    const { partida, mostradas, eliminada } = girarRuleta(enEliminador(300, tiene));
+    expect(mostradas).toHaveLength(6);
+    expect(new Set(mostradas).size).toBe(6);
+    expect(mostradas.every((id) => tiene.includes(id))).toBe(true);
+    expect(mostradas).toContain(eliminada);
+    expect(partida.baratijas).toEqual(tiene.filter((id) => id !== eliminada));
+    expect(partida.oro).toBe(200);
+    // Una vez por visita.
+    expect(puedeGirarRuleta(partida)).toBe(false);
+  });
+
+  it('con menos de 6 baratijas entran todas; sin baratijas o sin oro no se gira', () => {
+    expect(girarRuleta(enEliminador(300, ['subsidio', 'diversidad'])).mostradas.sort()).toEqual(['diversidad', 'subsidio']);
+    expect(puedeGirarRuleta(enEliminador(300, []))).toBe(false);
+    expect(puedeGirarRuleta(enEliminador(100, ['subsidio']))).toBe(false);
+  });
+
+  it('eliminar una carta cuesta sus fichas × el nivel de riesgo, una vez por visita', () => {
+    const partida = enEliminador(300, []); // piso 1: riesgo 1
+    const rey = partida.mazo.find((c) => c.id === 'corazones-13')!;
+    expect(costoDeEliminar(partida, rey)).toBe(10);
+    const sinRey = eliminarCarta(partida, rey.id);
+    expect(sinRey.mazo).toHaveLength(51);
+    expect(sinRey.mazo.some((c) => c.id === rey.id)).toBe(false);
+    expect(sinRey.oro).toBe(290);
+    expect(puedeEliminarCarta(sinRey, 'picas-2')).toBe(false);
+    expect(puedeEliminarCarta(partida, 'no-existe')).toBe(false);
   });
 });
