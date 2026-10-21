@@ -1,6 +1,6 @@
 {
-  "version": 8,
-  "guardadoEn": 1792561439531,
+  "version": 9,
+  "guardadoEn": 1792565766694,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -515,7 +515,7 @@
       "baratijas": [
         "all-in",
         "tasador",
-        "diversidad"
+        "racha"
       ]
     },
     "probabilidades": {
@@ -526,7 +526,8 @@
     "eleccion": null,
     "transformaciones": [],
     "apuesta": null,
-    "baratijasApostadas": []
+    "baratijasApostadas": [],
+    "racha": 0
   },
   "coleccion": [
     "materialista",
@@ -537,6 +538,7 @@
     "diversidad",
     "all-in",
     "tasador",
+    "racha",
     "tarjeta-de-credito",
     "de-zero-a-heroe"
   ]

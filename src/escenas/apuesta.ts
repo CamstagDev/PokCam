@@ -8,8 +8,8 @@ export interface OpcionesApuesta {
   // Las baratijas que también se pueden apostar (con el Tasador), por su
   // valor de venta; vacío si no se puede.
   baratijas: readonly Baratija[];
-  // Lo que cambian los bonos de set, si alguno toca las apuestas.
-  nota?: string;
+  // Lo que cambian los bonos de set y la racha, si tocan las apuestas.
+  notas: readonly string[];
 }
 
 const ANCHO_FICHA = 96;
@@ -20,28 +20,30 @@ const POR_FILA = 6;
 // la mesa hasta que se elige.
 export function preguntarApuesta(
   escena: Phaser.Scene,
-  { maximo, baratijas, nota }: OpcionesApuesta,
+  { maximo, baratijas, notas }: OpcionesApuesta,
   alElegir: (cantidad: number, baratijas: string[]) => void,
 ): void {
   const { width, height } = escena.scale;
   const filas = Math.ceil(baratijas.length / POR_FILA);
-  const altoNota = nota ? 56 : 0; // hasta dos líneas
+  const lineas = [
+    'Si ganas el combate te llevas lo apostado; si pierdes, lo pierdes.',
+    `Oro: hasta ${maximo}${baratijas.length > 0 ? '. Baratijas: por su valor de venta' : ''}`,
+    ...notas,
+  ];
+  const explicacion = escena.add
+    .text(width / 2, 0, lineas.join('\n'), { ...estiloTexto(19, COLORES.textoSuave), align: 'center', wordWrap: { width: 700 } })
+    .setOrigin(0.5, 0);
+  // Lo que ocupan las notas además de las dos primeras líneas.
+  const altoNota = Math.max(0, explicacion.height - 40);
   const alto = (filas > 0 ? 490 + (filas - 1) * 76 : 400) + altoNota;
   const arriba = height / 2 - alto / 2;
+  explicacion.setY(arriba + 90);
   let cantidad = 0;
   const elegidas = new Set<string>();
 
   const velo = escena.add.rectangle(width / 2, height / 2, width, height, COLORES.fondo, 0.85).setInteractive();
   const panel = escena.add.rectangle(width / 2, height / 2, 760, alto, COLORES.panel).setStrokeStyle(3, COLORES.oro);
   const titulo = escena.add.text(width / 2, arriba + 50, '¿Apuestas?', estiloTexto(40, COLORES.oro)).setOrigin(0.5);
-  const lineas = [
-    'Si ganas el combate te llevas lo apostado; si pierdes, lo pierdes.',
-    `Oro: hasta ${maximo}${baratijas.length > 0 ? '. Baratijas: por su valor de venta' : ''}`,
-    ...(nota ? [nota] : []),
-  ];
-  const explicacion = escena.add
-    .text(width / 2, arriba + 90, lineas.join('\n'), { ...estiloTexto(19, COLORES.textoSuave), align: 'center', wordWrap: { width: 700 } })
-    .setOrigin(0.5, 0);
   const yValor = arriba + 170 + altoNota;
   const valor = escena.add.text(width / 2, yValor, '0', estiloTexto(52, COLORES.oro)).setOrigin(0.5);
 

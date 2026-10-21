@@ -58,6 +58,8 @@ export interface Partida {
   // Las baratijas apostadas junto con el oro (con el Tasador), por su
   // valor de venta.
   baratijasApostadas: string[];
+  // Combates seguidos con el mismo resultado: +n ganados, −n perdidos.
+  racha: number;
 }
 
 export interface Oferta {
@@ -69,7 +71,7 @@ export interface Oferta {
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [] };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0 };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -102,7 +104,11 @@ export function resolverCombate(partida: Partida, gano: boolean): Partida {
   const apostadas = partida.baratijasApostadas;
   const enBaratijas = valorDeBaratijas(apostadas);
   const apostado = (partida.apuesta ?? 0) + enBaratijas;
-  const apuesta = apostado === 0 ? 0 : aplicar(efectos, 'alResolverApuesta', gano ? apostado : -apostado) + (gano ? 0 : enBaratijas);
+  const resultado = efectos.reduce(
+    (actual, e) => (e.alResolverApuesta ? e.alResolverApuesta(actual, partida.racha) : actual),
+    gano ? apostado : -apostado,
+  );
+  const apuesta = apostado === 0 ? 0 : resultado + (gano ? 0 : enBaratijas);
   const sinPerdidas = gano ? partida : quitarBaratijas(partida, apostadas);
   const resuelto = {
     ...sinPerdidas,
@@ -110,6 +116,7 @@ export function resolverCombate(partida: Partida, gano: boolean): Partida {
     combatePendiente: !gano && nodo.tipo === 'jefe',
     apuesta: null,
     baratijasApostadas: [],
+    racha: gano ? Math.max(partida.racha, 0) + 1 : Math.min(partida.racha, 0) - 1,
     ...avanzarTransformaciones(sinPerdidas),
   };
   // Vencer a un élite ofrece elegir 1 de 3 baratijas.

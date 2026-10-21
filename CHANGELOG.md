@@ -6,6 +6,11 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Baratija infrecuente Racha, del set del apostador empedernido (que ahora
+  se completa con tres): cada combate seguido ganado o perdido suma un
+  10 % a la apuesta si el resultado sigue la racha. La partida cuenta la
+  racha y la pregunta de la apuesta la muestra.
+
 - En el vendedor de baratijas se pueden vender las propias por la mitad
   de su precio ("Vender baratijas") y volver a tirar lo que ofrece por
   100 × (baratijas que tienes + 1) de oro.

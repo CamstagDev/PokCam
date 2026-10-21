@@ -389,12 +389,12 @@ describe('vender y volver a tirar en el vendedor', () => {
 });
 
 describe('sets de baratijas', () => {
-  it('el apostador empedernido son All In y Tasador', () => {
+  it('el apostador empedernido son All In, Tasador y Racha', () => {
     const apostador = CONJUNTOS.find((c) => c.id === 'apostador-empedernido')!;
     expect(apostador.nombre).toBe('Set del apostador empedernido');
-    expect(miembrosDe(apostador).map((b) => b.id).sort()).toEqual(['all-in', 'tasador']);
-    expect(bonosActivos(['all-in'])).toEqual([]);
-    expect(bonosActivos(['tasador', 'all-in'])).toHaveLength(1);
+    expect(miembrosDe(apostador).map((b) => b.id).sort()).toEqual(['all-in', 'racha', 'tasador']);
+    expect(bonosActivos(['all-in', 'tasador'])).toEqual([]);
+    expect(bonosActivos(['tasador', 'racha', 'all-in'])).toHaveLength(1);
   });
 
   it('todo set tiene baratijas del catálogo', () => {
@@ -432,17 +432,41 @@ describe('Tasador y el set del apostador', () => {
   });
 
   it('con el set completo se gana el doble y se pierde 1,5 veces', () => {
-    const conApuesta = apostar(enCombate(300, ['all-in', 'tasador', 'diversidad']), 100, ['diversidad']);
+    const conApuesta = apostar(enCombate(300, ['all-in', 'tasador', 'racha', 'diversidad']), 100, ['diversidad']);
     expect(totalApostado(conApuesta)).toBe(350);
     expect(resolverCombate(conApuesta, true).oro).toBe(300 + 100 + 700);
     // Pierde 525: Diversidad cubre 250 y el resto sale del oro.
     const perdido = resolverCombate(conApuesta, false);
     expect(perdido.oro).toBe(300 - 100 - 275);
-    expect(perdido.baratijas).toEqual(['all-in', 'tasador']);
+    expect(perdido.baratijas).toEqual(['all-in', 'tasador', 'racha']);
   });
 
   it('sin el set completo la apuesta paga lo apostado', () => {
     const conApuesta = apostar(enCombate(300, ['all-in']), 100);
     expect(resolverCombate(conApuesta, true).oro).toBe(500);
+  });
+});
+
+describe('Racha', () => {
+  const enCombate = (oro: number, baratijas: string[], racha: number) => {
+    const partida = { ...crearPartida(7), oro, baratijas, racha };
+    return apostar(avanzar(partida, nodoActual(partida).siguientes[0]!), 100);
+  };
+
+  it('cuenta los combates seguidos con el mismo resultado', () => {
+    const partida = avanzar(crearPartida(7), nodoActual(crearPartida(7)).siguientes[0]!);
+    expect(resolverCombate({ ...partida, racha: 2 }, true).racha).toBe(3);
+    expect(resolverCombate({ ...partida, racha: 2 }, false).racha).toBe(-1);
+    expect(resolverCombate({ ...partida, racha: -4 }, false).racha).toBe(-5);
+    expect(resolverCombate({ ...partida, racha: -4 }, true).racha).toBe(1);
+  });
+
+  it('suma 10 % a la apuesta por combate de la racha si el resultado la sigue', () => {
+    // 5 perdidos seguidos: perder otra vez cuesta 50 % más.
+    expect(resolverCombate(enCombate(300, ['racha'], -5), false).oro).toBe(300 - 100 - 150);
+    expect(resolverCombate(enCombate(300, ['racha'], 3), true).oro).toBe(300 + 100 + 130);
+    // Romper la racha no suma nada.
+    expect(resolverCombate(enCombate(300, ['racha'], -5), true).oro).toBe(300 + 100 + 100);
+    expect(resolverCombate(enCombate(300, [], 3), true).oro).toBe(300 + 100 + 100);
   });
 });

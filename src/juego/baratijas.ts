@@ -20,7 +20,9 @@
 //   alMoverseEnDeuda  lo que cuesta cada paso en el mapa mientras se debe
 //                     oro (recibe también la deuda y el nivel de riesgo)
 //   alResolverApuesta el oro que cambia una apuesta: lo apostado si se gana
-//                     el combate, menos lo apostado si se pierde
+//                     el combate, menos lo apostado si se pierde (recibe
+//                     también la racha de antes: +n ganados seguidos, −n
+//                     perdidos seguidos)
 //   apuestaBaratijas  si es true, las baratijas también se pueden apostar
 //
 // Una baratija puede pertenecer a un set (`conjunto`, el id de uno de
@@ -95,7 +97,7 @@ export interface Efectos {
   alLimitarApuesta?(fraccion: number): number;
   alLimitarDeuda?(limite: number, riesgo: number): number;
   alMoverseEnDeuda?(costo: number, deuda: number, riesgo: number): number;
-  alResolverApuesta?(oro: number): number;
+  alResolverApuesta?(oro: number, racha: number): number;
   apuestaBaratijas?: boolean;
 }
 
@@ -183,6 +185,15 @@ export const CATALOGO: readonly Baratija[] = [
     icono: '🔍',
     conjunto: 'apostador-empedernido',
     apuestaBaratijas: true,
+  },
+  {
+    id: 'racha',
+    nombre: 'Racha',
+    descripcion: 'Cada combate de tu racha (ganando o perdiendo) suma 10\u00a0% a la apuesta si la racha sigue.',
+    rareza: 'infrecuente',
+    icono: '🔥',
+    conjunto: 'apostador-empedernido',
+    alResolverApuesta: (oro, racha) => (Math.sign(oro) === Math.sign(racha) ? Math.sign(oro) * Math.round((Math.abs(oro) * (10 + Math.abs(racha))) / 10) : oro),
   },
   {
     id: 'tarjeta-de-credito',
@@ -337,7 +348,7 @@ export function fichasConBaratijas(fichas: number, carta: Carta, baratijas: read
 
 // Aplica en orden el efecto `efecto` de cada baratija que lo tenga.
 export function aplicar<
-  E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza' | 'alLimitarApuesta' | 'alResolverApuesta',
+  E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza' | 'alLimitarApuesta',
 >(
   baratijas: readonly Efectos[],
   efecto: E,

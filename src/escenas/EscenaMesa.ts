@@ -10,6 +10,7 @@ import { SIMBOLO_PALO, nombreRango, ordenarMano, type Carta, type Orden } from '
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
 import { MANOS, evaluarMano } from '../juego/manos.ts';
 import { baratijasDe, bonosActivos } from '../juego/baratijas.ts';
+import type { Partida } from '../juego/partida.ts';
 import {
   apostar,
   enBancarrota,
@@ -105,7 +106,7 @@ export class EscenaMesa extends Phaser.Scene {
     const opciones = {
       maximo: maximoApostable(partida),
       baratijas: puedeApostarBaratijas(partida) ? baratijasDe(partida.baratijas) : [],
-      nota: bonosActivos(partida.baratijas).find((b) => b.alResolverApuesta)?.descripcion,
+      notas: notasDeApuesta(partida),
     };
     this.bloqueada = true;
     this.time.delayedCall(1000, () =>
@@ -251,4 +252,20 @@ export class EscenaMesa extends Phaser.Scene {
       crearBoton(this, width / 2, height / 2 + 60, 'Seguir', COLORES.acento, () => irAPartida(this, partida));
     }
   }
+}
+
+// Lo que cambia la apuesta: los bonos de set y, con Racha, la racha actual.
+function notasDeApuesta(partida: Partida): string[] {
+  const notas = bonosActivos(partida.baratijas)
+    .filter((b) => b.alResolverApuesta)
+    .map((b) => `Set completo: ${b.descripcion}`);
+  if (partida.baratijas.includes('racha')) {
+    const n = Math.abs(partida.racha);
+    notas.push(
+      n === 0
+        ? 'Racha: todavía sin racha'
+        : `Racha: ${n} ${partida.racha > 0 ? 'ganado' : 'perdido'}${n === 1 ? '' : 's'} seguido${n === 1 ? '' : 's'} (+${n * 10}\u00a0% si ${partida.racha > 0 ? 'vuelves a ganar' : 'vuelves a perder'})`,
+    );
+  }
+  return notas;
 }
