@@ -94,7 +94,7 @@ export const CATALOGO: readonly Baratija[] = [
   },
   {
     id: 'flower-power',
-    nombre: 'Flower power',
+    nombre: 'El poder de las flores',
     descripcion: 'Las cartas de ♠ valen la mitad de fichas y las de ♣, 1,5 veces más.',
     rareza: 'comun',
     icono: '🌸',
@@ -102,7 +102,7 @@ export const CATALOGO: readonly Baratija[] = [
   },
   {
     id: 'grass-mower',
-    nombre: 'Grass mower',
+    nombre: 'Corta hierbas',
     descripcion: 'Las cartas de ♣ valen la mitad de fichas y las de ♠, 1,5 veces más.',
     rareza: 'comun',
     icono: '🚜',

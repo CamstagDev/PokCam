@@ -57,8 +57,8 @@ la versión nueva (ver scripts/nueva-version.mjs).
   ×4 al multiplicador si la mano tiene los 4 palos). Se agregan más en
   src/juego/baratijas.ts.
 - Baratijas comunes nuevas: Subsidio (+50 de oro en cada combate, ganado
-  o perdido), Altruista (♥ ×1,5, ♦ a la mitad), Flower power (♣ ×1,5,
-  ♠ a la mitad) y Grass mower (♠ ×1,5, ♣ a la mitad).
+  o perdido), Altruista (♥ ×1,5, ♦ a la mitad), El poder de las flores
+  (♣ ×1,5, ♠ a la mitad) y Corta hierbas (♠ ×1,5, ♣ a la mitad).
 - Colecciones, desde el menú principal: todas las baratijas del juego,
   en sombra hasta conseguirlas por primera vez en cualquier partida.
 - Botones "Baratijas", "Mazo" y "Manos" abajo a la izquierda en el

@@ -130,12 +130,12 @@ describe('baratijas de palos', () => {
     expect(par('corazones', 'diamantes', 'altruista')).toBe(10 + 12 + 4);
   });
 
-  it('Flower power: ♣ ×1,5 y ♠ a la mitad', () => {
+  it('El poder de las flores: ♣ ×1,5 y ♠ a la mitad', () => {
     expect(par('treboles', 'picas', 'flower-power')).toBe(10 + 12 + 4);
     expect(par('corazones', 'diamantes', 'flower-power')).toBe(10 + 8 + 8);
   });
 
-  it('Grass mower: ♠ ×1,5 y ♣ a la mitad', () => {
+  it('Corta hierbas: ♠ ×1,5 y ♣ a la mitad', () => {
     expect(par('picas', 'treboles', 'grass-mower')).toBe(10 + 12 + 4);
   });
 });
