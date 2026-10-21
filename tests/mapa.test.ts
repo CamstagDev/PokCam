@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PISOS_ANTES_DEL_JEFE, buscarNodo, generarMapa, type Mapa } from '../src/mapa/mapa.ts';
+import { OTROS_NODOS, PISOS_ANTES_DEL_JEFE, buscarNodo, generarMapa, type Mapa } from '../src/mapa/mapa.ts';
 
 const SEMILLAS = Array.from({ length: 200 }, (_, i) => i + 1);
 
@@ -36,5 +36,21 @@ describe('generarMapa', () => {
         expect(todos(mapa).some((otro) => otro.siguientes.includes(nodo.id))).toBe(true);
       }
     }
+  });
+
+  it('fuera de los pisos fijos, 40 % combates y el resto repartido por igual', () => {
+    const cuenta = new Map<string, number>();
+    let total = 0;
+    for (let semilla = 1; semilla <= 300; semilla++) {
+      const mapa = generarMapa(semilla);
+      for (const fila of mapa.pisos.slice(2, -2)) {
+        for (const nodo of fila) {
+          cuenta.set(nodo.tipo, (cuenta.get(nodo.tipo) ?? 0) + 1);
+          total++;
+        }
+      }
+    }
+    expect((cuenta.get('combate') ?? 0) / total).toBeCloseTo(0.4, 1);
+    for (const tipo of OTROS_NODOS) expect((cuenta.get(tipo) ?? 0) / total).toBeCloseTo(0.6 / OTROS_NODOS.length, 1);
   });
 });

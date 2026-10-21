@@ -91,20 +91,17 @@ function agregarCamino(desde: Nodo, hasta: Nodo): void {
   if (!desde.siguientes.includes(hasta.id)) desde.siguientes.push(hasta.id);
 }
 
+// Fuera de los pisos fijos, un nodo es combate con PROBABILIDAD_COMBATE y
+// si no, uno de OTROS_NODOS, todos con la misma probabilidad.
+export const PROBABILIDAD_COMBATE = 0.4;
+export const OTROS_NODOS: readonly TipoNodo[] = ['elite', 'vendedor', 'tienda', 'eliminador', 'manoNegra', 'evento', 'descanso'];
+
 function elegirTipo(piso: number, ultimo: number, aleatorio: Aleatorio): TipoNodo {
   if (piso === 0) return 'inicio';
   if (piso === ultimo) return 'jefe';
   if (piso === ultimo - 1) return 'descanso'; // siempre se descansa antes del jefe
   if (piso === 1) return 'combate'; // el primer paso siempre es un combate fácil
-  const tirada = aleatorio();
-  if (tirada < 0.42) return 'combate';
-  if (tirada < 0.48) return 'evento';
-  if (tirada < 0.54) return 'eliminador';
-  if (tirada < 0.58) return 'tienda';
-  if (tirada < 0.64) return 'manoNegra';
-  if (tirada < 0.74) return 'vendedor';
-  if (tirada < 0.86) return 'descanso';
-  return 'elite';
+  return aleatorio() < PROBABILIDAD_COMBATE ? 'combate' : OTROS_NODOS[Math.floor(aleatorio() * OTROS_NODOS.length)]!;
 }
 
 export function buscarNodo(mapa: Mapa, id: string): Nodo {

@@ -6,6 +6,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Nodos del mapa: fuera de los pisos fijos, el 40 % son combates y el 60 %
+  restante se reparte por igual entre élite, vendedor, tienda de cartas,
+  eliminador, mano negra, evento y descanso (cerca de 8,6 % cada uno).
+
 - La tienda de cartas ($) ya funciona: ofrece 6 cartas al azar (por ahora
   sin modificar), cada una por 5 × el nivel de riesgo, y las compradas
   pasan al mazo.
