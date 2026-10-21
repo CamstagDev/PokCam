@@ -121,6 +121,33 @@ describe('Diversidad', () => {
   });
 });
 
+describe('baratijas de palos', () => {
+  // Par de 8: 10 fichas de la mano + las de las dos cartas (8 cada una).
+  const par = (palo1: string, palo2: string, id: string) =>
+    puntuar([carta(`${palo1}-8`), carta(`${palo2}-8`)], [buscarBaratija(id)]).fichas;
+
+  it('Altruista: ♥ ×1,5 y ♦ a la mitad', () => {
+    expect(par('corazones', 'diamantes', 'altruista')).toBe(10 + 12 + 4);
+  });
+
+  it('Flower power: ♣ ×1,5 y ♠ a la mitad', () => {
+    expect(par('treboles', 'picas', 'flower-power')).toBe(10 + 12 + 4);
+    expect(par('corazones', 'diamantes', 'flower-power')).toBe(10 + 8 + 8);
+  });
+
+  it('Grass mower: ♠ ×1,5 y ♣ a la mitad', () => {
+    expect(par('picas', 'treboles', 'grass-mower')).toBe(10 + 12 + 4);
+  });
+});
+
+describe('Subsidio', () => {
+  it('da 50 de oro al ganar y al perder', () => {
+    const partida = { ...partidaEn('elite'), baratijas: ['subsidio'] };
+    expect(resolverCombate(partida, true).oro).toBe(300 + 100 + 50);
+    expect(resolverCombate(partida, false).oro).toBe(300 - 100 + 50);
+  });
+});
+
 describe('Materialista', () => {
   const materialista = [buscarBaratija('materialista')];
 

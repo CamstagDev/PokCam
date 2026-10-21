@@ -12,13 +12,14 @@
 //                     también la carta)
 //   alPuntuar         fichas y multiplicador de cada mano jugada
 //   alGanarCombate    el oro que da un combate ganado
+//   alPerderCombate   el oro que quita un combate perdido
 //   alSortearRareza   la probabilidad de cada rareza al ofrecer baratijas
 //
 // Si hace falta que una baratija toque algo más, se agrega aquí un efecto
 // nuevo y se llama desde la regla correspondiente.
 
 import { barajar, type Aleatorio } from './aleatorio.ts';
-import type { Carta } from './cartas.ts';
+import type { Carta, Palo } from './cartas.ts';
 import type { TipoMano } from './manos.ts';
 
 export interface InicioDeCombate {
@@ -64,7 +65,14 @@ export interface Baratija {
   alContarCarta?(fichas: number, carta: Carta): number;
   alPuntuar?(mano: ManoPuntuada): ManoPuntuada;
   alGanarCombate?(oro: number): number;
+  alPerderCombate?(oro: number): number;
   alSortearRareza?(probabilidades: Probabilidades): Probabilidades;
+}
+
+// Las fichas de las cartas de un palo ×1,5 y las de otro a la mitad,
+// redondeando.
+function cambiarPalos(sube: Palo, baja: Palo): (fichas: number, carta: Carta) => number {
+  return (fichas, carta) => (carta.palo === sube ? Math.round(fichas * 1.5) : carta.palo === baja ? Math.round(fichas / 2) : fichas);
 }
 
 export const CATALOGO: readonly Baratija[] = [
@@ -74,8 +82,40 @@ export const CATALOGO: readonly Baratija[] = [
     descripcion: 'Las cartas de ♥ valen la mitad de fichas y las de ♦, 1,5 veces más.',
     rareza: 'comun',
     icono: '💰',
-    alContarCarta: (fichas, carta) =>
-      carta.palo === 'corazones' ? Math.round(fichas / 2) : carta.palo === 'diamantes' ? Math.round(fichas * 1.5) : fichas,
+    alContarCarta: cambiarPalos('diamantes', 'corazones'),
+  },
+  {
+    id: 'altruista',
+    nombre: 'Altruista',
+    descripcion: 'Las cartas de ♦ valen la mitad de fichas y las de ♥, 1,5 veces más.',
+    rareza: 'comun',
+    icono: '💝',
+    alContarCarta: cambiarPalos('corazones', 'diamantes'),
+  },
+  {
+    id: 'flower-power',
+    nombre: 'Flower power',
+    descripcion: 'Las cartas de ♠ valen la mitad de fichas y las de ♣, 1,5 veces más.',
+    rareza: 'comun',
+    icono: '🌸',
+    alContarCarta: cambiarPalos('treboles', 'picas'),
+  },
+  {
+    id: 'grass-mower',
+    nombre: 'Grass mower',
+    descripcion: 'Las cartas de ♣ valen la mitad de fichas y las de ♠, 1,5 veces más.',
+    rareza: 'comun',
+    icono: '🚜',
+    alContarCarta: cambiarPalos('picas', 'treboles'),
+  },
+  {
+    id: 'subsidio',
+    nombre: 'Subsidio',
+    descripcion: '+50 de oro en cada combate, ganado o perdido.',
+    rareza: 'comun',
+    icono: '🏛',
+    alGanarCombate: (oro) => oro + 50,
+    alPerderCombate: (oro) => oro - 50,
   },
   {
     id: 'diversidad',
@@ -143,7 +183,7 @@ export function fichasConBaratijas(fichas: number, carta: Carta, baratijas: read
 }
 
 // Aplica en orden el efecto `efecto` de cada baratija que lo tenga.
-export function aplicar<E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate' | 'alSortearRareza'>(
+export function aplicar<E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza'>(
   baratijas: readonly Baratija[],
   efecto: E,
   valor: Parameters<NonNullable<Baratija[E]>>[0],

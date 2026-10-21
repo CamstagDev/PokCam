@@ -71,9 +71,10 @@ export function avanzar(partida: Partida, id: string): Partida {
 export function resolverCombate(partida: Partida, gano: boolean): Partida {
   const nodo = nodoActual(partida);
   const oro = ORO_POR_COMBATE[nodo.tipo] ?? 0;
+  const baratijas = baratijasDe(partida.baratijas);
   const resuelto = {
     ...partida,
-    oro: partida.oro + (gano ? aplicar(baratijasDe(partida.baratijas), 'alGanarCombate', oro) : -oro),
+    oro: partida.oro + (gano ? aplicar(baratijas, 'alGanarCombate', oro) : -aplicar(baratijas, 'alPerderCombate', oro)),
     combatePendiente: !gano && nodo.tipo === 'jefe',
   };
   // Vencer a un élite ofrece elegir 1 de 3 baratijas.
