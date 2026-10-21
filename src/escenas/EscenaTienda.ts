@@ -3,9 +3,9 @@
 // vuelve al mapa. La partida se guarda después de cada compra.
 
 import Phaser from 'phaser';
-import { SIMBOLO_PALO, nombreRango, type Carta } from '../juego/cartas.ts';
 import { cerrarOferta, comprarCarta, costoDeCarta, nivelDeRiesgo, puedeComprarCarta } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
+import { dibujarCarta } from './carta.ts';
 import { mostrarCripto } from './cripto.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { mostrarBotonesInventario } from './inventario.ts';
@@ -41,7 +41,7 @@ export class EscenaTienda extends Phaser.Scene {
     cartas.forEach((carta, i) => {
       const x = width / 2 + (i - (cartas.length - 1) / 2) * separacion;
       const y = height / 2;
-      this.carta(x, y, carta);
+      dibujarCarta(this, x, y, carta, ANCHO_CARTA, ALTO_CARTA);
       const boton = crearBoton(this, x, y + ALTO_CARTA / 2 + 50, `Comprar · ${costo}`, COLORES.oro, () => {
         jugarPartida(this, comprarCarta(partidaActual(this), carta.id));
         this.scene.restart();
@@ -54,16 +54,5 @@ export class EscenaTienda extends Phaser.Scene {
       jugarPartida(this, cerrada);
       irAPartida(this, cerrada);
     }, 240);
-  }
-
-  private carta(x: number, y: number, carta: Carta): void {
-    const roja = carta.palo === 'corazones' || carta.palo === 'diamantes';
-    const color = roja ? COLORES.cartaRoja : COLORES.cartaNegra;
-    const fondo = this.add.graphics();
-    fondo.fillStyle(COLORES.carta).fillRoundedRect(-ANCHO_CARTA / 2, -ALTO_CARTA / 2, ANCHO_CARTA, ALTO_CARTA, 10);
-    fondo.lineStyle(2, COLORES.borde).strokeRoundedRect(-ANCHO_CARTA / 2, -ALTO_CARTA / 2, ANCHO_CARTA, ALTO_CARTA, 10);
-    const rango = this.add.text(-ANCHO_CARTA / 2 + 10, -ALTO_CARTA / 2 + 6, nombreRango(carta.rango), estiloTexto(28, color));
-    const palo = this.add.text(0, 12, SIMBOLO_PALO[carta.palo], estiloTexto(56, color)).setOrigin(0.5);
-    this.add.container(x, y, [fondo, rango, palo]);
   }
 }

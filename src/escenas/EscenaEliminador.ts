@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 import { buscarBaratija } from '../juego/baratijas.ts';
-import { PALOS, SIMBOLO_PALO, nombreRango, ordenarMano, type Carta } from '../juego/cartas.ts';
+import { PALOS, SIMBOLO_PALO, nombreRango, ordenarMano } from '../juego/cartas.ts';
 import {
   COSTO_RULETA,
   cerrarOferta,
@@ -22,6 +22,7 @@ import {
   type Ruleta,
 } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
+import { dibujarCarta } from './carta.ts';
 import { abrirCapa } from './capa.ts';
 import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
@@ -150,7 +151,7 @@ export class EscenaEliminador extends Phaser.Scene {
         const y = 150 + fila * (alto + 38);
         const costo = costoDeEliminar(partida, carta);
         const puede = puedeEliminarCarta(partida, carta.id);
-        const objeto = this.carta(x, y, carta, ancho, alto).setAlpha(puede ? 1 : 0.4);
+        const objeto = dibujarCarta(this, x, y, carta, ancho, alto).setAlpha(puede ? 1 : 0.4);
         capa.add([objeto, this.add.text(x, y + alto / 2 + 12, String(costo), estiloTexto(16, COLORES.oro)).setOrigin(0.5)]);
         if (!puede) return;
         objeto.setSize(ancho, alto).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
@@ -163,15 +164,5 @@ export class EscenaEliminador extends Phaser.Scene {
         });
       });
     });
-  }
-
-  private carta(x: number, y: number, carta: Carta, ancho: number, alto: number): Phaser.GameObjects.Container {
-    const roja = carta.palo === 'corazones' || carta.palo === 'diamantes';
-    const color = roja ? COLORES.cartaRoja : COLORES.cartaNegra;
-    const fondo = this.add.graphics();
-    fondo.fillStyle(COLORES.carta).fillRoundedRect(-ancho / 2, -alto / 2, ancho, alto, 6);
-    const rango = this.add.text(-ancho / 2 + 6, -alto / 2 + 4, nombreRango(carta.rango), estiloTexto(18, color));
-    const simbolo = this.add.text(0, 10, SIMBOLO_PALO[carta.palo], estiloTexto(30, color)).setOrigin(0.5);
-    return this.add.container(x, y, [fondo, rango, simbolo]);
   }
 }

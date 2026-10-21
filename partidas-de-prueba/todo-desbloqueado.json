@@ -1,6 +1,6 @@
 {
   "version": 11,
-  "guardadoEn": 1792624746456,
+  "guardadoEn": 1792626230213,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -23,7 +23,7 @@
             "id": "p1-1",
             "piso": 1,
             "columna": 1,
-            "tipo": "vendedor",
+            "tipo": "pintor",
             "siguientes": [
               "p2-1",
               "p2-0"
@@ -33,7 +33,7 @@
             "id": "p1-2",
             "piso": 1,
             "columna": 2,
-            "tipo": "elite",
+            "tipo": "vendedor",
             "siguientes": [
               "p2-2",
               "p2-1"
@@ -43,7 +43,7 @@
             "id": "p1-3",
             "piso": 1,
             "columna": 3,
-            "tipo": "eliminador",
+            "tipo": "elite",
             "siguientes": [
               "p2-2"
             ]
@@ -54,7 +54,7 @@
             "id": "p2-0",
             "piso": 2,
             "columna": 0,
-            "tipo": "manoNegra",
+            "tipo": "eliminador",
             "siguientes": [
               "p3-2",
               "p3-3"
@@ -64,7 +64,7 @@
             "id": "p2-1",
             "piso": 2,
             "columna": 1,
-            "tipo": "tienda",
+            "tipo": "manoNegra",
             "siguientes": [
               "p3-2"
             ]
@@ -73,7 +73,7 @@
             "id": "p2-2",
             "piso": 2,
             "columna": 2,
-            "tipo": "vendedor",
+            "tipo": "tienda",
             "siguientes": [
               "p3-2",
               "p3-3"
@@ -156,7 +156,7 @@
             "id": "p5-3",
             "piso": 5,
             "columna": 3,
-            "tipo": "tienda",
+            "tipo": "eliminador",
             "siguientes": [
               "p6-3"
             ]
@@ -185,7 +185,7 @@
             "id": "p6-2",
             "piso": 6,
             "columna": 2,
-            "tipo": "eliminador",
+            "tipo": "manoNegra",
             "siguientes": [
               "p7-2",
               "p7-1"
@@ -237,7 +237,7 @@
             "id": "p8-1",
             "piso": 8,
             "columna": 1,
-            "tipo": "tienda",
+            "tipo": "eliminador",
             "siguientes": [
               "p9-1"
             ]
@@ -266,7 +266,7 @@
             "id": "p9-0",
             "piso": 9,
             "columna": 0,
-            "tipo": "tienda",
+            "tipo": "eliminador",
             "siguientes": [
               "p10-0"
             ]
@@ -353,7 +353,7 @@
             "id": "p11-3",
             "piso": 11,
             "columna": 3,
-            "tipo": "eliminador",
+            "tipo": "manoNegra",
             "siguientes": [
               "p12-2"
             ]
@@ -453,7 +453,7 @@
             "id": "p15-0",
             "piso": 15,
             "columna": 0,
-            "tipo": "vendedor",
+            "tipo": "tienda",
             "siguientes": [
               "p16-1"
             ]
@@ -462,7 +462,7 @@
             "id": "p15-3",
             "piso": 15,
             "columna": 3,
-            "tipo": "vendedor",
+            "tipo": "tienda",
             "siguientes": [
               "p16-3"
             ]
@@ -829,7 +829,9 @@
         "rango": 14
       }
     ],
-    "baratijas": [],
+    "baratijas": [
+      "claire-obscure"
+    ],
     "oferta": {
       "tipo": "vendedor",
       "baratijas": [
@@ -871,6 +873,7 @@
     "grass-mower",
     "subsidio",
     "no-gracias",
+    "claire-obscure",
     "broker",
     "diversidad",
     "all-in",
@@ -889,6 +892,7 @@
     "vendedor",
     "eliminador",
     "manoNegra",
+    "pintor",
     "tienda",
     "evento",
     "descanso",

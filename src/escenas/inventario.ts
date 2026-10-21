@@ -4,10 +4,11 @@
 
 import Phaser from 'phaser';
 import { DATOS_RAREZA, RAREZAS, baratijasDe, buscarConjunto, probabilidadComun, type Baratija, type Rareza } from '../juego/baratijas.ts';
-import { PALOS, SIMBOLO_PALO, nombreRango, ordenarMano, type Carta } from '../juego/cartas.ts';
+import { PALOS, ordenarMano } from '../juego/cartas.ts';
 import { datosDeMano, type TipoMano } from '../juego/manos.ts';
 import { probabilidadesDeRareza, type Partida } from '../juego/partida.ts';
 import { crearBotonRedondo } from './boton.ts';
+import { dibujarCarta } from './carta.ts';
 import { abrirCapa } from './capa.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 
@@ -105,18 +106,8 @@ function verMazo(escena: Phaser.Scene, partida: Partida): void {
   PALOS.forEach((palo, fila) => {
     const cartas = ordenadas.filter((c) => c.palo === palo);
     const inicio = width / 2 - ((cartas.length - 1) * separacion) / 2;
-    cartas.forEach((carta, i) => capa.add(cartaChica(escena, inicio + i * separacion, 160 + fila * (alto + 18), carta, ancho, alto)));
+    cartas.forEach((carta, i) => capa.add(dibujarCarta(escena, inicio + i * separacion, 160 + fila * (alto + 18), carta, ancho, alto)));
   });
-}
-
-function cartaChica(escena: Phaser.Scene, x: number, y: number, carta: Carta, ancho: number, alto: number): Phaser.GameObjects.Container {
-  const roja = carta.palo === 'corazones' || carta.palo === 'diamantes';
-  const color = roja ? COLORES.cartaRoja : COLORES.cartaNegra;
-  const fondo = escena.add.graphics();
-  fondo.fillStyle(COLORES.carta).fillRoundedRect(-ancho / 2, -alto / 2, ancho, alto, 6);
-  const rango = escena.add.text(-ancho / 2 + 6, -alto / 2 + 4, nombreRango(carta.rango), estiloTexto(18, color));
-  const simbolo = escena.add.text(0, 10, SIMBOLO_PALO[carta.palo], estiloTexto(30, color)).setOrigin(0.5);
-  return escena.add.container(x, y, [fondo, rango, simbolo]);
 }
 
 // De la mejor mano a la peor, con el nivel de cada una en la partida.

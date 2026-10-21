@@ -1,5 +1,7 @@
 // La baraja francesa de 52 cartas.
 
+import type { Aleatorio } from './aleatorio.ts';
+
 export const PALOS = ['picas', 'corazones', 'treboles', 'diamantes'] as const;
 export type Palo = (typeof PALOS)[number];
 
@@ -11,6 +13,43 @@ export interface Carta {
   id: string; // único dentro del mazo, p. ej. 'corazones-12'
   palo: Palo;
   rango: Rango;
+  // Cuántas veces se le puso cada modificador (el pintor).
+  modificaciones?: Partial<Record<Modificador, number>>;
+}
+
+// Lo que el pintor le puede poner a una carta. Cada vez que se pone uno
+// cuenta como una modificación (dos veces +1 multiplicador son 2):
+//   'multi'   +1 al multiplicador cuando la carta puntúa
+//   'fichas'  +FICHAS_POR_MODIFICACION fichas
+//   'palo'    pasa a otro palo, al azar
+export const MODIFICADORES = ['multi', 'fichas', 'palo'] as const;
+export type Modificador = (typeof MODIFICADORES)[number];
+export const FICHAS_POR_MODIFICACION = 5;
+
+export const NOMBRE_MODIFICADOR: Record<Modificador, string> = {
+  multi: '+1 multiplicador',
+  fichas: `+${FICHAS_POR_MODIFICACION} fichas`,
+  palo: 'Cambiar de palo',
+};
+
+export function modificacionesDe(carta: Carta): number {
+  return MODIFICADORES.reduce((suma, m) => suma + (carta.modificaciones?.[m] ?? 0), 0);
+}
+
+// Lo que suma la carta al multiplicador cuando puntúa.
+export function multiDeCarta(carta: Carta): number {
+  return carta.modificaciones?.multi ?? 0;
+}
+
+export function modificar(carta: Carta, modificador: Modificador, aleatorio: Aleatorio): Carta {
+  const modificaciones = { ...carta.modificaciones, [modificador]: (carta.modificaciones?.[modificador] ?? 0) + 1 };
+  if (modificador !== 'palo') return { ...carta, modificaciones };
+  const otros = PALOS.filter((p) => p !== carta.palo);
+  return { ...carta, palo: otros[Math.floor(aleatorio() * otros.length)]!, modificaciones };
+}
+
+export function nombreDeCarta(carta: Carta): string {
+  return `${nombreRango(carta.rango)}${SIMBOLO_PALO[carta.palo]}`;
 }
 
 export const SIMBOLO_PALO: Record<Palo, string> = {
@@ -28,10 +67,11 @@ export function nombreRango(rango: Rango): string {
   return { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' }[rango as 11 | 12 | 13 | 14] ?? String(rango);
 }
 
-// Fichas que suma la carta al puntuar: su número, las figuras 10 y el as 11.
+// Fichas que suma la carta al puntuar: su número, las figuras 10 y el as
+// 11, más las de sus modificaciones.
 export function fichasDeCarta(carta: Carta): number {
-  if (carta.rango === 14) return 11;
-  return Math.min(carta.rango, 10);
+  const base = carta.rango === 14 ? 11 : Math.min(carta.rango, 10);
+  return base + (carta.modificaciones?.fichas ?? 0) * FICHAS_POR_MODIFICACION;
 }
 
 // Cómo ordenar la mano: por valor (de mayor a menor) o por palo (agrupando

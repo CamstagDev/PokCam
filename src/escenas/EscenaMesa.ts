@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import { crearAleatorio } from '../juego/aleatorio.ts';
-import { SIMBOLO_PALO, nombreRango, ordenarMano, type Carta, type Orden } from '../juego/cartas.ts';
+import { ordenarMano, type Carta, type Orden } from '../juego/cartas.ts';
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
 import { MANOS, evaluarMano } from '../juego/manos.ts';
 import { baratijasDe, bonosActivos } from '../juego/baratijas.ts';
@@ -25,6 +25,7 @@ import {
 } from '../juego/partida.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton, crearBotonRedondo, type Boton, type BotonRedondo } from './boton.ts';
+import { dibujarCarta } from './carta.ts';
 import { preguntarApuesta } from './apuesta.ts';
 import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
@@ -198,15 +199,7 @@ export class EscenaMesa extends Phaser.Scene {
   }
 
   private crearCarta(carta: Carta, x: number, y: number): Phaser.GameObjects.Container {
-    const roja = carta.palo === 'corazones' || carta.palo === 'diamantes';
-    const color = roja ? COLORES.cartaRoja : COLORES.cartaNegra;
-    const fondo = this.add.graphics();
-    fondo.fillStyle(COLORES.carta).fillRoundedRect(-ANCHO_CARTA / 2, -ALTO_CARTA / 2, ANCHO_CARTA, ALTO_CARTA, 10);
-    fondo.lineStyle(2, COLORES.borde).strokeRoundedRect(-ANCHO_CARTA / 2, -ALTO_CARTA / 2, ANCHO_CARTA, ALTO_CARTA, 10);
-    const rango = this.add.text(-ANCHO_CARTA / 2 + 10, -ALTO_CARTA / 2 + 6, nombreRango(carta.rango), estiloTexto(28, color));
-    const palo = this.add.text(0, 12, SIMBOLO_PALO[carta.palo], estiloTexto(56, color)).setOrigin(0.5);
-
-    const objeto = this.add.container(x, y, [fondo, rango, palo]);
+    const objeto = dibujarCarta(this, x, y, carta, ANCHO_CARTA, ALTO_CARTA);
     objeto.setSize(ANCHO_CARTA, ALTO_CARTA).setInteractive({ useHandCursor: true });
     objeto.on('pointerdown', () => this.alternar(carta.id));
     return objeto;

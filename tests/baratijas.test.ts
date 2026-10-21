@@ -441,7 +441,7 @@ describe('sets de baratijas', () => {
   });
 
   it('todo set tiene baratijas del catálogo', () => {
-    for (const conjunto of CONJUNTOS) expect(miembrosDe(conjunto).length).toBeGreaterThan(1);
+    for (const conjunto of CONJUNTOS) expect(miembrosDe(conjunto).length).toBeGreaterThan(0);
     for (const b of CATALOGO) if (b.conjunto) expect(CONJUNTOS.some((c) => c.id === b.conjunto)).toBe(true);
   });
 });

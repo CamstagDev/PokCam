@@ -29,6 +29,7 @@
 //   pasarRecompensa   si es true, se puede pasar la recompensa de un élite
 //   cripto            si es true, el oro se vuelve cripto (ver partida.ts)
 //   venderBaratijas   si es true, se le pueden vender baratijas al vendedor
+//   pintorPersonalizado  si es true, el pintor ofrece "Personalizado"
 //
 // Una baratija puede pertenecer a un set (`conjunto`, el id de uno de
 // CONJUNTOS). Cada set da bonos según cuántas de sus baratijas se tengan;
@@ -118,6 +119,7 @@ export interface Efectos {
   pasarRecompensa?: boolean; // deja pasar la recompensa de un élite
   cripto?: boolean; // el oro sube o baja según predicciones (ver partida.ts)
   venderBaratijas?: boolean; // deja vender baratijas al vendedor
+  pintorPersonalizado?: boolean; // el pintor ofrece el servicio Personalizado
 }
 
 export interface Baratija extends Efectos {
@@ -213,6 +215,15 @@ export const CATALOGO: readonly Baratija[] = [
     rareza: 'comun',
     icono: '🙅',
     pasarRecompensa: true,
+  },
+  {
+    id: 'claire-obscure',
+    nombre: 'Claire obscure',
+    descripcion: 'El pintor también ofrece "Personalizado": eliges el modificador y la carta, de todo tu mazo.',
+    rareza: 'rara',
+    icono: '🎨',
+    conjunto: 'artista',
+    pintorPersonalizado: true,
   },
   {
     id: 'broker',
@@ -335,6 +346,8 @@ export interface Conjunto {
 }
 
 export const CONJUNTOS: readonly Conjunto[] = [
+  // Por ahora una sola baratija y sin bonos.
+  { id: 'artista', nombre: 'Set del artista', bonos: [] },
   {
     id: 'apostador-empedernido',
     nombre: 'Set del apostador empedernido',

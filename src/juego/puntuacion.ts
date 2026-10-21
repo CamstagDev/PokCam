@@ -1,9 +1,10 @@
 // Puntos de una mano jugada: (fichas de la mano + fichas de las cartas que
 // puntúan) × multiplicador, después de que cada baratija cambie las fichas
-// o el multiplicador. La mano vale según su nivel.
+// o el multiplicador. La mano vale según su nivel, y cada carta que puntúa
+// suma lo de sus modificaciones.
 
 import { MESA_VACIA, fichasConBaratijas, type Efectos, type ManoPuntuada, type Mesa } from './baratijas.ts';
-import { fichasDeCarta, type Carta } from './cartas.ts';
+import { fichasDeCarta, multiDeCarta, type Carta } from './cartas.ts';
 import { datosDeMano, evaluarMano, type ManoEvaluada, type Niveles } from './manos.ts';
 
 export interface Puntuacion extends ManoEvaluada {
@@ -24,7 +25,7 @@ export function puntuar(
     ...mano,
     cartasJugadas: cartas,
     fichas: base.fichas + mano.cartasQuePuntuan.reduce((suma, carta) => suma + fichasConBaratijas(fichasDeCarta(carta), carta, baratijas, mesa), 0),
-    multi: base.multi,
+    multi: base.multi + mano.cartasQuePuntuan.reduce((suma, carta) => suma + multiDeCarta(carta), 0),
   };
   const { fichas, multi } = baratijas.reduce<ManoPuntuada>((actual, b) => (b.alPuntuar ? b.alPuntuar(actual, mesa) : actual), sinBaratijas);
   return { ...mano, fichas, multi, total: fichas * multi };

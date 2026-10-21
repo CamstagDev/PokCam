@@ -6,6 +6,18 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Nodo nuevo, El pintor 🖌: hace un solo trabajo por visita.
+  - Pintura libre (100 de oro): muestra una carta del mazo al azar y, si
+    pagas, le pone un modificador al azar.
+  - Alquiler de servicio: el modificador ya está a la vista y eliges a cuál
+    de 6 cartas del mazo ponérselo, por 100 × las modificaciones que ya
+    tienen esas 6 (al menos 100).
+  - Modificadores: +1 multiplicador, +5 fichas o cambiar de palo. Cada vez
+    cuenta como una modificación, y las cartas muestran lo que suman.
+- Set del artista, con la baratija rara Claire obscure 🎨: el pintor
+  también ofrece Personalizado, donde eliges el modificador y la carta de
+  todo el mazo, por 100 × las modificaciones de todo el mazo (al menos 100).
+
 - Baratija infrecuente nueva, Bróker 📈: deja venderle tus baratijas al
   vendedor por la mitad de su precio. Sin ella, el botón "Vender baratijas"
   ya no aparece. El Tasador sigue apostando baratijas sin necesitarla.

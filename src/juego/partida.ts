@@ -15,7 +15,7 @@ import {
   type Transformacion,
   valorDeVenta,
 } from './baratijas.ts';
-import { PALOS, RANGOS, crearMazo, fichasDeCarta, type Carta } from './cartas.ts';
+import { MODIFICADORES, PALOS, RANGOS, crearMazo, fichasDeCarta, modificacionesDe, modificar, type Carta, type Modificador } from './cartas.ts';
 import { TIPOS_DE_MANO, nivelesIniciales, type Niveles, type TipoMano } from './manos.ts';
 import { buscarNodo, generarMapa, type Mapa, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 
@@ -85,16 +85,31 @@ export interface Cripto {
 //                 vez por visita; `usados` dice cuáles ya se usaron)
 //   'manoNegra'   subir un nivel una de las `manos` (una vez por visita)
 //   'tienda'      comprar las `cartas` que se quieran para el mazo
+//   'pintor'      un solo servicio por visita: pintar la `cartaLibre`, poner
+//                 el `modificador` en una de las `opciones` o (con Claire
+//                 obscure) el personalizado
 export interface Oferta {
-  tipo: 'elite' | 'vendedor' | 'eliminador' | 'manoNegra' | 'tienda';
+  tipo: 'elite' | 'vendedor' | 'eliminador' | 'manoNegra' | 'tienda' | 'pintor';
   baratijas: string[]; // ids
   tiradas?: number; // las veces que se volvió a tirar el vendedor
   usados?: Servicio[];
   manos?: TipoMano[];
   cartas?: Carta[];
+  cartaLibre?: string; // id de una carta del mazo
+  modificador?: Modificador;
+  opciones?: string[]; // ids de cartas del mazo
 }
 
-export type Servicio = 'ruleta' | 'eliminar' | 'mejorar';
+export type Servicio = 'ruleta' | 'eliminar' | 'mejorar' | 'pintura' | 'alquiler' | 'personalizado';
+
+const OFERTA_DEL_SERVICIO: Record<Servicio, Oferta['tipo']> = {
+  ruleta: 'eliminador',
+  eliminar: 'eliminador',
+  mejorar: 'manoNegra',
+  pintura: 'pintor',
+  alquiler: 'pintor',
+  personalizado: 'pintor',
+};
 
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
@@ -120,6 +135,7 @@ export function avanzar(partida: Partida, id: string): Partida {
   if (tipo === 'vendedor') return { ...siguiente, oferta: sortearOferta(siguiente, 'vendedor') };
   if (tipo === 'eliminador') return { ...siguiente, oferta: { tipo: 'eliminador', baratijas: [], usados: [] } };
   if (tipo === 'tienda') return { ...siguiente, oferta: { tipo: 'tienda', baratijas: [], cartas: sortearCartas(siguiente) } };
+  if (tipo === 'pintor') return { ...siguiente, oferta: sortearPintor(siguiente) };
   if (tipo === 'manoNegra') return { ...siguiente, oferta: { tipo: 'manoNegra', baratijas: [], usados: [], manos: sortearManos(siguiente) } };
   return siguiente;
 }
@@ -305,8 +321,8 @@ export const BARATIJAS_EN_RULETA = 6;
 
 function puedeUsar(partida: Partida, servicio: Servicio, costo: number): boolean {
   const oferta = partida.oferta;
-  const tipo = servicio === 'mejorar' ? 'manoNegra' : 'eliminador';
-  if (oferta?.tipo !== tipo || oferta.usados?.includes(servicio)) return false;
+  if (oferta?.tipo !== OFERTA_DEL_SERVICIO[servicio] || oferta.usados?.includes(servicio)) return false;
+  if (oferta.tipo === 'pintor' && (oferta.usados?.length ?? 0) > 0) return false; // un solo trabajo por visita
   return !enBancarrota({ ...partida, oro: partida.oro - costo });
 }
 
@@ -525,6 +541,89 @@ export function mejorarMano(partida: Partida, tipo: TipoMano): Partida {
   if (!puedeMejorarMano(partida, tipo)) throw new Error(`No se puede mejorar ${tipo}`);
   const pagada = usar(partida, 'mejorar', costoDeMejorar(partida));
   return { ...pagada, niveles: { ...partida.niveles, [tipo]: partida.niveles[tipo] + 1 } };
+}
+
+// El pintor hace un solo trabajo por visita:
+//   Pintura libre  por COSTO_PINTURA_LIBRE, un modificador al azar en la
+//                  `cartaLibre` (sorteada al llegar; se ve antes de pagar).
+//   Alquiler       el `modificador` (sorteado al llegar) en la carta que se
+//                  elija de las `opciones`, por ORO_POR_MODIFICACION × las
+//                  modificaciones que ya tienen esas cartas (al menos ×1).
+//   Personalizado  solo con Claire obscure: el modificador y la carta que
+//                  se elijan, de todo el mazo, por ORO_POR_MODIFICACION ×
+//                  las modificaciones de todo el mazo (al menos ×1).
+export const COSTO_PINTURA_LIBRE = 100;
+export const ORO_POR_MODIFICACION = 100;
+export const CARTAS_EN_ALQUILER = 6;
+
+function sortearPintor(partida: Partida): Oferta {
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 41 + partida.visitados.length * 17);
+  return {
+    tipo: 'pintor',
+    baratijas: [],
+    usados: [],
+    cartaLibre: barajar(partida.mazo, aleatorio)[0]?.id,
+    modificador: MODIFICADORES[Math.floor(aleatorio() * MODIFICADORES.length)]!,
+    opciones: barajar(partida.mazo, aleatorio).slice(0, CARTAS_EN_ALQUILER).map((c) => c.id),
+  };
+}
+
+// Le pone el modificador a una carta del mazo (el palo nuevo, al azar).
+function pintar(partida: Partida, id: string, modificador: Modificador): Partida {
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 43 + partida.visitados.length * 29 + partida.oro);
+  return { ...partida, mazo: partida.mazo.map((c) => (c.id === id ? modificar(c, modificador, aleatorio) : c)) };
+}
+
+function costoPorModificaciones(cartas: readonly Carta[]): number {
+  return ORO_POR_MODIFICACION * Math.max(1, cartas.reduce((suma, c) => suma + modificacionesDe(c), 0));
+}
+
+export function puedePintarLibre(partida: Partida): boolean {
+  const id = partida.oferta?.cartaLibre;
+  return !!id && partida.mazo.some((c) => c.id === id) && puedeUsar(partida, 'pintura', COSTO_PINTURA_LIBRE);
+}
+
+export function pintarLibre(partida: Partida): { partida: Partida; modificador: Modificador } {
+  if (!puedePintarLibre(partida)) throw new Error('No se puede usar la pintura libre');
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 47 + partida.visitados.length * 31 + partida.oro);
+  const modificador = MODIFICADORES[Math.floor(aleatorio() * MODIFICADORES.length)]!;
+  return { partida: pintar(usar(partida, 'pintura', COSTO_PINTURA_LIBRE), partida.oferta!.cartaLibre!, modificador), modificador };
+}
+
+export function cartasEnAlquiler(partida: Partida): Carta[] {
+  const ids = partida.oferta?.opciones ?? [];
+  return partida.mazo.filter((c) => ids.includes(c.id));
+}
+
+export function costoDeAlquiler(partida: Partida): number {
+  return costoPorModificaciones(cartasEnAlquiler(partida));
+}
+
+export function puedeAlquilar(partida: Partida, id: string): boolean {
+  return !!partida.oferta?.modificador && cartasEnAlquiler(partida).some((c) => c.id === id) && puedeUsar(partida, 'alquiler', costoDeAlquiler(partida));
+}
+
+export function alquilar(partida: Partida, id: string): Partida {
+  if (!puedeAlquilar(partida, id)) throw new Error(`No se puede alquilar el servicio para ${id}`);
+  return pintar(usar(partida, 'alquiler', costoDeAlquiler(partida)), id, partida.oferta!.modificador!);
+}
+
+// Si el pintor ofrece el servicio Personalizado (con Claire obscure).
+export function ofrecePersonalizado(partida: Partida): boolean {
+  return partida.oferta?.tipo === 'pintor' && efectosDe(partida.baratijas).some((e) => e.pintorPersonalizado);
+}
+
+export function costoDePersonalizado(partida: Partida): number {
+  return costoPorModificaciones(partida.mazo);
+}
+
+export function puedePersonalizar(partida: Partida, id: string): boolean {
+  return ofrecePersonalizado(partida) && partida.mazo.some((c) => c.id === id) && puedeUsar(partida, 'personalizado', costoDePersonalizado(partida));
+}
+
+export function personalizar(partida: Partida, id: string, modificador: Modificador): Partida {
+  if (!puedePersonalizar(partida, id)) throw new Error(`No se puede personalizar ${id}`);
+  return pintar(usar(partida, 'personalizado', costoDePersonalizado(partida)), id, modificador);
 }
 
 // El nivel de riesgo es el piso en el que está el jugador (el inicio es el

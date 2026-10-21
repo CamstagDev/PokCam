@@ -7,8 +7,9 @@ import { barajar, crearAleatorio, enteroEntre, type Aleatorio } from '../juego/a
 
 // 'vendedor' es el vendedor de baratijas; 'tienda' la de cartas;
 // 'eliminador' quita baratijas (ruleta rusa) o cartas del mazo; 'manoNegra'
-// sube el nivel de una mano de póker.
-export type TipoNodo = 'inicio' | 'combate' | 'elite' | 'tienda' | 'vendedor' | 'eliminador' | 'manoNegra' | 'evento' | 'descanso' | 'jefe';
+// sube el nivel de una mano de póker; 'pintor' le pone modificadores a las
+// cartas.
+export type TipoNodo = 'inicio' | 'combate' | 'elite' | 'tienda' | 'vendedor' | 'eliminador' | 'manoNegra' | 'pintor' | 'evento' | 'descanso' | 'jefe';
 
 // Cómo se ve y qué hace cada tipo de nodo (en el mapa y en la colección).
 export const DATOS_NODO: Record<TipoNodo, { nombre: string; icono: string; descripcion: string }> = {
@@ -18,6 +19,7 @@ export const DATOS_NODO: Record<TipoNodo, { nombre: string; icono: string; descr
   vendedor: { nombre: 'Vendedor de baratijas', icono: '✦', descripcion: 'Compra, vende y vuelve a tirar baratijas.' },
   eliminador: { nombre: 'El eliminador', icono: '✂', descripcion: 'Ruleta rusa de baratijas o eliminar una carta del mazo.' },
   manoNegra: { nombre: 'La mano negra', icono: '✋', descripcion: 'Sube un nivel a una de 3 manos de póker.' },
+  pintor: { nombre: 'El pintor', icono: '🖌', descripcion: 'Le pone un modificador a una carta del mazo: +1 multiplicador, +5 fichas o cambiar de palo.' },
   tienda: { nombre: 'Tienda', icono: '$', descripcion: 'Compra cartas para tu mazo, a 5 × el nivel de riesgo cada una.' },
   evento: { nombre: 'Evento', icono: '?', descripcion: 'Algo inesperado. Próximamente: por ahora solo se pasa.' },
   descanso: { nombre: 'Descanso', icono: '☕', descripcion: 'Un respiro antes de seguir. Siempre hay uno antes del jefe.' },
@@ -94,7 +96,7 @@ function agregarCamino(desde: Nodo, hasta: Nodo): void {
 // Fuera de los pisos fijos, un nodo es combate con PROBABILIDAD_COMBATE y
 // si no, uno de OTROS_NODOS, todos con la misma probabilidad.
 export const PROBABILIDAD_COMBATE = 0.4;
-export const OTROS_NODOS: readonly TipoNodo[] = ['elite', 'vendedor', 'tienda', 'eliminador', 'manoNegra', 'evento', 'descanso'];
+export const OTROS_NODOS: readonly TipoNodo[] = ['elite', 'vendedor', 'tienda', 'eliminador', 'manoNegra', 'pintor', 'evento', 'descanso'];
 
 function elegirTipo(piso: number, ultimo: number, aleatorio: Aleatorio): TipoNodo {
   if (piso === 0) return 'inicio';

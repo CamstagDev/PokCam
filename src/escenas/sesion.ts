@@ -55,6 +55,7 @@ export function irAPartida(escena: Phaser.Scene, partida: Partida): void {
   else if (partida.oferta?.tipo === 'eliminador' && !partida.eleccion) escena.scene.start('eliminador');
   else if (partida.oferta?.tipo === 'manoNegra' && !partida.eleccion) escena.scene.start('manoNegra');
   else if (partida.oferta?.tipo === 'tienda' && !partida.eleccion) escena.scene.start('tienda');
+  else if (partida.oferta?.tipo === 'pintor' && !partida.eleccion) escena.scene.start('pintor');
   else if (partida.eleccion || partida.oferta) escena.scene.start('baratijas');
   else escena.scene.start('mapa');
 }
