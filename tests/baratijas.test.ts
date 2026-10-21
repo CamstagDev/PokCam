@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { crearAleatorio } from '../src/juego/aleatorio.ts';
-import { CATALOGO, aplicar, baratijasDe, buscarBaratija, sortearBaratijas, type Baratija } from '../src/juego/baratijas.ts';
+import {
+  CATALOGO,
+  PROBABILIDADES_INICIALES,
+  aplicar,
+  baratijasDe,
+  buscarBaratija,
+  precioDe,
+  sortearBaratijas,
+  sortearRareza,
+  type Baratija,
+} from '../src/juego/baratijas.ts';
 import type { Carta } from '../src/juego/cartas.ts';
 import {
   avanzar,
@@ -30,10 +40,10 @@ function partidaEn(tipo: 'elite' | 'vendedor', oro = 300): Partida {
 }
 
 // Baratijas de prueba, una por efecto, para no depender del catálogo.
-const deMulti: Baratija = { id: 'm', nombre: 'm', descripcion: '', precio: 1, icono: '', alPuntuar: (m) => ({ ...m, multi: m.multi + 4 }) };
-const deFichas: Baratija = { id: 'f', nombre: 'f', descripcion: '', precio: 1, icono: '', alPuntuar: (m) => ({ ...m, fichas: m.fichas + 30 }) };
-const deManos: Baratija = { id: 'h', nombre: 'h', descripcion: '', precio: 1, icono: '', alEmpezarCombate: (i) => ({ ...i, manos: i.manos + 1 }) };
-const deOro: Baratija = { id: 'o', nombre: 'o', descripcion: '', precio: 1, icono: '', alGanarCombate: (oro) => oro + 50 };
+const deMulti: Baratija = { id: 'm', nombre: 'm', descripcion: '', rareza: 'comun', icono: '', alPuntuar: (m) => ({ ...m, multi: m.multi + 4 }) };
+const deFichas: Baratija = { id: 'f', nombre: 'f', descripcion: '', rareza: 'comun', icono: '', alPuntuar: (m) => ({ ...m, fichas: m.fichas + 30 }) };
+const deManos: Baratija = { id: 'h', nombre: 'h', descripcion: '', rareza: 'comun', icono: '', alEmpezarCombate: (i) => ({ ...i, manos: i.manos + 1 }) };
+const deOro: Baratija = { id: 'o', nombre: 'o', descripcion: '', rareza: 'comun', icono: '', alGanarCombate: (oro) => oro + 50 };
 
 describe('baratijas', () => {
   it('el catálogo no repite ids', () => {
@@ -66,6 +76,51 @@ describe('baratijas', () => {
   });
 });
 
+describe('rarezas', () => {
+  it('cada lugar sortea su rareza con las probabilidades dadas', () => {
+    const cuenta = { comun: 0, infrecuente: 0, rara: 0, legendaria: 0 };
+    const aleatorio = crearAleatorio(5);
+    for (let i = 0; i < 20_000; i++) cuenta[sortearRareza(aleatorio, PROBABILIDADES_INICIALES)]++;
+    expect(cuenta.legendaria / 20_000).toBeCloseTo(0.05, 1);
+    expect(cuenta.rara / 20_000).toBeCloseTo(0.1, 1);
+    expect(cuenta.infrecuente / 20_000).toBeCloseTo(0.25, 1);
+    expect(cuenta.comun / 20_000).toBeCloseTo(0.6, 1);
+  });
+
+  it('si no queda ninguna de la rareza sorteada, se busca en otra', () => {
+    const soloRaras = { infrecuente: 0, rara: 1, legendaria: 0 };
+    const rara = CATALOGO.find((b) => b.rareza === 'rara')!.id;
+    expect(sortearBaratijas(crearAleatorio(1), [], soloRaras, 1)).toEqual([rara]);
+    expect(sortearBaratijas(crearAleatorio(1), [rara], soloRaras, 1)).toHaveLength(1);
+  });
+
+  it('el precio sale de la rareza', () => {
+    expect(precioDe({ ...deMulti, rareza: 'comun' })).toBe(200);
+    expect(precioDe({ ...deMulti, rareza: 'infrecuente' })).toBe(300);
+    expect(precioDe({ ...deMulti, rareza: 'rara' })).toBe(500);
+    expect(precioDe({ ...deMulti, rareza: 'legendaria' })).toBe(1000);
+  });
+
+  it('una baratija puede cambiar las probabilidades', () => {
+    const suerte: Baratija = { ...deMulti, alSortearRareza: (p) => ({ ...p, legendaria: p.legendaria * 2 }) };
+    expect(aplicar([suerte], 'alSortearRareza', PROBABILIDADES_INICIALES).legendaria).toBe(0.1);
+  });
+});
+
+describe('Diversidad', () => {
+  const diversidad = [buscarBaratija('diversidad')];
+
+  it('multiplica el multiplicador por 4 con los 4 palos en la mano', () => {
+    const cartas = [carta('picas-2'), carta('corazones-5'), carta('treboles-9'), carta('diamantes-11')];
+    expect(puntuar(cartas, diversidad).multi).toBe(puntuar(cartas).multi * 4);
+  });
+
+  it('sin los 4 palos no cambia nada', () => {
+    const cartas = [carta('picas-2'), carta('corazones-5'), carta('treboles-9'), carta('treboles-11')];
+    expect(puntuar(cartas, diversidad).multi).toBe(puntuar(cartas).multi);
+  });
+});
+
 describe('Materialista', () => {
   const materialista = [buscarBaratija('materialista')];
 
@@ -91,6 +146,16 @@ describe('recompensa del élite', () => {
     const despues = elegirBaratija(partida, elegida);
     expect(despues.baratijas).toEqual([elegida]);
     expect(despues.oferta).toBeNull();
+  });
+
+  it('pasar da 300 de oro', () => {
+    const partida = resolverCombate(partidaEn('elite'), true);
+    expect(cerrarOferta(partida).oro).toBe(partida.oro + 300);
+  });
+
+  it('irse del vendedor no da oro', () => {
+    const partida = partidaEn('vendedor');
+    expect(cerrarOferta(partida).oro).toBe(partida.oro);
   });
 
   it('perderlo no ofrece nada', () => {
@@ -121,7 +186,7 @@ describe('vendedor de baratijas', () => {
   it('comprar resta el precio y la saca de la venta', () => {
     const partida = partidaEn('vendedor', 1000);
     const id = partida.oferta!.baratijas[0]!;
-    const precio = CATALOGO.find((b) => b.id === id)!.precio;
+    const precio = precioDe(buscarBaratija(id));
     const despues = comprarBaratija(partida, id);
     expect(despues.oro).toBe(1000 - precio);
     expect(despues.baratijas).toEqual([id]);
@@ -130,7 +195,7 @@ describe('vendedor de baratijas', () => {
 
   it('no deja comprar si el oro no alcanza o quedaría en 0', () => {
     const id = partidaEn('vendedor').oferta!.baratijas[0]!;
-    const precio = CATALOGO.find((b) => b.id === id)!.precio;
+    const precio = precioDe(buscarBaratija(id));
     expect(puedeComprar(partidaEn('vendedor', precio), id)).toBe(false);
     expect(puedeComprar(partidaEn('vendedor', precio + 1), id)).toBe(true);
     expect(() => comprarBaratija(partidaEn('vendedor', precio), id)).toThrow();

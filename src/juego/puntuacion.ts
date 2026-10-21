@@ -17,6 +17,7 @@ export function puntuar(cartas: readonly Carta[], baratijas: readonly Baratija[]
   const base = MANOS[mano.tipo];
   const sinBaratijas = {
     ...mano,
+    cartasJugadas: cartas,
     fichas: base.fichas + mano.cartasQuePuntuan.reduce((suma, carta) => suma + fichasConBaratijas(fichasDeCarta(carta), carta, baratijas), 0),
     multi: base.multi,
   };

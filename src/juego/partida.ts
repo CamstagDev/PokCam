@@ -2,7 +2,7 @@
 // mazo y sus baratijas.
 
 import { crearAleatorio } from './aleatorio.ts';
-import { aplicar, baratijasDe, buscarBaratija, sortearBaratijas } from './baratijas.ts';
+import { PROBABILIDADES_INICIALES, aplicar, baratijasDe, buscarBaratija, precioDe, sortearBaratijas, type Probabilidades } from './baratijas.ts';
 import { crearMazo, type Carta } from './cartas.ts';
 import { buscarNodo, generarMapa, type Mapa, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 
@@ -33,6 +33,9 @@ export interface Partida {
   // de un élite (elige 1) o lo que ofrece el vendedor. Se guarda para que
   // al continuar la partida se vuelva a la misma oferta.
   oferta: Oferta | null;
+  // Las de cada rareza al ofrecer baratijas, sin contar lo que cambien las
+  // baratijas (ver probabilidadesDeRareza).
+  probabilidades: Probabilidades;
 }
 
 export interface Oferta {
@@ -43,7 +46,7 @@ export interface Oferta {
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -85,8 +88,16 @@ export function resolverCombate(partida: Partida, gano: boolean): Partida {
 // partida no cambia lo que se ofrece.
 function sortearOferta(partida: Partida, tipo: Oferta['tipo']): Oferta {
   const aleatorio = crearAleatorio(partida.mapa.semilla * 31 + partida.visitados.length * 7 + (tipo === 'elite' ? 1 : 2));
-  return { tipo, baratijas: sortearBaratijas(aleatorio, partida.baratijas) };
+  return { tipo, baratijas: sortearBaratijas(aleatorio, partida.baratijas, probabilidadesDeRareza(partida)) };
 }
+
+// Las de la partida con lo que cambien sus baratijas.
+export function probabilidadesDeRareza(partida: Partida): Probabilidades {
+  return aplicar(baratijasDe(partida.baratijas), 'alSortearRareza', partida.probabilidades);
+}
+
+// Lo que se gana por pasar la recompensa de un élite en vez de elegir.
+export const ORO_POR_PASAR = 300;
 
 // Elegir la recompensa del élite: se queda con esa y la oferta se cierra.
 export function elegirBaratija(partida: Partida, id: string): Partida {
@@ -99,7 +110,7 @@ export function elegirBaratija(partida: Partida, id: string): Partida {
 // Se puede comprar si está a la venta y alcanza el oro sin quedar en 0
 // (con 0 de oro la partida se terminaría).
 export function puedeComprar(partida: Partida, id: string): boolean {
-  return partida.oferta?.tipo === 'vendedor' && partida.oferta.baratijas.includes(id) && partida.oro > buscarBaratija(id).precio;
+  return partida.oferta?.tipo === 'vendedor' && partida.oferta.baratijas.includes(id) && partida.oro > precioDe(buscarBaratija(id));
 }
 
 export function comprarBaratija(partida: Partida, id: string): Partida {
@@ -107,15 +118,17 @@ export function comprarBaratija(partida: Partida, id: string): Partida {
   const oferta = partida.oferta!;
   return {
     ...partida,
-    oro: partida.oro - buscarBaratija(id).precio,
+    oro: partida.oro - precioDe(buscarBaratija(id)),
     baratijas: [...partida.baratijas, id],
     oferta: { ...oferta, baratijas: oferta.baratijas.filter((b) => b !== id) },
   };
 }
 
-// Saltear la recompensa del élite o irse del vendedor.
+// Pasar: irse del vendedor, o dejar la recompensa del élite a cambio de
+// ORO_POR_PASAR.
 export function cerrarOferta(partida: Partida): Partida {
-  return { ...partida, oferta: null };
+  const oro = partida.oferta?.tipo === 'elite' ? ORO_POR_PASAR : 0;
+  return { ...partida, oro: partida.oro + oro, oferta: null };
 }
 
 export function enBancarrota(partida: Partida): boolean {

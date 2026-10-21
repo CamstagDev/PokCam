@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RANURAS, borrar, cargar, guardar, resumirTodas, type Almacen } from '../src/juego/guardado.ts';
+import { RANURAS, agregarAColeccion, borrar, cargar, guardar, leerColeccion, resumirTodas, type Almacen } from '../src/juego/guardado.ts';
 import { avanzar, crearPartida, nodosDisponibles } from '../src/juego/partida.ts';
 
 function almacenDePrueba(): Almacen & { datos: Map<string, string> } {
@@ -22,7 +22,7 @@ describe('guardado', () => {
     let partida = crearPartida(7);
     partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
     guardar(almacen, 1, partida, 1234);
-    expect(cargar(almacen, 1)).toEqual({ version: 4, guardadoEn: 1234, partida });
+    expect(cargar(almacen, 1)).toEqual({ version: 5, guardadoEn: 1234, partida });
     expect(cargar(almacen, 0)).toBeNull();
   });
 
@@ -88,6 +88,16 @@ describe('guardado', () => {
     const cargada = cargar(almacen, 0)?.partida;
     expect(cargada?.mazo).toEqual(mazo);
     expect(cargada?.oro).toBe(150);
+  });
+
+  it('la colección suma baratijas sin repetir y no se borra con las ranuras', () => {
+    const almacen = almacenDePrueba();
+    expect(leerColeccion(almacen)).toEqual([]);
+    agregarAColeccion(almacen, ['materialista']);
+    agregarAColeccion(almacen, ['materialista', 'diversidad']);
+    guardar(almacen, 0, crearPartida(1));
+    borrar(almacen, 0);
+    expect(leerColeccion(almacen)).toEqual(['materialista', 'diversidad']);
   });
 
   it('no existe una cuarta ranura', () => {

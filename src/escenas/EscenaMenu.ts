@@ -1,5 +1,5 @@
 // La pantalla de inicio: el título y las opciones de empezar una partida
-// nueva o seguir una guardada.
+// nueva, seguir una guardada o ver la colección de baratijas.
 
 import Phaser from 'phaser';
 import { resumirTodas } from '../juego/guardado.ts';
@@ -26,5 +26,6 @@ export class EscenaMenu extends Phaser.Scene {
       this.scene.start('ranuras', { modo: 'continuar' }),
     );
     continuar.activar(resumirTodas(almacen).some((r) => r !== null));
+    crearBoton(this, width / 2, height / 2 + 220, 'Colecciones', COLORES.rara, () => this.scene.start('colecciones'));
   }
 }

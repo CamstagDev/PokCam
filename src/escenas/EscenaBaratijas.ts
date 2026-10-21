@@ -1,13 +1,13 @@
 // Las dos pantallas de ofertas de baratijas, según partida.oferta:
-//   'elite'     la recompensa de vencer a un élite: se elige 1 de 3 (o se
-//               saltea).
+//   'elite'     la recompensa de vencer a un élite: se elige 1 de 3, o se
+//               pasa a cambio de oro.
 //   'vendedor'  el vendedor de baratijas: se compran con oro las que
-//               alcancen, y "Seguir" vuelve al mapa.
+//               alcancen, y "Pasar" vuelve al mapa.
 // La partida se guarda después de cada elección o compra.
 
 import Phaser from 'phaser';
-import { buscarBaratija } from '../juego/baratijas.ts';
-import { cerrarOferta, comprarBaratija, elegirBaratija, nivelDeRiesgo, puedeComprar, type Partida } from '../juego/partida.ts';
+import { buscarBaratija, precioDe } from '../juego/baratijas.ts';
+import { ORO_POR_PASAR, cerrarOferta, comprarBaratija, elegirBaratija, nivelDeRiesgo, puedeComprar, type Partida } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { fichaDeBaratija, mostrarBotonesInventario } from './inventario.ts';
@@ -52,7 +52,7 @@ export class EscenaBaratijas extends Phaser.Scene {
       if (esElite) {
         crearBoton(this, x, y + ALTO / 2 + 50, 'Elegir', COLORES.acento, () => this.guardarYSeguir(elegirBaratija(partida, id)));
       } else {
-        const boton = crearBoton(this, x, y + ALTO / 2 + 50, `Comprar · ${baratija.precio}`, COLORES.oro, () => {
+        const boton = crearBoton(this, x, y + ALTO / 2 + 50, `Comprar · ${precioDe(baratija)}`, COLORES.oro, () => {
           jugarPartida(this, comprarBaratija(partida, id));
           this.scene.restart();
         }, 220);
@@ -60,9 +60,8 @@ export class EscenaBaratijas extends Phaser.Scene {
       }
     });
 
-    crearBoton(this, width - 140, height - 60, esElite ? 'Saltear' : 'Seguir', COLORES.borde, () =>
-      this.guardarYSeguir(cerrarOferta(partida)),
-    );
+    const pasar = esElite ? `Pasar · +${ORO_POR_PASAR} oro` : 'Pasar';
+    crearBoton(this, width - 150, height - 60, pasar, COLORES.borde, () => this.guardarYSeguir(cerrarOferta(partida)), 240);
   }
 
   private guardarYSeguir(partida: Partida): void {

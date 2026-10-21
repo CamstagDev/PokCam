@@ -49,9 +49,15 @@ la versión nueva (ver scripts/nueva-version.mjs).
 - Baratijas: objetos que cambian las reglas de la partida. Al vencer a
   un élite se elige 1 de 3 (o se saltea), y el nuevo nodo del vendedor
   de baratijas (✦) las vende por oro, sin dejar que el oro llegue a 0.
-  Por ahora hay una, Materialista: las cartas de ♥ dan la mitad de
-  fichas y las de ♦, 1,5 veces más. Se agregan más en
+  Cada una tiene rareza (común, infrecuente, rara, legendaria), que fija
+  su precio (200, 300, 500, 1000); cada lugar de una oferta sortea su
+  rareza (60 %, 25 %, 10 %, 5 %), y eso se ve en "Baratijas". Pasar la
+  recompensa del élite da 300 de oro. Por ahora hay dos: Materialista
+  (común: ♥ dan la mitad de fichas, ♦ 1,5 veces más) y Diversidad (rara:
+  ×4 al multiplicador si la mano tiene los 4 palos). Se agregan más en
   src/juego/baratijas.ts.
+- Colecciones, desde el menú principal: todas las baratijas del juego,
+  en sombra hasta conseguirlas por primera vez en cualquier partida.
 - Botones "Baratijas", "Mazo" y "Manos" abajo a la izquierda en el
   mapa, la mesa y las pantallas de baratijas, para ver las que se
   tienen, el mazo y las fichas y el multiplicador de cada mano.

@@ -3,7 +3,8 @@
 // o comprándolas con oro en el nodo del vendedor de baratijas.
 //
 // Para agregar una baratija nueva basta con sumarla a CATALOGO: un id
-// único, nombre, descripción, precio y los efectos que use. Cada efecto es
+// único, nombre, descripción, rareza (que fija el precio) y los efectos
+// que use. Cada efecto es
 // opcional y recibe el valor de antes para devolver el de después:
 //
 //   alEmpezarCombate  manos y descartes con los que empieza cada combate
@@ -11,6 +12,7 @@
 //                     también la carta)
 //   alPuntuar         fichas y multiplicador de cada mano jugada
 //   alGanarCombate    el oro que da un combate ganado
+//   alSortearRareza   la probabilidad de cada rareza al ofrecer baratijas
 //
 // Si hace falta que una baratija toque algo más, se agrega aquí un efecto
 // nuevo y se llama desde la regla correspondiente.
@@ -24,8 +26,29 @@ export interface InicioDeCombate {
   descartes: number;
 }
 
+export type Rareza = 'comun' | 'infrecuente' | 'rara' | 'legendaria';
+export const RAREZAS: readonly Rareza[] = ['comun', 'infrecuente', 'rara', 'legendaria'];
+
+export const DATOS_RAREZA: Record<Rareza, { nombre: string; precio: number }> = {
+  comun: { nombre: 'Común', precio: 200 },
+  infrecuente: { nombre: 'Infrecuente', precio: 300 },
+  rara: { nombre: 'Rara', precio: 500 },
+  legendaria: { nombre: 'Legendaria', precio: 1000 },
+};
+
+// Probabilidad de cada rareza en cada lugar de una oferta (cada lugar
+// sortea la suya). Común es lo que queda hasta 1. La partida guarda las
+// suyas para que eventos o baratijas puedan cambiarlas.
+export type Probabilidades = Record<Exclude<Rareza, 'comun'>, number>;
+export const PROBABILIDADES_INICIALES: Probabilidades = { infrecuente: 0.25, rara: 0.1, legendaria: 0.05 };
+
+export function probabilidadComun(probabilidades: Probabilidades): number {
+  return Math.max(0, 1 - probabilidades.infrecuente - probabilidades.rara - probabilidades.legendaria);
+}
+
 export interface ManoPuntuada {
   tipo: TipoMano;
+  cartasJugadas: readonly Carta[];
   cartasQuePuntuan: readonly Carta[];
   fichas: number;
   multi: number;
@@ -35,12 +58,13 @@ export interface Baratija {
   id: string;
   nombre: string;
   descripcion: string;
-  precio: number; // en oro, en el vendedor
+  rareza: Rareza;
   icono: string; // un símbolo o emoji para dibujarla
   alEmpezarCombate?(inicio: InicioDeCombate): InicioDeCombate;
   alContarCarta?(fichas: number, carta: Carta): number;
   alPuntuar?(mano: ManoPuntuada): ManoPuntuada;
   alGanarCombate?(oro: number): number;
+  alSortearRareza?(probabilidades: Probabilidades): Probabilidades;
 }
 
 export const CATALOGO: readonly Baratija[] = [
@@ -48,10 +72,18 @@ export const CATALOGO: readonly Baratija[] = [
     id: 'materialista',
     nombre: 'Materialista',
     descripcion: 'Las cartas de ♥ valen la mitad de fichas y las de ♦, 1,5 veces más.',
-    precio: 150,
+    rareza: 'comun',
     icono: '💰',
     alContarCarta: (fichas, carta) =>
       carta.palo === 'corazones' ? Math.round(fichas / 2) : carta.palo === 'diamantes' ? Math.round(fichas * 1.5) : fichas,
+  },
+  {
+    id: 'diversidad',
+    nombre: 'Diversidad',
+    descripcion: 'Multiplica por 4 el multiplicador si la mano jugada tiene al menos una carta de cada palo.',
+    rareza: 'rara',
+    icono: '🎨',
+    alPuntuar: (mano) => (new Set(mano.cartasJugadas.map((c) => c.palo)).size === 4 ? { ...mano, multi: mano.multi * 4 } : mano),
   },
 ];
 
@@ -69,10 +101,40 @@ export function baratijasDe(ids: readonly string[]): Baratija[] {
   return ids.flatMap((id) => CATALOGO.filter((b) => b.id === id));
 }
 
-// Hasta `cuantas` baratijas al azar que el jugador todavía no tiene.
-export function sortearBaratijas(aleatorio: Aleatorio, tiene: readonly string[], cuantas = BARATIJAS_POR_OFERTA): string[] {
-  const libres = CATALOGO.filter((b) => !tiene.includes(b.id)).map((b) => b.id);
-  return barajar(libres, aleatorio).slice(0, cuantas);
+export function precioDe(baratija: Baratija): number {
+  return DATOS_RAREZA[baratija.rareza].precio;
+}
+
+export function sortearRareza(aleatorio: Aleatorio, probabilidades: Probabilidades): Rareza {
+  const tirada = aleatorio();
+  if (tirada < probabilidades.legendaria) return 'legendaria';
+  if (tirada < probabilidades.legendaria + probabilidades.rara) return 'rara';
+  if (tirada < probabilidades.legendaria + probabilidades.rara + probabilidades.infrecuente) return 'infrecuente';
+  return 'comun';
+}
+
+// Hasta `cuantas` baratijas que el jugador todavía no tiene, sin repetir.
+// Cada lugar sortea su rareza; si no queda ninguna libre de esa rareza,
+// se busca en las de abajo y después en las de arriba.
+export function sortearBaratijas(
+  aleatorio: Aleatorio,
+  tiene: readonly string[],
+  probabilidades: Probabilidades = PROBABILIDADES_INICIALES,
+  cuantas = BARATIJAS_POR_OFERTA,
+): string[] {
+  const elegidas: string[] = [];
+  for (let lugar = 0; lugar < cuantas; lugar++) {
+    const rareza = RAREZAS.indexOf(sortearRareza(aleatorio, probabilidades));
+    const orden = [...RAREZAS.slice(0, rareza + 1).reverse(), ...RAREZAS.slice(rareza + 1)];
+    for (const buscada of orden) {
+      const libres = CATALOGO.filter((b) => b.rareza === buscada && !tiene.includes(b.id) && !elegidas.includes(b.id));
+      if (libres.length > 0) {
+        elegidas.push(barajar(libres, aleatorio)[0]!.id);
+        break;
+      }
+    }
+  }
+  return elegidas;
 }
 
 // Las fichas que suma una carta que puntúa, con lo que cambien las baratijas.
@@ -81,7 +143,7 @@ export function fichasConBaratijas(fichas: number, carta: Carta, baratijas: read
 }
 
 // Aplica en orden el efecto `efecto` de cada baratija que lo tenga.
-export function aplicar<E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate'>(
+export function aplicar<E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate' | 'alSortearRareza'>(
   baratijas: readonly Baratija[],
   efecto: E,
   valor: Parameters<NonNullable<Baratija[E]>>[0],
