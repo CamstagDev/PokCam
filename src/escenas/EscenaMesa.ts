@@ -137,7 +137,7 @@ export class EscenaMesa extends Phaser.Scene {
     this.marcador.setText([
       `Objetivo: ${c.objetivo}`,
       `Puntos: ${c.puntos}`,
-      `Manos: ${c.manosRestantes}   Descartes: ${c.descartesRestantes}`,
+      `Manos: ${c.manosRestantes}   Descartes: ${c.descartesRestantes}   Mazo: ${c.pila.length}`,
       ...this.lineaDeApuesta(),
     ]);
     // Con cartas elegidas se anticipa qué mano se jugaría (solo el nombre);

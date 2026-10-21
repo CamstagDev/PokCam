@@ -20,6 +20,7 @@ export interface Combate {
   estado: 'jugando' | 'ganado' | 'perdido';
   ultimaJugada: Puntuacion | null;
   baratijas: readonly string[]; // ids de las del jugador, que cambian la puntuación
+  mazo: readonly Carta[]; // el de la partida entero, que algunas baratijas miran
 }
 
 export interface OpcionesCombate {
@@ -46,13 +47,14 @@ export function crearCombate(
     estado: 'jugando',
     ultimaJugada: null,
     baratijas,
+    mazo,
   });
 }
 
 export function jugar(combate: Combate, ids: readonly string[]): Combate {
   const cartas = elegidas(combate, ids, MAX_CARTAS_JUGADAS);
   if (combate.manosRestantes === 0) throw new Error('No quedan manos');
-  const jugada = puntuar(cartas, efectosDe(combate.baratijas));
+  const jugada = puntuar(cartas, efectosDe(combate.baratijas), { mazo: combate.mazo, restantes: combate.pila.length });
   const puntos = combate.puntos + jugada.total;
   const manosRestantes = combate.manosRestantes - 1;
   const estado = puntos >= combate.objetivo ? 'ganado' : manosRestantes === 0 ? 'perdido' : 'jugando';

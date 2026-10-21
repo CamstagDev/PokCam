@@ -7,6 +7,7 @@ import {
   baratijasDe,
   CONJUNTOS,
   bonosActivos,
+  efectosDe,
   buscarBaratija,
   miembrosDe,
   precioDe,
@@ -15,7 +16,8 @@ import {
   sortearRareza,
   type Baratija,
 } from '../src/juego/baratijas.ts';
-import type { Carta } from '../src/juego/cartas.ts';
+import { crearMazo, type Carta } from '../src/juego/cartas.ts';
+import { crearCombate, jugar } from '../src/juego/combate.ts';
 import {
   apostar,
   avanzar,
@@ -468,5 +470,50 @@ describe('Racha', () => {
     // Romper la racha no suma nada.
     expect(resolverCombate(enCombate(300, ['racha'], -5), true).oro).toBe(300 + 100 + 100);
     expect(resolverCombate(enCombate(300, [], 3), true).oro).toBe(300 + 100 + 100);
+  });
+});
+
+describe('set TOC TOC TOC', () => {
+  const mazoDe = (...palos: Carta['palo'][]): Carta[] => palos.map((palo, i) => carta(`${palo}-${(i % 13) + 2}`));
+  const fichasDe8 = (ids: string[], mazo: Carta[]) =>
+    puntuar([carta('picas-8')], efectosDe(ids), { mazo, restantes: 0 }).fichas - 5; // carta alta: 5 fichas de base
+
+  it('son Estético y Simétrico', () => {
+    const toc = CONJUNTOS.find((c) => c.id === 'toc-toc-toc')!;
+    expect(toc.nombre).toBe('TOC TOC TOC');
+    expect(miembrosDe(toc).map((b) => b.id).sort()).toEqual(['estetico', 'simetrico']);
+  });
+
+  it('Estético: rojas y negras a la mitad, un color igual, un palo ×1,25', () => {
+    expect(fichasDe8(['estetico'], mazoDe('picas', 'corazones'))).toBe(4);
+    expect(fichasDe8(['estetico'], mazoDe('picas', 'treboles'))).toBe(8);
+    expect(fichasDe8(['estetico'], mazoDe('picas', 'picas'))).toBe(10);
+  });
+
+  it('Simétrico: suma las cartas por robar si son pares y las resta si son impares', () => {
+    const base = puntuar([carta('picas-8')]).fichas;
+    const con = (restantes: number, ids = ['simetrico']) => puntuar([carta('picas-8')], efectosDe(ids), { mazo: [], restantes }).fichas;
+    expect(con(20)).toBe(base + 20);
+    expect(con(11)).toBe(base - 11);
+    expect(con(0)).toBe(base);
+    expect(con(41)).toBe(0); // no baja de 0
+  });
+
+  it('con el set completo los bonos valen el doble y los castigos no cambian', () => {
+    const ambos = ['estetico', 'simetrico'];
+    expect(fichasDe8(ambos, mazoDe('picas', 'picas'))).toBe(12);
+    expect(fichasDe8(ambos, mazoDe('picas', 'corazones'))).toBe(4);
+    const base = puntuar([carta('picas-8')]).fichas;
+    expect(puntuar([carta('picas-8')], efectosDe(ambos), { mazo: [], restantes: 20 }).fichas).toBe(base + 40);
+    expect(puntuar([carta('picas-8')], efectosDe(ambos), { mazo: [], restantes: 11 }).fichas).toBe(base - 11);
+  });
+
+  it('en combate miran el mazo de la partida y las cartas por robar', () => {
+    const mazo = crearMazo();
+    const combate = crearCombate(crearAleatorio(3), { objetivo: 100_000, mazo, baratijas: ['simetrico'] });
+    const sin = crearCombate(crearAleatorio(3), { objetivo: 100_000, mazo });
+    const id = combate.mano[0]!.id;
+    // Quedan 44 por robar (52 − 8): par.
+    expect(jugar(combate, [id]).puntos).toBe(jugar(sin, [id]).puntos + 44 * jugar(sin, [id]).ultimaJugada!.multi);
   });
 });

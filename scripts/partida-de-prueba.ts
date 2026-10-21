@@ -2,7 +2,7 @@
 // importar desde "Importar" en las ranuras y probar cosas:
 //   - la colección completa (todas las baratijas desbloqueadas)
 //   - 99 999 de oro
-//   - empieza en el vendedor con All In, Tasador y Racha
+//   - empieza en el vendedor con Estético, Simétrico y Racha
 //   - en el piso 1 hay un vendedor y un élite
 //
 //   npm run partida:prueba
@@ -20,7 +20,7 @@ segundo!.tipo = 'elite';
 const exportado: Exportado = {
   version: 9,
   guardadoEn: Date.now(),
-  partida: { ...partida, oro: 99_999, oferta: { tipo: 'vendedor', baratijas: ['all-in', 'tasador', 'racha'] } },
+  partida: { ...partida, oro: 99_999, oferta: { tipo: 'vendedor', baratijas: ['estetico', 'simetrico', 'racha'] } },
   coleccion: CATALOGO.map((b) => b.id),
 };
 writeFileSync(new URL('../partidas-de-prueba/todo-desbloqueado.json', import.meta.url), JSON.stringify(exportado, null, 2) + '\n');

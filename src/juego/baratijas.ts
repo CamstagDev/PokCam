@@ -9,8 +9,10 @@
 //
 //   alEmpezarCombate  manos y descartes con los que empieza cada combate
 //   alContarCarta     las fichas que suma cada carta que puntúa (recibe
-//                     también la carta)
-//   alPuntuar         fichas y multiplicador de cada mano jugada
+//                     también la carta y la mesa: el mazo y cuántas cartas
+//                     quedan por robar)
+//   alPuntuar         fichas y multiplicador de cada mano jugada (recibe
+//                     también la mesa)
 //   alGanarCombate    el oro que da un combate ganado
 //   alPerderCombate   el oro que quita un combate perdido
 //   alSortearRareza   la probabilidad de cada rareza al ofrecer baratijas
@@ -27,7 +29,9 @@
 //
 // Una baratija puede pertenecer a un set (`conjunto`, el id de uno de
 // CONJUNTOS). Cada set da bonos según cuántas de sus baratijas se tengan;
-// un bono tiene los mismos efectos que una baratija.
+// un bono tiene los mismos efectos que una baratija. Un bono con
+// `potencia` hace que las baratijas del set usen sus efectos `potenciados`
+// (por ejemplo, con los bonos al doble).
 //
 // Una baratija también puede pedir un número al conseguirla (`pregunta`)
 // y usarlo para cambiar las baratijas del jugador (`alElegirNumero`), por
@@ -86,11 +90,20 @@ export interface CambioDeBaratijas {
   transformaciones: Transformacion[];
 }
 
+// Lo que se ve de la mesa al jugar una mano: el mazo entero de la partida
+// y cuántas cartas quedan por robar (antes de reponer la mano).
+export interface Mesa {
+  mazo: readonly Carta[];
+  restantes: number;
+}
+
+export const MESA_VACIA: Mesa = { mazo: [], restantes: 0 };
+
 // Lo que cambia las reglas: una baratija o el bono de un set.
 export interface Efectos {
   alEmpezarCombate?(inicio: InicioDeCombate): InicioDeCombate;
-  alContarCarta?(fichas: number, carta: Carta): number;
-  alPuntuar?(mano: ManoPuntuada): ManoPuntuada;
+  alContarCarta?(fichas: number, carta: Carta, mesa: Mesa): number;
+  alPuntuar?(mano: ManoPuntuada, mesa: Mesa): ManoPuntuada;
   alGanarCombate?(oro: number): number;
   alPerderCombate?(oro: number): number;
   alSortearRareza?(probabilidades: Probabilidades): Probabilidades;
@@ -108,8 +121,34 @@ export interface Baratija extends Efectos {
   rareza: Rareza;
   icono: string; // un símbolo o emoji para dibujarla
   conjunto?: string; // id del set al que pertenece
+  // Los efectos que reemplazan a los de arriba cuando un bono de su set
+  // tiene potencia.
+  potenciados?: Efectos;
   pregunta?: { texto: string; maximo(tiene: readonly string[]): number };
   alElegirNumero?(cambio: CambioDeBaratijas, numero: number, aleatorio: Aleatorio): CambioDeBaratijas;
+}
+
+// Estético: con cartas rojas y negras en el mazo, las fichas de cada carta
+// a la mitad; con un solo color, igual; con un solo palo, ×(1 + 0,25 ×
+// potencia). La potencia solo agranda el bono, no el castigo.
+function estetico(potencia: number): (fichas: number, carta: Carta, mesa: Mesa) => number {
+  return (fichas, _carta, { mazo }) => {
+    if (mazo.length === 0) return fichas;
+    const palos = new Set(mazo.map((c) => c.palo));
+    const colores = new Set(mazo.map((c) => (c.palo === 'corazones' || c.palo === 'diamantes' ? 'rojo' : 'negro')));
+    if (colores.size > 1) return Math.round(fichas / 2);
+    if (palos.size > 1) return fichas;
+    return Math.round(fichas * (1 + 0.25 * potencia));
+  };
+}
+
+// Simétrico: con un número par de cartas por robar, la mano suma ese número
+// × potencia a sus fichas; con uno impar, se lo resta (sin bajar de 0).
+function simetrico(potencia: number): (mano: ManoPuntuada, mesa: Mesa) => ManoPuntuada {
+  return (mano, { restantes }) => ({
+    ...mano,
+    fichas: restantes % 2 === 0 ? mano.fichas + restantes * potencia : Math.max(0, mano.fichas - restantes),
+  });
 }
 
 // Las fichas de las cartas de un palo ×1,5 y las de otro a la mitad,
@@ -189,11 +228,31 @@ export const CATALOGO: readonly Baratija[] = [
   {
     id: 'racha',
     nombre: 'Racha',
-    descripcion: 'Cada combate de tu racha (ganando o perdiendo) suma 10\u00a0% a la apuesta si la racha sigue.',
+    descripcion: 'Cada combate de tu racha (ganando o perdiendo) suma 10\u00a0% a la apuesta si sigue.',
     rareza: 'infrecuente',
     icono: '🔥',
     conjunto: 'apostador-empedernido',
     alResolverApuesta: (oro, racha) => (Math.sign(oro) === Math.sign(racha) ? Math.sign(oro) * Math.round((Math.abs(oro) * (10 + Math.abs(racha))) / 10) : oro),
+  },
+  {
+    id: 'estetico',
+    nombre: 'Estético',
+    descripcion: 'Mazo de un solo palo: cartas ×1,25 de fichas. De un color: igual. Con rojas y negras: ×0,5.',
+    rareza: 'infrecuente',
+    icono: '🎀',
+    conjunto: 'toc-toc-toc',
+    alContarCarta: estetico(1),
+    potenciados: { alContarCarta: estetico(2) },
+  },
+  {
+    id: 'simetrico',
+    nombre: 'Simétrico',
+    descripcion: 'Cartas por robar en número par: la mano suma esa cantidad de fichas. En impar, la resta.',
+    rareza: 'infrecuente',
+    icono: '🪞',
+    conjunto: 'toc-toc-toc',
+    alPuntuar: simetrico(1),
+    potenciados: { alPuntuar: simetrico(2) },
   },
   {
     id: 'tarjeta-de-credito',
@@ -235,6 +294,7 @@ export const BARATIJAS_POR_OFERTA = 3;
 export interface Bono extends Efectos {
   cantidad?: number;
   descripcion: string;
+  potencia?: boolean; // las baratijas del set usan sus efectos potenciados
 }
 
 export interface Conjunto {
@@ -254,6 +314,11 @@ export const CONJUNTOS: readonly Conjunto[] = [
       },
     ],
   },
+  {
+    id: 'toc-toc-toc',
+    nombre: 'TOC TOC TOC',
+    bonos: [{ descripcion: 'Los bonos de las baratijas del set valen el doble (los castigos no cambian).', potencia: true }],
+  },
 ];
 
 export function buscarConjunto(id: string): Conjunto {
@@ -270,17 +335,22 @@ export function cantidadDelBono(conjunto: Conjunto, bono: Bono): number {
   return bono.cantidad ?? miembrosDe(conjunto).length;
 }
 
-// Los bonos de set que dan esas baratijas.
-export function bonosActivos(ids: readonly string[]): Bono[] {
-  return CONJUNTOS.flatMap((conjunto) => {
-    const tiene = miembrosDe(conjunto).filter((b) => ids.includes(b.id)).length;
-    return conjunto.bonos.filter((bono) => tiene >= cantidadDelBono(conjunto, bono));
-  });
+function bonosDe(conjunto: Conjunto, ids: readonly string[]): Bono[] {
+  const tiene = miembrosDe(conjunto).filter((b) => ids.includes(b.id)).length;
+  return conjunto.bonos.filter((bono) => tiene >= cantidadDelBono(conjunto, bono));
 }
 
-// Todo lo que cambia las reglas con esas baratijas: ellas y sus bonos de set.
+// Los bonos de set que dan esas baratijas.
+export function bonosActivos(ids: readonly string[]): Bono[] {
+  return CONJUNTOS.flatMap((conjunto) => bonosDe(conjunto, ids));
+}
+
+// Todo lo que cambia las reglas con esas baratijas: ellas (potenciadas si
+// un bono de su set lo pide) y sus bonos de set.
 export function efectosDe(ids: readonly string[]): Efectos[] {
-  return [...baratijasDe(ids), ...bonosActivos(ids)];
+  const potenciados = CONJUNTOS.filter((c) => bonosDe(c, ids).some((b) => b.potencia)).map((c) => c.id);
+  const baratijas = baratijasDe(ids).map((b) => (b.potenciados && b.conjunto && potenciados.includes(b.conjunto) ? { ...b, ...b.potenciados } : b));
+  return [...baratijas, ...bonosActivos(ids)];
 }
 
 export function buscarBaratija(id: string): Baratija {
@@ -342,13 +412,13 @@ export function sortearDeRareza(aleatorio: Aleatorio, rareza: Rareza, excluir: r
 }
 
 // Las fichas que suma una carta que puntúa, con lo que cambien las baratijas.
-export function fichasConBaratijas(fichas: number, carta: Carta, baratijas: readonly Efectos[]): number {
-  return baratijas.reduce((actual, b) => (b.alContarCarta ? b.alContarCarta(actual, carta) : actual), fichas);
+export function fichasConBaratijas(fichas: number, carta: Carta, baratijas: readonly Efectos[], mesa: Mesa = MESA_VACIA): number {
+  return baratijas.reduce((actual, b) => (b.alContarCarta ? b.alContarCarta(actual, carta, mesa) : actual), fichas);
 }
 
 // Aplica en orden el efecto `efecto` de cada baratija que lo tenga.
 export function aplicar<
-  E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza' | 'alLimitarApuesta',
+  E extends 'alEmpezarCombate' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza' | 'alLimitarApuesta',
 >(
   baratijas: readonly Efectos[],
   efecto: E,

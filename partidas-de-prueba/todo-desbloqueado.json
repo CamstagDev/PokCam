@@ -1,6 +1,6 @@
 {
   "version": 9,
-  "guardadoEn": 1792565766694,
+  "guardadoEn": 1792593193106,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -513,8 +513,8 @@
     "oferta": {
       "tipo": "vendedor",
       "baratijas": [
-        "all-in",
-        "tasador",
+        "estetico",
+        "simetrico",
         "racha"
       ]
     },
@@ -539,6 +539,8 @@
     "all-in",
     "tasador",
     "racha",
+    "estetico",
+    "simetrico",
     "tarjeta-de-credito",
     "de-zero-a-heroe"
   ]
