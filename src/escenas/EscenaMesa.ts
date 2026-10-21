@@ -29,6 +29,7 @@ import { preguntarApuesta } from './apuesta.ts';
 import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { mostrarBotonesInventario } from './inventario.ts';
+import { mostrarCripto } from './cripto.ts';
 import { mostrarOro, type Marcador } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { irAPartida, jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
@@ -88,6 +89,7 @@ export class EscenaMesa extends Phaser.Scene {
         this.scene.start('menu'),
       ), 130);
     this.oro = mostrarOro(this, partida.oro);
+    mostrarCripto(this, partida);
     mostrarRiesgo(this, nivelDeRiesgo(partida));
     mostrarBotonesInventario(this, () => partidaActual(this));
     this.actualizar();

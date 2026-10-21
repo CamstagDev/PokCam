@@ -616,3 +616,48 @@ describe('la mano negra y los niveles de las manos', () => {
     expect(puntuar(par).fichas).toBe(10 + 16);
   });
 });
+
+describe('Crypto monedas', () => {
+  // Avanza siempre al primer nodo y cierra lo que haya (con No gracias).
+  const paso = (partida: Partida): Partida => {
+    const movida = avanzar(partida, nodoActual(partida).siguientes[0]!);
+    return { ...movida, combatePendiente: false, oferta: null };
+  };
+  const conCripto = (oro: number): Partida => ({ ...crearPartida(7), oro, baratijas: ['crypto-monedas'] });
+
+  it('cada paso deja una predicción que se cumple dos pasos después', () => {
+    let partida = paso(conCripto(1000));
+    expect(partida.oro).toBe(1000);
+    expect(partida.cripto.predicciones).toHaveLength(1);
+    const primera = partida.cripto.predicciones[0]!;
+    partida = paso(partida);
+    expect(partida.oro).toBe(1000);
+    expect(partida.cripto.predicciones.map((p) => p.pasos)).toEqual([1, 2]);
+    partida = paso(partida);
+    const ultima = partida.cripto.ultima!;
+    expect(ultima.sube).toBe(primera.sube);
+    expect(ultima.porcentaje).toBeGreaterThanOrEqual(0);
+    expect(ultima.porcentaje).toBeLessThanOrEqual(200);
+    expect(ultima.oro).toBe(Math.round((1000 * ultima.porcentaje) / 100) * (ultima.sube ? 1 : -1));
+    expect(partida.oro).toBe(1000 + ultima.oro);
+    expect(partida.cripto.predicciones).toHaveLength(2);
+  });
+
+  it('los porcentajes salen casi siempre por debajo de 100', () => {
+    const porcentajes: number[] = [];
+    for (let semilla = 1; semilla <= 200; semilla++) {
+      let partida: Partida = { ...crearPartida(semilla), oro: 1000, baratijas: ['crypto-monedas'] };
+      for (let i = 0; i < 3; i++) partida = paso({ ...partida, oro: 1000 });
+      porcentajes.push(partida.cripto.ultima!.porcentaje);
+    }
+    const bajos = porcentajes.filter((p) => p < 100).length / porcentajes.length;
+    expect(bajos).toBeGreaterThan(0.6);
+    expect(Math.max(...porcentajes)).toBeLessThanOrEqual(200);
+  });
+
+  it('sin la baratija no hay predicciones', () => {
+    const partida = paso({ ...crearPartida(7), cripto: { predicciones: [{ sube: true, pasos: 1 }], ultima: null } });
+    expect(partida.cripto.predicciones).toEqual([]);
+    expect(partida.oro).toBe(300);
+  });
+});

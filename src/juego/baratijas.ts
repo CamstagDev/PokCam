@@ -27,6 +27,7 @@
 //                     perdidos seguidos)
 //   apuestaBaratijas  si es true, las baratijas también se pueden apostar
 //   pasarRecompensa   si es true, se puede pasar la recompensa de un élite
+//   cripto            si es true, el oro se vuelve cripto (ver partida.ts)
 //
 // Una baratija puede pertenecer a un set (`conjunto`, el id de uno de
 // CONJUNTOS). Cada set da bonos según cuántas de sus baratijas se tengan;
@@ -114,6 +115,7 @@ export interface Efectos {
   alResolverApuesta?(oro: number, racha: number): number;
   apuestaBaratijas?: boolean;
   pasarRecompensa?: boolean; // deja pasar la recompensa de un élite
+  cripto?: boolean; // el oro sube o baja según predicciones (ver partida.ts)
 }
 
 export interface Baratija extends Efectos {
@@ -273,6 +275,14 @@ export const CATALOGO: readonly Baratija[] = [
     icono: '💳',
     alLimitarDeuda: (limite, riesgo) => Math.max(limite, riesgo * 100),
     alMoverseEnDeuda: (costo, deuda, riesgo) => costo + Math.ceil((deuda * riesgo * 10) / 100),
+  },
+  {
+    id: 'crypto-monedas',
+    nombre: 'Crypto monedas',
+    descripcion: 'Cada paso predice si tu oro sube o baja. A los 2 pasos se cumple: hasta ±200\u00a0%, casi siempre menos.',
+    rareza: 'legendaria',
+    icono: '🪙',
+    cripto: true,
   },
   {
     id: 'de-zero-a-heroe',

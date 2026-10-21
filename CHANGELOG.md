@@ -6,6 +6,11 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Baratija legendaria Crypto monedas: cada paso por el mapa deja una
+  predicción (sube o baja) que se cumple dos pasos después, moviendo el
+  oro de 0 a 200 % (casi siempre menos de 100 %). Debajo del oro se ven
+  las predicciones pendientes y el resultado de la última.
+
 - Las manos de póker tienen nivel: cada nivel suma fichas y multiplicador
   (como en Balatro), y la pantalla de Manos muestra el nivel de cada una.
 - Nodo nuevo, la mano negra (✋): sortea 3 manos y deja subir un nivel a

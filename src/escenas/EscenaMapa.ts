@@ -14,6 +14,7 @@ import { buscarNodo, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton } from './boton.ts';
 import { avisar } from './confirmar.ts';
 import { mostrarBotonesInventario } from './inventario.ts';
+import { mostrarCripto } from './cripto.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
@@ -114,6 +115,7 @@ export class EscenaMapa extends Phaser.Scene {
     this.add.text(width / 2, 50, 'Elige tu camino', estiloTexto(30)).setOrigin(0.5).setDepth(41);
     crearBoton(this, 90, 50, 'Menú', COLORES.borde, () => this.scene.start('menu'), 130).setDepth(41);
     mostrarOro(this, partida.oro);
+    mostrarCripto(this, partida);
     mostrarRiesgo(this, nivelDeRiesgo(partida));
     mostrarBotonesInventario(this, () => partidaActual(this));
     const barra = this.children.list.filter((objeto) => !mundo.includes(objeto));
@@ -161,10 +163,13 @@ export class EscenaMapa extends Phaser.Scene {
 
   private ir(partida: Partida, nodo: Nodo): void {
     const siguiente = avanzar(partida, nodo.id);
-    // En deuda, el paso puede costar más de lo que queda por deber.
+    // En deuda, el paso puede costar más de lo que queda por deber, y con
+    // Crypto monedas una bajada puede llevarse todo el oro.
     if (enBancarrota(siguiente)) {
+      const ultima = siguiente.cripto.ultima;
+      const cripto = ultima?.paso === siguiente.visitados.length && ultima.oro < 0;
       terminarPartida(this);
-      avisar(this, 'Las deudas te hundieron.\nFin de la partida.', () => this.scene.start('menu'));
+      avisar(this, `${cripto ? 'Tus cripto se desplomaron.' : 'Las deudas te hundieron.'}\nFin de la partida.`, () => this.scene.start('menu'));
       return;
     }
     jugarPartida(this, siguiente);

@@ -62,6 +62,20 @@ export interface Partida {
   // Combates seguidos con el mismo resultado: +n ganados, −n perdidos.
   racha: number;
   niveles: Niveles; // el de cada mano de póker, desde 1
+  cripto: Cripto; // con Crypto monedas
+}
+
+// Con Crypto monedas, cada paso en el mapa deja una predicción (sube o
+// baja) que se cumple PASOS_DE_PREDICCION pasos después.
+export interface Prediccion {
+  sube: boolean;
+  pasos: number; // los que faltan para cumplirse
+}
+
+export interface Cripto {
+  predicciones: Prediccion[];
+  // La última que se cumplió, en qué paso (visitados.length) y cuánto oro movió.
+  ultima: { sube: boolean; porcentaje: number; oro: number; paso: number } | null;
 }
 
 // La oferta del nodo en el que está el jugador, hasta que la cierre:
@@ -83,7 +97,7 @@ export type Servicio = 'ruleta' | 'eliminar' | 'mejorar';
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0, niveles: nivelesIniciales() };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0, niveles: nivelesIniciales(), cripto: { predicciones: [], ultima: null } };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -99,7 +113,8 @@ export function avanzar(partida: Partida, id: string): Partida {
     throw new Error(`Desde ${partida.nodoActual} no se puede ir a ${id}`);
   }
   const tipo = buscarNodo(partida.mapa, id).tipo;
-  const siguiente = { ...partida, oro: partida.oro - costoDelPaso(partida), nodoActual: id, visitados: [...partida.visitados, id], combatePendiente: TIPOS_DE_COMBATE.includes(tipo) };
+  const pagada = { ...partida, oro: partida.oro - costoDelPaso(partida), nodoActual: id, visitados: [...partida.visitados, id], combatePendiente: TIPOS_DE_COMBATE.includes(tipo) };
+  const siguiente = moverCripto(pagada);
   if (tipo === 'vendedor') return { ...siguiente, oferta: sortearOferta(siguiente, 'vendedor') };
   if (tipo === 'eliminador') return { ...siguiente, oferta: { tipo: 'eliminador', baratijas: [], usados: [] } };
   if (tipo === 'manoNegra') return { ...siguiente, oferta: { tipo: 'manoNegra', baratijas: [], usados: [], manos: sortearManos(siguiente) } };
@@ -407,6 +422,37 @@ export function preverApuesta(partida: Partida, cantidad: number, baratijas: rea
 // Todo lo apostado en el combate en curso, contando las baratijas.
 export function totalApostado(partida: Partida): number {
   return (partida.apuesta ?? 0) + valorDeBaratijas(partida.baratijasApostadas);
+}
+
+// Crypto monedas: en cada paso se cumplen las predicciones que llegan a 0
+// (el oro, si es positivo, sube o baja un porcentaje al azar de 0 a 200,
+// más a menudo por debajo de 100) y se agrega una nueva. Sin la baratija
+// no queda ninguna pendiente.
+export const PASOS_DE_PREDICCION = 2;
+export const PORCENTAJE_MAXIMO_CRIPTO = 200;
+
+function moverCripto(partida: Partida): Partida {
+  if (!efectosDe(partida.baratijas).some((e) => e.cripto)) {
+    return partida.cripto.predicciones.length > 0 ? { ...partida, cripto: { ...partida.cripto, predicciones: [] } } : partida;
+  }
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 29 + partida.visitados.length * 17);
+  let { oro } = partida;
+  let ultima = partida.cripto.ultima;
+  const pendientes: Prediccion[] = [];
+  for (const prediccion of partida.cripto.predicciones) {
+    if (prediccion.pasos > 1) {
+      pendientes.push({ ...prediccion, pasos: prediccion.pasos - 1 });
+      continue;
+    }
+    // Al cuadrado, para que los porcentajes bajos salgan más (el 71 % de
+    // las veces, menos de 100).
+    const porcentaje = Math.round(PORCENTAJE_MAXIMO_CRIPTO * aleatorio() ** 2);
+    const cambio = Math.round((Math.max(0, oro) * porcentaje) / 100) * (prediccion.sube ? 1 : -1);
+    oro += cambio;
+    ultima = { sube: prediccion.sube, porcentaje, oro: cambio, paso: partida.visitados.length };
+  }
+  pendientes.push({ sube: aleatorio() < 0.5, pasos: PASOS_DE_PREDICCION });
+  return { ...partida, oro, cripto: { predicciones: pendientes, ultima } };
 }
 
 // La mano negra: al llegar se sortean MANOS_EN_MANO_NEGRA manos y se puede

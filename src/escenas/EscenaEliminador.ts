@@ -26,6 +26,7 @@ import { abrirCapa } from './capa.ts';
 import { confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { mostrarBotonesInventario } from './inventario.ts';
+import { mostrarCripto } from './cripto.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
@@ -42,6 +43,7 @@ export class EscenaEliminador extends Phaser.Scene {
     const partida = partidaActual(this);
     const { width, height } = this.scale;
     mostrarOro(this, partida.oro);
+    mostrarCripto(this, partida);
     mostrarRiesgo(this, nivelDeRiesgo(partida));
     mostrarBotonesInventario(this, () => partidaActual(this));
     const usados = partida.oferta?.usados ?? [];

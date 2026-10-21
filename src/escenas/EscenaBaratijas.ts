@@ -28,6 +28,7 @@ import { abrirCapa } from './capa.ts';
 import { crearBoton } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { COLOR_RAREZA, fichaDeBaratija, mostrarBotonesInventario } from './inventario.ts';
+import { mostrarCripto } from './cripto.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
@@ -44,6 +45,7 @@ export class EscenaBaratijas extends Phaser.Scene {
     const partida = partidaActual(this);
     const { width, height } = this.scale;
     mostrarOro(this, partida.oro);
+    mostrarCripto(this, partida);
     mostrarRiesgo(this, nivelDeRiesgo(partida));
     mostrarBotonesInventario(this, () => partidaActual(this));
     if (partida.eleccion) {

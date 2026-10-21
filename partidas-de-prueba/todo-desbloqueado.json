@@ -1,6 +1,6 @@
 {
-  "version": 10,
-  "guardadoEn": 1792609501997,
+  "version": 11,
+  "guardadoEn": 1792613188351,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -513,7 +513,7 @@
     "oferta": {
       "tipo": "vendedor",
       "baratijas": [
-        "estetico",
+        "crypto-monedas",
         "simetrico",
         "no-gracias"
       ]
@@ -538,6 +538,10 @@
       "full": 1,
       "poker": 1,
       "escaleraColor": 1
+    },
+    "cripto": {
+      "predicciones": [],
+      "ultima": null
     }
   },
   "coleccion": [
@@ -554,6 +558,7 @@
     "estetico",
     "simetrico",
     "tarjeta-de-credito",
+    "crypto-monedas",
     "de-zero-a-heroe"
   ]
 }
