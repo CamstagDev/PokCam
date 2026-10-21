@@ -6,6 +6,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- La tienda de cartas ($) ya funciona: ofrece 6 cartas al azar (por ahora
+  sin modificar), cada una por 5 × el nivel de riesgo, y las compradas
+  pasan al mazo.
+
 - Apostar ya no abre una ventana sola al empezar el combate: entre los
   botones Valor y Palo hay un botón "Apostar", que se puede usar hasta
   jugar la primera mano (después desaparece y la apuesta queda en 0).

@@ -5,7 +5,7 @@
 
 import { barajar, crearAleatorio, enteroEntre, type Aleatorio } from '../juego/aleatorio.ts';
 
-// 'vendedor' es el vendedor de baratijas; 'tienda' la de cartas (por hacer);
+// 'vendedor' es el vendedor de baratijas; 'tienda' la de cartas;
 // 'eliminador' quita baratijas (ruleta rusa) o cartas del mazo; 'manoNegra'
 // sube el nivel de una mano de póker.
 export type TipoNodo = 'inicio' | 'combate' | 'elite' | 'tienda' | 'vendedor' | 'eliminador' | 'manoNegra' | 'evento' | 'descanso' | 'jefe';
@@ -18,7 +18,7 @@ export const DATOS_NODO: Record<TipoNodo, { nombre: string; icono: string; descr
   vendedor: { nombre: 'Vendedor de baratijas', icono: '✦', descripcion: 'Compra, vende y vuelve a tirar baratijas.' },
   eliminador: { nombre: 'El eliminador', icono: '✂', descripcion: 'Ruleta rusa de baratijas o eliminar una carta del mazo.' },
   manoNegra: { nombre: 'La mano negra', icono: '✋', descripcion: 'Sube un nivel a una de 3 manos de póker.' },
-  tienda: { nombre: 'Tienda', icono: '$', descripcion: 'La tienda de cartas. Próximamente: por ahora solo se pasa.' },
+  tienda: { nombre: 'Tienda', icono: '$', descripcion: 'Compra cartas para tu mazo, a 5 × el nivel de riesgo cada una.' },
   evento: { nombre: 'Evento', icono: '?', descripcion: 'Algo inesperado. Próximamente: por ahora solo se pasa.' },
   descanso: { nombre: 'Descanso', icono: '☕', descripcion: 'Un respiro antes de seguir. Siempre hay uno antes del jefe.' },
   jefe: { nombre: 'Jefe', icono: '☠', descripcion: 'El último combate. Si lo pierdes, vuelves a enfrentarlo mientras te quede oro.' },

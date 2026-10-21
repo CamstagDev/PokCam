@@ -3,7 +3,8 @@
 //   - la colección completa (todas las baratijas y los nodos desbloqueados)
 //   - 99 999 de oro
 //   - empieza en el vendedor con Crypto monedas, Simétrico y No gracias
-//   - en el piso 1 hay un vendedor, un élite, un eliminador y la mano negra
+//   - en los pisos 1 y 2 hay vendedor, élite, eliminador, mano negra y
+//     tienda de cartas
 //
 //   npm run partida:prueba
 
@@ -14,11 +15,11 @@ import { crearPartida } from '../src/juego/partida.ts';
 import { DATOS_NODO } from '../src/mapa/mapa.ts';
 
 const partida = crearPartida(20261021);
-const [primero, segundo, tercero, cuarto] = partida.mapa.pisos[1]!;
-primero!.tipo = 'vendedor';
-segundo!.tipo = 'elite';
-tercero!.tipo = 'eliminador';
-cuarto!.tipo = 'manoNegra';
+// Los nodos especiales, repartidos entre los pisos 1 y 2 en este orden.
+const especiales = ['vendedor', 'elite', 'eliminador', 'manoNegra', 'tienda'] as const;
+[...partida.mapa.pisos[1]!, ...partida.mapa.pisos[2]!].forEach((nodo, i) => {
+  nodo.tipo = especiales[i % especiales.length]!;
+});
 
 const exportado: Exportado = {
   version: 11,

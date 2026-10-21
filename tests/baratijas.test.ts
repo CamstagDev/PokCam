@@ -24,7 +24,10 @@ import {
   avanzar,
   cerrarOferta,
   comprarBaratija,
+  comprarCarta,
+  costoDeCarta,
   costoDeEliminar,
+  puedeComprarCarta,
   costoDeMejorar,
   eliminarCarta,
   mejorarMano,
@@ -58,7 +61,7 @@ const carta = (id: string): Carta => {
 
 // Una partida parada en el nodo del tipo pedido (se fuerza el tipo del nodo
 // del piso 1 para no depender de cómo salió el mapa).
-function partidaEn(tipo: 'elite' | 'vendedor' | 'eliminador' | 'manoNegra', oro = 300): Partida {
+function partidaEn(tipo: 'elite' | 'vendedor' | 'eliminador' | 'manoNegra' | 'tienda', oro = 300): Partida {
   const partida = crearPartida(7);
   const destino = partida.mapa.pisos[1]![0]!;
   destino.tipo = tipo;
@@ -659,5 +662,29 @@ describe('Crypto monedas', () => {
     const partida = paso({ ...crearPartida(7), cripto: { predicciones: [{ sube: true, pasos: 1 }], ultima: null } });
     expect(partida.cripto.predicciones).toEqual([]);
     expect(partida.oro).toBe(300);
+  });
+});
+
+describe('la tienda de cartas', () => {
+  it('ofrece 6 cartas al azar, siempre las mismas, con ids que no chocan con el mazo', () => {
+    const partida = partidaEn('tienda');
+    const cartas = partida.oferta!.cartas!;
+    expect(cartas).toHaveLength(6);
+    expect(partidaEn('tienda').oferta!.cartas).toEqual(cartas);
+    expect(cartas.some((c) => partida.mazo.some((m) => m.id === c.id))).toBe(false);
+  });
+
+  it('cada carta cuesta 5 × el riesgo y pasa al mazo', () => {
+    const partida = partidaEn('tienda'); // piso 1: riesgo 1
+    expect(costoDeCarta(partida)).toBe(5);
+    const carta = partida.oferta!.cartas![0]!;
+    const comprada = comprarCarta(partida, carta.id);
+    expect(comprada.oro).toBe(295);
+    expect(comprada.mazo).toHaveLength(53);
+    expect(comprada.mazo.at(-1)).toEqual(carta);
+    expect(comprada.oferta!.cartas).toHaveLength(5);
+    expect(puedeComprarCarta(comprada, carta.id)).toBe(false);
+    expect(puedeComprarCarta({ ...partida, oro: 5 }, carta.id)).toBe(false);
+    expect(cerrarOferta(comprada).oferta).toBeNull();
   });
 });

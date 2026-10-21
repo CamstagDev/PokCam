@@ -1,6 +1,6 @@
 {
   "version": 11,
-  "guardadoEn": 1792614583696,
+  "guardadoEn": 1792620918166,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -13,7 +13,6 @@
             "tipo": "inicio",
             "siguientes": [
               "p1-1",
-              "p1-0",
               "p1-2",
               "p1-3"
             ]
@@ -21,20 +20,12 @@
         ],
         [
           {
-            "id": "p1-0",
-            "piso": 1,
-            "columna": 0,
-            "tipo": "vendedor",
-            "siguientes": [
-              "p2-0"
-            ]
-          },
-          {
             "id": "p1-1",
             "piso": 1,
             "columna": 1,
-            "tipo": "elite",
+            "tipo": "vendedor",
             "siguientes": [
+              "p2-1",
               "p2-0"
             ]
           },
@@ -42,18 +33,19 @@
             "id": "p1-2",
             "piso": 1,
             "columna": 2,
-            "tipo": "eliminador",
+            "tipo": "elite",
             "siguientes": [
-              "p2-3"
+              "p2-2",
+              "p2-1"
             ]
           },
           {
             "id": "p1-3",
             "piso": 1,
             "columna": 3,
-            "tipo": "manoNegra",
+            "tipo": "eliminador",
             "siguientes": [
-              "p2-3"
+              "p2-2"
             ]
           }
         ],
@@ -62,57 +54,48 @@
             "id": "p2-0",
             "piso": 2,
             "columna": 0,
-            "tipo": "vendedor",
+            "tipo": "manoNegra",
             "siguientes": [
-              "p3-0",
-              "p3-1"
+              "p3-2",
+              "p3-3"
             ]
           },
           {
-            "id": "p2-3",
+            "id": "p2-1",
             "piso": 2,
-            "columna": 3,
-            "tipo": "combate",
+            "columna": 1,
+            "tipo": "tienda",
             "siguientes": [
-              "p3-3",
               "p3-2"
+            ]
+          },
+          {
+            "id": "p2-2",
+            "piso": 2,
+            "columna": 2,
+            "tipo": "vendedor",
+            "siguientes": [
+              "p3-2",
+              "p3-3"
             ]
           }
         ],
         [
           {
-            "id": "p3-0",
-            "piso": 3,
-            "columna": 0,
-            "tipo": "combate",
-            "siguientes": [
-              "p4-1",
-              "p4-2"
-            ]
-          },
-          {
-            "id": "p3-1",
-            "piso": 3,
-            "columna": 1,
-            "tipo": "tienda",
-            "siguientes": [
-              "p4-1"
-            ]
-          },
-          {
             "id": "p3-2",
             "piso": 3,
             "columna": 2,
-            "tipo": "elite",
+            "tipo": "combate",
             "siguientes": [
-              "p4-2"
+              "p4-3",
+              "p4-0"
             ]
           },
           {
             "id": "p3-3",
             "piso": 3,
             "columna": 3,
-            "tipo": "combate",
+            "tipo": "descanso",
             "siguientes": [
               "p4-3"
             ]
@@ -120,28 +103,20 @@
         ],
         [
           {
-            "id": "p4-1",
+            "id": "p4-0",
             "piso": 4,
-            "columna": 1,
-            "tipo": "tienda",
-            "siguientes": [
-              "p5-0"
-            ]
-          },
-          {
-            "id": "p4-2",
-            "piso": 4,
-            "columna": 2,
+            "columna": 0,
             "tipo": "combate",
             "siguientes": [
-              "p5-2"
+              "p5-0",
+              "p5-1"
             ]
           },
           {
             "id": "p4-3",
             "piso": 4,
             "columna": 3,
-            "tipo": "descanso",
+            "tipo": "elite",
             "siguientes": [
               "p5-3",
               "p5-2"
@@ -155,24 +130,33 @@
             "columna": 0,
             "tipo": "combate",
             "siguientes": [
-              "p6-0"
+              "p6-0",
+              "p6-1"
+            ]
+          },
+          {
+            "id": "p5-1",
+            "piso": 5,
+            "columna": 1,
+            "tipo": "combate",
+            "siguientes": [
+              "p6-1"
             ]
           },
           {
             "id": "p5-2",
             "piso": 5,
             "columna": 2,
-            "tipo": "combate",
+            "tipo": "eliminador",
             "siguientes": [
-              "p6-1",
-              "p6-3"
+              "p6-2"
             ]
           },
           {
             "id": "p5-3",
             "piso": 5,
             "columna": 3,
-            "tipo": "tienda",
+            "tipo": "combate",
             "siguientes": [
               "p6-3"
             ]
@@ -185,7 +169,7 @@
             "columna": 0,
             "tipo": "combate",
             "siguientes": [
-              "p7-0"
+              "p7-1"
             ]
           },
           {
@@ -194,45 +178,381 @@
             "columna": 1,
             "tipo": "combate",
             "siguientes": [
-              "p7-1",
-              "p7-0"
+              "p7-1"
+            ]
+          },
+          {
+            "id": "p6-2",
+            "piso": 6,
+            "columna": 2,
+            "tipo": "combate",
+            "siguientes": [
+              "p7-2",
+              "p7-1"
             ]
           },
           {
             "id": "p6-3",
             "piso": 6,
             "columna": 3,
-            "tipo": "combate",
+            "tipo": "descanso",
             "siguientes": [
-              "p7-1",
-              "p7-0"
+              "p7-2"
             ]
           }
         ],
         [
-          {
-            "id": "p7-0",
-            "piso": 7,
-            "columna": 0,
-            "tipo": "descanso",
-            "siguientes": [
-              "p8-1"
-            ]
-          },
           {
             "id": "p7-1",
             "piso": 7,
             "columna": 1,
+            "tipo": "combate",
+            "siguientes": [
+              "p8-1",
+              "p8-0"
+            ]
+          },
+          {
+            "id": "p7-2",
+            "piso": 7,
+            "columna": 2,
             "tipo": "descanso",
             "siguientes": [
-              "p8-1"
+              "p8-2",
+              "p8-3"
             ]
           }
         ],
         [
           {
+            "id": "p8-0",
+            "piso": 8,
+            "columna": 0,
+            "tipo": "elite",
+            "siguientes": [
+              "p9-0"
+            ]
+          },
+          {
             "id": "p8-1",
             "piso": 8,
+            "columna": 1,
+            "tipo": "eliminador",
+            "siguientes": [
+              "p9-1"
+            ]
+          },
+          {
+            "id": "p8-2",
+            "piso": 8,
+            "columna": 2,
+            "tipo": "descanso",
+            "siguientes": [
+              "p9-2"
+            ]
+          },
+          {
+            "id": "p8-3",
+            "piso": 8,
+            "columna": 3,
+            "tipo": "manoNegra",
+            "siguientes": [
+              "p9-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p9-0",
+            "piso": 9,
+            "columna": 0,
+            "tipo": "eliminador",
+            "siguientes": [
+              "p10-0"
+            ]
+          },
+          {
+            "id": "p9-1",
+            "piso": 9,
+            "columna": 1,
+            "tipo": "descanso",
+            "siguientes": [
+              "p10-1"
+            ]
+          },
+          {
+            "id": "p9-2",
+            "piso": 9,
+            "columna": 2,
+            "tipo": "combate",
+            "siguientes": [
+              "p10-1"
+            ]
+          },
+          {
+            "id": "p9-3",
+            "piso": 9,
+            "columna": 3,
+            "tipo": "combate",
+            "siguientes": [
+              "p10-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p10-0",
+            "piso": 10,
+            "columna": 0,
+            "tipo": "combate",
+            "siguientes": [
+              "p11-1"
+            ]
+          },
+          {
+            "id": "p10-1",
+            "piso": 10,
+            "columna": 1,
+            "tipo": "combate",
+            "siguientes": [
+              "p11-1",
+              "p11-2"
+            ]
+          },
+          {
+            "id": "p10-3",
+            "piso": 10,
+            "columna": 3,
+            "tipo": "eliminador",
+            "siguientes": [
+              "p11-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p11-1",
+            "piso": 11,
+            "columna": 1,
+            "tipo": "combate",
+            "siguientes": [
+              "p12-1",
+              "p12-0"
+            ]
+          },
+          {
+            "id": "p11-2",
+            "piso": 11,
+            "columna": 2,
+            "tipo": "tienda",
+            "siguientes": [
+              "p12-2"
+            ]
+          },
+          {
+            "id": "p11-3",
+            "piso": 11,
+            "columna": 3,
+            "tipo": "combate",
+            "siguientes": [
+              "p12-2"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p12-0",
+            "piso": 12,
+            "columna": 0,
+            "tipo": "combate",
+            "siguientes": [
+              "p13-0"
+            ]
+          },
+          {
+            "id": "p12-1",
+            "piso": 12,
+            "columna": 1,
+            "tipo": "elite",
+            "siguientes": [
+              "p13-0"
+            ]
+          },
+          {
+            "id": "p12-2",
+            "piso": 12,
+            "columna": 2,
+            "tipo": "elite",
+            "siguientes": [
+              "p13-2",
+              "p13-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p13-0",
+            "piso": 13,
+            "columna": 0,
+            "tipo": "vendedor",
+            "siguientes": [
+              "p14-0"
+            ]
+          },
+          {
+            "id": "p13-2",
+            "piso": 13,
+            "columna": 2,
+            "tipo": "combate",
+            "siguientes": [
+              "p14-1"
+            ]
+          },
+          {
+            "id": "p13-3",
+            "piso": 13,
+            "columna": 3,
+            "tipo": "evento",
+            "siguientes": [
+              "p14-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p14-0",
+            "piso": 14,
+            "columna": 0,
+            "tipo": "elite",
+            "siguientes": [
+              "p15-0"
+            ]
+          },
+          {
+            "id": "p14-1",
+            "piso": 14,
+            "columna": 1,
+            "tipo": "descanso",
+            "siguientes": [
+              "p15-0"
+            ]
+          },
+          {
+            "id": "p14-3",
+            "piso": 14,
+            "columna": 3,
+            "tipo": "combate",
+            "siguientes": [
+              "p15-3",
+              "p15-0"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p15-0",
+            "piso": 15,
+            "columna": 0,
+            "tipo": "combate",
+            "siguientes": [
+              "p16-1"
+            ]
+          },
+          {
+            "id": "p15-3",
+            "piso": 15,
+            "columna": 3,
+            "tipo": "tienda",
+            "siguientes": [
+              "p16-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p16-1",
+            "piso": 16,
+            "columna": 1,
+            "tipo": "manoNegra",
+            "siguientes": [
+              "p17-1",
+              "p17-3"
+            ]
+          },
+          {
+            "id": "p16-3",
+            "piso": 16,
+            "columna": 3,
+            "tipo": "manoNegra",
+            "siguientes": [
+              "p17-3"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p17-1",
+            "piso": 17,
+            "columna": 1,
+            "tipo": "combate",
+            "siguientes": [
+              "p18-1",
+              "p18-0"
+            ]
+          },
+          {
+            "id": "p17-3",
+            "piso": 17,
+            "columna": 3,
+            "tipo": "combate",
+            "siguientes": [
+              "p18-3",
+              "p18-2"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p18-0",
+            "piso": 18,
+            "columna": 0,
+            "tipo": "descanso",
+            "siguientes": [
+              "p19-1"
+            ]
+          },
+          {
+            "id": "p18-1",
+            "piso": 18,
+            "columna": 1,
+            "tipo": "descanso",
+            "siguientes": [
+              "p19-1"
+            ]
+          },
+          {
+            "id": "p18-2",
+            "piso": 18,
+            "columna": 2,
+            "tipo": "descanso",
+            "siguientes": [
+              "p19-1"
+            ]
+          },
+          {
+            "id": "p18-3",
+            "piso": 18,
+            "columna": 3,
+            "tipo": "descanso",
+            "siguientes": [
+              "p19-1"
+            ]
+          }
+        ],
+        [
+          {
+            "id": "p19-1",
+            "piso": 19,
             "columna": 1,
             "tipo": "jefe",
             "siguientes": []

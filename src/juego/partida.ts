@@ -15,7 +15,7 @@ import {
   type Transformacion,
   valorDeVenta,
 } from './baratijas.ts';
-import { crearMazo, fichasDeCarta, type Carta } from './cartas.ts';
+import { PALOS, RANGOS, crearMazo, fichasDeCarta, type Carta } from './cartas.ts';
 import { TIPOS_DE_MANO, nivelesIniciales, type Niveles, type TipoMano } from './manos.ts';
 import { buscarNodo, generarMapa, type Mapa, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 
@@ -84,12 +84,14 @@ export interface Cripto {
 //   'eliminador'  la ruleta rusa y eliminar una carta (cada servicio una
 //                 vez por visita; `usados` dice cuáles ya se usaron)
 //   'manoNegra'   subir un nivel una de las `manos` (una vez por visita)
+//   'tienda'      comprar las `cartas` que se quieran para el mazo
 export interface Oferta {
-  tipo: 'elite' | 'vendedor' | 'eliminador' | 'manoNegra';
+  tipo: 'elite' | 'vendedor' | 'eliminador' | 'manoNegra' | 'tienda';
   baratijas: string[]; // ids
   tiradas?: number; // las veces que se volvió a tirar el vendedor
   usados?: Servicio[];
   manos?: TipoMano[];
+  cartas?: Carta[];
 }
 
 export type Servicio = 'ruleta' | 'eliminar' | 'mejorar';
@@ -117,6 +119,7 @@ export function avanzar(partida: Partida, id: string): Partida {
   const siguiente = moverCripto(pagada);
   if (tipo === 'vendedor') return { ...siguiente, oferta: sortearOferta(siguiente, 'vendedor') };
   if (tipo === 'eliminador') return { ...siguiente, oferta: { tipo: 'eliminador', baratijas: [], usados: [] } };
+  if (tipo === 'tienda') return { ...siguiente, oferta: { tipo: 'tienda', baratijas: [], cartas: sortearCartas(siguiente) } };
   if (tipo === 'manoNegra') return { ...siguiente, oferta: { tipo: 'manoNegra', baratijas: [], usados: [], manos: sortearManos(siguiente) } };
   return siguiente;
 }
@@ -453,6 +456,44 @@ function moverCripto(partida: Partida): Partida {
   }
   pendientes.push({ sube: aleatorio() < 0.5, pasos: PASOS_DE_PREDICCION });
   return { ...partida, oro, cripto: { predicciones: pendientes, ultima } };
+}
+
+// La tienda de cartas: CARTAS_EN_TIENDA cartas al azar (por ahora sin
+// modificar), cada una por ORO_POR_CARTA × el nivel de riesgo (al menos
+// ×1). Cada carta comprada lleva un id nuevo, para no repetir el de otra
+// igual del mazo.
+export const CARTAS_EN_TIENDA = 6;
+export const ORO_POR_CARTA = 5;
+
+function sortearCartas(partida: Partida): Carta[] {
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 37 + partida.visitados.length * 19);
+  const paso = partida.visitados.length;
+  return Array.from({ length: CARTAS_EN_TIENDA }, (_, i) => {
+    const palo = PALOS[Math.floor(aleatorio() * PALOS.length)]!;
+    const rango = RANGOS[Math.floor(aleatorio() * RANGOS.length)]!;
+    return { id: `${palo}-${rango}-t${paso}-${i}`, palo, rango };
+  });
+}
+
+export function costoDeCarta(partida: Partida): number {
+  return ORO_POR_CARTA * Math.max(1, nivelDeRiesgo(partida));
+}
+
+export function puedeComprarCarta(partida: Partida, id: string): boolean {
+  if (partida.oferta?.tipo !== 'tienda' || !partida.oferta.cartas?.some((c) => c.id === id)) return false;
+  return !enBancarrota({ ...partida, oro: partida.oro - costoDeCarta(partida) });
+}
+
+export function comprarCarta(partida: Partida, id: string): Partida {
+  if (!puedeComprarCarta(partida, id)) throw new Error(`No se puede comprar ${id}`);
+  const oferta = partida.oferta!;
+  const carta = oferta.cartas!.find((c) => c.id === id)!;
+  return {
+    ...partida,
+    oro: partida.oro - costoDeCarta(partida),
+    mazo: [...partida.mazo, carta],
+    oferta: { ...oferta, cartas: oferta.cartas!.filter((c) => c.id !== id) },
+  };
 }
 
 // La mano negra: al llegar se sortean MANOS_EN_MANO_NEGRA manos y se puede
