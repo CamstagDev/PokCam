@@ -9,7 +9,18 @@ import { crearAleatorio } from '../juego/aleatorio.ts';
 import { SIMBOLO_PALO, nombreRango, ordenarMano, type Carta, type Orden } from '../juego/cartas.ts';
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
 import { MANOS, evaluarMano } from '../juego/manos.ts';
-import { apostar, enBancarrota, maximoApostable, nivelDeRiesgo, objetivoDelCombate, resolverCombate } from '../juego/partida.ts';
+import { baratijasDe, bonosActivos } from '../juego/baratijas.ts';
+import {
+  apostar,
+  enBancarrota,
+  hayQueApostar,
+  maximoApostable,
+  nivelDeRiesgo,
+  objetivoDelCombate,
+  puedeApostarBaratijas,
+  resolverCombate,
+  totalApostado,
+} from '../juego/partida.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton, crearBotonRedondo, type Boton, type BotonRedondo } from './boton.ts';
 import { preguntarApuesta } from './apuesta.ts';
@@ -81,21 +92,25 @@ export class EscenaMesa extends Phaser.Scene {
     this.pedirApuesta();
   }
 
-  // Si todavía no se apostó en este combate: la mesa queda quieta 2
-  // segundos (se ven las cartas) y después se pregunta cuánto apostar. Sin
-  // oro para apostar, se apuesta 0 sin preguntar.
+  // Si todavía no se apostó en este combate: la mesa queda quieta un
+  // segundo (se ven las cartas) y después se pregunta cuánto apostar. Sin
+  // nada para apostar, se apuesta 0 sin preguntar.
   private pedirApuesta(): void {
     const partida = partidaActual(this);
     if (partida.apuesta !== null) return;
-    const maximo = maximoApostable(partida);
-    if (maximo === 0) {
+    if (!hayQueApostar(partida)) {
       jugarPartida(this, apostar(partida, 0));
       return;
     }
+    const opciones = {
+      maximo: maximoApostable(partida),
+      baratijas: puedeApostarBaratijas(partida) ? baratijasDe(partida.baratijas) : [],
+      nota: bonosActivos(partida.baratijas).find((b) => b.alResolverApuesta)?.descripcion,
+    };
     this.bloqueada = true;
     this.time.delayedCall(1000, () =>
-      preguntarApuesta(this, maximo, (cantidad) => {
-        jugarPartida(this, apostar(partidaActual(this), cantidad));
+      preguntarApuesta(this, opciones, (cantidad, baratijas) => {
+        jugarPartida(this, apostar(partidaActual(this), cantidad, baratijas));
         this.bloqueada = false;
         this.actualizar();
       }),
@@ -122,7 +137,7 @@ export class EscenaMesa extends Phaser.Scene {
       `Objetivo: ${c.objetivo}`,
       `Puntos: ${c.puntos}`,
       `Manos: ${c.manosRestantes}   Descartes: ${c.descartesRestantes}`,
-      ...(partidaActual(this).apuesta ? [`Apuesta: ${partidaActual(this).apuesta}`] : []),
+      ...this.lineaDeApuesta(),
     ]);
     // Con cartas elegidas se anticipa qué mano se jugaría (solo el nombre);
     // sin elegir, queda el resultado de la última jugada.
@@ -139,6 +154,15 @@ export class EscenaMesa extends Phaser.Scene {
     const hayElegidas = this.elegidas.size > 0;
     this.botonJugar.activar(hayElegidas && c.estado === 'jugando');
     this.botonDescartar.activar(hayElegidas && c.descartesRestantes > 0 && c.estado === 'jugando');
+  }
+
+  // La apuesta en curso, con los iconos de las baratijas apostadas.
+  private lineaDeApuesta(): string[] {
+    const partida = partidaActual(this);
+    const total = totalApostado(partida);
+    if (total === 0) return [];
+    const iconos = baratijasDe(partida.baratijasApostadas).map((b) => b.icono).join('');
+    return [`Apuesta: ${total}${iconos ? ` (${iconos})` : ''}`];
   }
 
   // Las cartas que ya estaban se deslizan a su lugar nuevo; las recién
@@ -193,6 +217,7 @@ export class EscenaMesa extends Phaser.Scene {
     const { width, height } = this.scale;
     const gano = this.combate.estado === 'ganado';
     const antes = partidaActual(this).oro;
+    const perdidas = gano ? [] : baratijasDe(partidaActual(this).baratijasApostadas);
     const partida = resolverCombate(partidaActual(this), gano);
     const quebrado = enBancarrota(partida);
     const jefeVencido = gano && this.tipo === 'jefe';
@@ -211,8 +236,12 @@ export class EscenaMesa extends Phaser.Scene {
 
     this.add.rectangle(width / 2, height / 2, width, height, COLORES.fondo, 0.85);
     this.add.text(width / 2, height / 2 - 80, titulo, estiloTexto(48, gano ? COLORES.acento : COLORES.multi)).setOrigin(0.5);
-    const detalle = quebrado ? 'Fin de la partida' : `${diferencia > 0 ? '+' : '−'}${Math.abs(diferencia)} de oro`;
-    this.add.text(width / 2, height / 2 - 20, detalle, estiloTexto(28, quebrado ? COLORES.textoSuave : COLORES.oro)).setOrigin(0.5);
+    const oro = `${diferencia >= 0 ? '+' : '−'}${Math.abs(diferencia)} de oro`;
+    const sinBaratijas = perdidas.length > 0 ? `\nPerdiste ${perdidas.map((b) => `${b.icono} ${b.nombre}`).join(', ')}` : '';
+    const detalle = quebrado ? 'Fin de la partida' : oro + sinBaratijas;
+    this.add
+      .text(width / 2, height / 2 - 20, detalle, { ...estiloTexto(28, quebrado ? COLORES.textoSuave : COLORES.oro), align: 'center' })
+      .setOrigin(0.5);
 
     if (finDePartida) {
       crearBoton(this, width / 2, height / 2 + 60, 'Menú principal', COLORES.acento, () => this.scene.start('menu'));

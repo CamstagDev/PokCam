@@ -1,41 +1,99 @@
 import Phaser from 'phaser';
+import { valorDeVenta, type Baratija } from '../juego/baratijas.ts';
 import { crearBoton } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 
-// La pregunta de la apuesta al empezar un combate: cuánto apostar, de 0 a
-// `maximo`, con botones de ±10 y ±100. Tapa la mesa hasta que se elige.
-export function preguntarApuesta(escena: Phaser.Scene, maximo: number, alElegir: (cantidad: number) => void): void {
+export interface OpcionesApuesta {
+  maximo: number; // el oro que se puede apostar
+  // Las baratijas que también se pueden apostar (con el Tasador), por su
+  // valor de venta; vacío si no se puede.
+  baratijas: readonly Baratija[];
+  // Lo que cambian los bonos de set, si alguno toca las apuestas.
+  nota?: string;
+}
+
+const ANCHO_FICHA = 96;
+const POR_FILA = 6;
+
+// La pregunta de la apuesta al empezar un combate: cuánto oro apostar, de 0
+// a `maximo`, con botones de ±10 y ±100, y qué baratijas, tocándolas. Tapa
+// la mesa hasta que se elige.
+export function preguntarApuesta(
+  escena: Phaser.Scene,
+  { maximo, baratijas, nota }: OpcionesApuesta,
+  alElegir: (cantidad: number, baratijas: string[]) => void,
+): void {
   const { width, height } = escena.scale;
-  const centro = height / 2;
+  const filas = Math.ceil(baratijas.length / POR_FILA);
+  const altoNota = nota ? 56 : 0; // hasta dos líneas
+  const alto = (filas > 0 ? 490 + (filas - 1) * 76 : 400) + altoNota;
+  const arriba = height / 2 - alto / 2;
   let cantidad = 0;
+  const elegidas = new Set<string>();
 
-  const velo = escena.add.rectangle(width / 2, centro, width, height, COLORES.fondo, 0.85).setInteractive();
-  const panel = escena.add.rectangle(width / 2, centro, 720, 400, COLORES.panel).setStrokeStyle(3, COLORES.oro);
-  const titulo = escena.add.text(width / 2, centro - 150, '¿Apuestas?', estiloTexto(40, COLORES.oro)).setOrigin(0.5);
+  const velo = escena.add.rectangle(width / 2, height / 2, width, height, COLORES.fondo, 0.85).setInteractive();
+  const panel = escena.add.rectangle(width / 2, height / 2, 760, alto, COLORES.panel).setStrokeStyle(3, COLORES.oro);
+  const titulo = escena.add.text(width / 2, arriba + 50, '¿Apuestas?', estiloTexto(40, COLORES.oro)).setOrigin(0.5);
+  const lineas = [
+    'Si ganas el combate te llevas lo apostado; si pierdes, lo pierdes.',
+    `Oro: hasta ${maximo}${baratijas.length > 0 ? '. Baratijas: por su valor de venta' : ''}`,
+    ...(nota ? [nota] : []),
+  ];
   const explicacion = escena.add
-    .text(width / 2, centro - 95, `Si ganas el combate te llevas lo apostado; si pierdes, lo pierdes.\nMáximo: ${maximo} de oro`, {
-      ...estiloTexto(20, COLORES.textoSuave),
-      align: 'center',
-    })
-    .setOrigin(0.5);
-  const valor = escena.add.text(width / 2, centro - 20, '0', estiloTexto(56, COLORES.oro)).setOrigin(0.5);
+    .text(width / 2, arriba + 90, lineas.join('\n'), { ...estiloTexto(19, COLORES.textoSuave), align: 'center', wordWrap: { width: 700 } })
+    .setOrigin(0.5, 0);
+  const yValor = arriba + 170 + altoNota;
+  const valor = escena.add.text(width / 2, yValor, '0', estiloTexto(52, COLORES.oro)).setOrigin(0.5);
 
+  const total = () => cantidad + baratijas.filter((b) => elegidas.has(b.id)).reduce((suma, b) => suma + valorDeVenta(b), 0);
+  const refrescar = () => {
+    valor.setText(elegidas.size > 0 ? `${cantidad} + baratijas = ${total()}` : String(cantidad));
+    apostar.activar(total() > 0);
+  };
   const cambiar = (delta: number) => {
     cantidad = Phaser.Math.Clamp(cantidad + delta, 0, maximo);
-    valor.setText(String(cantidad));
-    apostar.activar(cantidad > 0);
+    refrescar();
   };
   // << resta 100, < resta 10, > suma 10, >> suma 100.
-  const pasos = ([[-100, '<<'], [-10, '<'], [10, '>'], [100, '>>']] as const).map(([delta, etiqueta], i) =>
-    crearBoton(escena, width / 2 + (i - 1.5) * 120, centro + 60, etiqueta, COLORES.borde, () => cambiar(delta), 100),
-  );
-  const cerrar = (final: number) => {
+  const pasos = ([[-100, '<<'], [-10, '<'], [10, '>'], [100, '>>']] as const).map(([delta, etiqueta], i) => {
+    const boton = crearBoton(escena, width / 2 + (i - 1.5) * 120, yValor + 75, etiqueta, COLORES.borde, () => cambiar(delta), 100);
+    if (maximo === 0) boton.activar(false);
+    return boton;
+  });
+
+  // Cada baratija es una ficha con su icono y su valor; tocarla la suma o
+  // la quita de la apuesta.
+  const yFichas = yValor + 175;
+  const fichas = baratijas.map((baratija, i) => {
+    const fila = Math.floor(i / POR_FILA);
+    const enFila = Math.min(POR_FILA, baratijas.length - fila * POR_FILA);
+    const x = width / 2 + ((i % POR_FILA) - (enFila - 1) / 2) * (ANCHO_FICHA + 12);
+    const fondo = escena.add.rectangle(0, 0, ANCHO_FICHA, 66, COLORES.fondo).setStrokeStyle(2, COLORES.borde);
+    const icono = escena.add.text(0, -12, baratija.icono, estiloTexto(26)).setOrigin(0.5);
+    const precio = escena.add.text(0, 18, String(valorDeVenta(baratija)), estiloTexto(16, COLORES.oro)).setOrigin(0.5);
+    const ficha = escena.add.container(x, yFichas + fila * 76, [fondo, icono, precio]).setSize(ANCHO_FICHA, 66);
+    ficha.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+      if (elegidas.has(baratija.id)) elegidas.delete(baratija.id);
+      else elegidas.add(baratija.id);
+      const marcada = elegidas.has(baratija.id);
+      fondo.setStrokeStyle(marcada ? 3 : 2, marcada ? COLORES.oro : COLORES.borde).setFillStyle(marcada ? COLORES.panel : COLORES.fondo);
+      refrescar();
+    });
+    return ficha;
+  });
+  const leyenda =
+    baratijas.length > 0 ? [escena.add.text(width / 2, yFichas - 48, 'Toca las baratijas que quieras apostar', estiloTexto(17, COLORES.textoSuave)).setOrigin(0.5)] : [];
+
+  const cerrar = (final: number, ids: string[]) => {
     capa.destroy();
-    alElegir(final);
+    alElegir(final, ids);
   };
-  const noApostar = crearBoton(escena, width / 2 - 130, centro + 145, 'No apostar', COLORES.borde, () => cerrar(0), 220);
-  const apostar = crearBoton(escena, width / 2 + 130, centro + 145, 'Apostar', COLORES.oro, () => cerrar(cantidad), 220);
+  const yBotones = arriba + alto - 50;
+  const noApostar = crearBoton(escena, width / 2 - 130, yBotones, 'No apostar', COLORES.borde, () => cerrar(0, []), 220);
+  const apostar = crearBoton(escena, width / 2 + 130, yBotones, 'Apostar', COLORES.oro, () => cerrar(cantidad, [...elegidas]), 220);
   apostar.activar(false);
 
-  const capa = escena.add.container(0, 0, [velo, panel, titulo, explicacion, valor, ...pasos, noApostar, apostar]).setDepth(150);
+  const capa = escena.add
+    .container(0, 0, [velo, panel, titulo, explicacion, valor, ...pasos, ...leyenda, ...fichas, noApostar, apostar])
+    .setDepth(150);
 }

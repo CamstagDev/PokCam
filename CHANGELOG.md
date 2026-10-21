@@ -6,6 +6,17 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- En el vendedor de baratijas se pueden vender las propias por la mitad
+  de su precio ("Vender baratijas") y volver a tirar lo que ofrece por
+  100 × (baratijas que tienes + 1) de oro.
+- Sets de baratijas: algunas pertenecen a un set y tener varias da bonos.
+  La colección las agrupa por set con sus bonos, y se desplaza con la
+  rueda o arrastrando. Primer set, el del apostador empedernido (All In y
+  Tasador): con el set completo las apuestas ganadas pagan el doble y las
+  perdidas cuestan 1,5 veces lo apostado.
+- Baratija rara Tasador: deja apostar baratijas por su valor de venta; si
+  se pierde la apuesta, se pierden también las baratijas apostadas.
+
 - En Colecciones, el botón "Volver" de abajo tapaba la última fila de
   baratijas: ahora es una flecha arriba a la derecha.
 

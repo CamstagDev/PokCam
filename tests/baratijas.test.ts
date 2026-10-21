@@ -5,8 +5,12 @@ import {
   PROBABILIDADES_INICIALES,
   aplicar,
   baratijasDe,
+  CONJUNTOS,
+  bonosActivos,
   buscarBaratija,
+  miembrosDe,
   precioDe,
+  valorDeVenta,
   sortearBaratijas,
   sortearRareza,
   type Baratija,
@@ -17,8 +21,10 @@ import {
   avanzar,
   cerrarOferta,
   comprarBaratija,
+  costoDeTirada,
   costoDelPaso,
   crearPartida,
+  hayQueApostar,
   elegirBaratija,
   enBancarrota,
   limiteDeDeuda,
@@ -27,6 +33,9 @@ import {
   puedeComprar,
   resolverCombate,
   responderEleccion,
+  totalApostado,
+  venderBaratija,
+  volverATirar,
   type Partida,
 } from '../src/juego/partida.ts';
 import { puntuar } from '../src/juego/puntuacion.ts';
@@ -335,5 +344,105 @@ describe('vendedor de baratijas', () => {
     expect(puedeComprar(partidaEn('vendedor', precio), id)).toBe(false);
     expect(puedeComprar(partidaEn('vendedor', precio + 1), id)).toBe(true);
     expect(() => comprarBaratija(partidaEn('vendedor', precio), id)).toThrow();
+  });
+});
+
+describe('vender y volver a tirar en el vendedor', () => {
+  const enVendedor = (oro: number, baratijas: string[]): Partida => ({
+    ...crearPartida(7),
+    oro,
+    baratijas,
+    oferta: { tipo: 'vendedor', baratijas: ['subsidio'] },
+  });
+
+  it('vender paga la mitad del precio y quita la baratija', () => {
+    const vendida = venderBaratija(enVendedor(100, ['diversidad', 'materialista']), 'diversidad');
+    expect(valorDeVenta(buscarBaratija('diversidad'))).toBe(250);
+    expect(vendida.oro).toBe(350);
+    expect(vendida.baratijas).toEqual(['materialista']);
+    expect(() => venderBaratija(vendida, 'diversidad')).toThrow();
+    expect(() => venderBaratija({ ...vendida, oferta: null }, 'materialista')).toThrow();
+  });
+
+  it('vender quita la baratija de su transformación pendiente', () => {
+    const partida = { ...enVendedor(0, ['subsidio', 'altruista']), transformaciones: [{ ids: ['subsidio', 'altruista'], combatesRestantes: 2, hacia: 'legendaria' as const }] };
+    expect(venderBaratija(partida, 'subsidio').transformaciones[0]!.ids).toEqual(['altruista']);
+  });
+
+  it('volver a tirar cuesta 100 × (baratijas + 1) y cambia la oferta', () => {
+    const partida = enVendedor(1000, ['materialista', 'altruista']);
+    expect(costoDeTirada(partida)).toBe(300);
+    const tirada = volverATirar(partida);
+    expect(tirada.oro).toBe(700);
+    expect(tirada.oferta?.tipo).toBe('vendedor');
+    expect(tirada.oferta?.baratijas).toHaveLength(3);
+    expect(tirada.oferta?.baratijas.some((id) => partida.baratijas.includes(id))).toBe(false);
+    // Cada tirada sortea otra cosa.
+    expect(volverATirar(tirada).oferta?.baratijas).not.toEqual(tirada.oferta?.baratijas);
+    expect(volverATirar(tirada).oferta?.tiradas).toBe(2);
+  });
+
+  it('no se puede volver a tirar si deja la partida en bancarrota', () => {
+    expect(() => volverATirar(enVendedor(100, []))).toThrow();
+    expect(volverATirar(enVendedor(101, [])).oro).toBe(1);
+  });
+});
+
+describe('sets de baratijas', () => {
+  it('el apostador empedernido son All In y Tasador', () => {
+    const apostador = CONJUNTOS.find((c) => c.id === 'apostador-empedernido')!;
+    expect(apostador.nombre).toBe('Set del apostador empedernido');
+    expect(miembrosDe(apostador).map((b) => b.id).sort()).toEqual(['all-in', 'tasador']);
+    expect(bonosActivos(['all-in'])).toEqual([]);
+    expect(bonosActivos(['tasador', 'all-in'])).toHaveLength(1);
+  });
+
+  it('todo set tiene baratijas del catálogo', () => {
+    for (const conjunto of CONJUNTOS) expect(miembrosDe(conjunto).length).toBeGreaterThan(1);
+    for (const b of CATALOGO) if (b.conjunto) expect(CONJUNTOS.some((c) => c.id === b.conjunto)).toBe(true);
+  });
+});
+
+describe('Tasador y el set del apostador', () => {
+  const enCombate = (oro: number, baratijas: string[]) => {
+    const partida = { ...crearPartida(7), oro, baratijas };
+    return avanzar(partida, nodoActual(partida).siguientes[0]!);
+  };
+
+  it('sin el Tasador no se apuestan baratijas', () => {
+    expect(() => apostar(enCombate(300, ['diversidad']), 0, ['diversidad'])).toThrow();
+  });
+
+  it('con el Tasador se apuestan por su valor de venta, aun sin oro para apostar', () => {
+    const partida = enCombate(0, ['tasador', 'diversidad', 'tarjeta-de-credito']);
+    expect(hayQueApostar(partida)).toBe(true);
+    expect(() => apostar(partida, 0, ['subsidio'])).toThrow();
+    const conApuesta = apostar(partida, 0, ['diversidad']);
+    expect(totalApostado(conApuesta)).toBe(250);
+    expect(resolverCombate(conApuesta, true).oro).toBe(0 + 100 + 250);
+    expect(resolverCombate(conApuesta, true).baratijas).toContain('diversidad');
+  });
+
+  it('al perder se pierden las baratijas apostadas y el oro apostado', () => {
+    const conApuesta = apostar(enCombate(300, ['tasador', 'diversidad']), 100, ['diversidad']);
+    const perdido = resolverCombate(conApuesta, false);
+    expect(perdido.baratijas).toEqual(['tasador']);
+    expect(perdido.oro).toBe(300 - 100 - 100);
+    expect(perdido.baratijasApostadas).toEqual([]);
+  });
+
+  it('con el set completo se gana el doble y se pierde 1,5 veces', () => {
+    const conApuesta = apostar(enCombate(300, ['all-in', 'tasador', 'diversidad']), 100, ['diversidad']);
+    expect(totalApostado(conApuesta)).toBe(350);
+    expect(resolverCombate(conApuesta, true).oro).toBe(300 + 100 + 700);
+    // Pierde 525: Diversidad cubre 250 y el resto sale del oro.
+    const perdido = resolverCombate(conApuesta, false);
+    expect(perdido.oro).toBe(300 - 100 - 275);
+    expect(perdido.baratijas).toEqual(['all-in', 'tasador']);
+  });
+
+  it('sin el set completo la apuesta paga lo apostado', () => {
+    const conApuesta = apostar(enCombate(300, ['all-in']), 100);
+    expect(resolverCombate(conApuesta, true).oro).toBe(500);
   });
 });

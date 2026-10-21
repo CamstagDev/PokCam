@@ -3,7 +3,7 @@
 // del jugador, su mazo y lo que vale cada mano de póker.
 
 import Phaser from 'phaser';
-import { DATOS_RAREZA, RAREZAS, baratijasDe, probabilidadComun, type Baratija, type Rareza } from '../juego/baratijas.ts';
+import { DATOS_RAREZA, RAREZAS, baratijasDe, buscarConjunto, probabilidadComun, type Baratija, type Rareza } from '../juego/baratijas.ts';
 import { PALOS, SIMBOLO_PALO, nombreRango, ordenarMano, type Carta } from '../juego/cartas.ts';
 import { MANOS, type TipoMano } from '../juego/manos.ts';
 import { probabilidadesDeRareza, type Partida } from '../juego/partida.ts';
@@ -67,8 +67,8 @@ export const COLOR_RAREZA: Record<Rareza, number> = {
   legendaria: COLORES.oro,
 };
 
-// La ficha de una baratija: icono, nombre, descripción y rareza (que pinta
-// también el borde). La usan también el vendedor, la recompensa del élite
+// La ficha de una baratija: icono, nombre, descripción, rareza (que pinta
+// también el borde) y, abajo, el set al que pertenece. La usan también el vendedor, la recompensa del élite
 // y la colección.
 export function fichaDeBaratija(
   escena: Phaser.Scene,
@@ -86,7 +86,12 @@ export function fichaDeBaratija(
   const descripcion = escena.add
     .text(-ancho / 2 + 20, -alto / 2 + 76, baratija.descripcion, { ...estiloTexto(16, COLORES.textoSuave), wordWrap: { width: ancho - 40 } })
     .setOrigin(0, 0);
-  return escena.add.container(x, y, [fondo, icono, nombre, descripcion, rareza]).setSize(ancho, alto);
+  const partes = [fondo, icono, nombre, descripcion, rareza];
+  if (baratija.conjunto) {
+    const set = buscarConjunto(baratija.conjunto).nombre;
+    partes.push(escena.add.text(ancho / 2 - 14, alto / 2 - 8, set, estiloTexto(13, COLORES.acento)).setOrigin(1, 1));
+  }
+  return escena.add.container(x, y, partes).setSize(ancho, alto);
 }
 
 function verMazo(escena: Phaser.Scene, partida: Partida): void {

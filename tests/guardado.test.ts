@@ -32,7 +32,7 @@ describe('guardado', () => {
     let partida = crearPartida(7);
     partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
     guardar(almacen, 1, partida, 1234);
-    expect(cargar(almacen, 1)).toEqual({ version: 7, guardadoEn: 1234, partida });
+    expect(cargar(almacen, 1)).toEqual({ version: 8, guardadoEn: 1234, partida });
     expect(cargar(almacen, 0)).toBeNull();
   });
 
@@ -119,7 +119,7 @@ describe('guardado', () => {
 
     const destino = almacenDePrueba();
     expect(importarRanura(destino, 2, texto)).toBe(true);
-    expect(cargar(destino, 2)).toEqual({ version: 7, guardadoEn: 77, partida });
+    expect(cargar(destino, 2)).toEqual({ version: 8, guardadoEn: 77, partida });
     expect(leerColeccion(destino).sort()).toEqual(['diversidad', 'subsidio']);
   });
 

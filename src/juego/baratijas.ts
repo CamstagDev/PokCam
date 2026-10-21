@@ -19,6 +19,13 @@
 //                     el nivel de riesgo); tenerlo permite la deuda
 //   alMoverseEnDeuda  lo que cuesta cada paso en el mapa mientras se debe
 //                     oro (recibe también la deuda y el nivel de riesgo)
+//   alResolverApuesta el oro que cambia una apuesta: lo apostado si se gana
+//                     el combate, menos lo apostado si se pierde
+//   apuestaBaratijas  si es true, las baratijas también se pueden apostar
+//
+// Una baratija puede pertenecer a un set (`conjunto`, el id de uno de
+// CONJUNTOS). Cada set da bonos según cuántas de sus baratijas se tengan;
+// un bono tiene los mismos efectos que una baratija.
 //
 // Una baratija también puede pedir un número al conseguirla (`pregunta`)
 // y usarlo para cambiar las baratijas del jugador (`alElegirNumero`), por
@@ -77,12 +84,8 @@ export interface CambioDeBaratijas {
   transformaciones: Transformacion[];
 }
 
-export interface Baratija {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  rareza: Rareza;
-  icono: string; // un símbolo o emoji para dibujarla
+// Lo que cambia las reglas: una baratija o el bono de un set.
+export interface Efectos {
   alEmpezarCombate?(inicio: InicioDeCombate): InicioDeCombate;
   alContarCarta?(fichas: number, carta: Carta): number;
   alPuntuar?(mano: ManoPuntuada): ManoPuntuada;
@@ -92,6 +95,17 @@ export interface Baratija {
   alLimitarApuesta?(fraccion: number): number;
   alLimitarDeuda?(limite: number, riesgo: number): number;
   alMoverseEnDeuda?(costo: number, deuda: number, riesgo: number): number;
+  alResolverApuesta?(oro: number): number;
+  apuestaBaratijas?: boolean;
+}
+
+export interface Baratija extends Efectos {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  rareza: Rareza;
+  icono: string; // un símbolo o emoji para dibujarla
+  conjunto?: string; // id del set al que pertenece
   pregunta?: { texto: string; maximo(tiene: readonly string[]): number };
   alElegirNumero?(cambio: CambioDeBaratijas, numero: number, aleatorio: Aleatorio): CambioDeBaratijas;
 }
@@ -158,13 +172,22 @@ export const CATALOGO: readonly Baratija[] = [
     descripcion: 'Puedes apostar todo tu oro al empezar un combate, no solo la mitad.',
     rareza: 'rara',
     icono: '🎰',
+    conjunto: 'apostador-empedernido',
     alLimitarApuesta: () => 1,
+  },
+  {
+    id: 'tasador',
+    nombre: 'Tasador',
+    descripcion: 'Puedes apostar tus baratijas por su valor de venta; si pierdes la apuesta, las pierdes.',
+    rareza: 'rara',
+    icono: '🔍',
+    conjunto: 'apostador-empedernido',
+    apuestaBaratijas: true,
   },
   {
     id: 'tarjeta-de-credito',
     nombre: 'Tarjeta de crédito',
-    descripcion:
-      'Puedes quedar en deuda hasta riesgo × 100 de oro sin perder. Mientras debas, cada paso en el mapa cuesta riesgo × 10 % de la deuda.',
+    descripcion: 'Puedes deber hasta riesgo × 100 de oro. En deuda, cada paso en el mapa cuesta riesgo × 10 % de lo que debes.',
     rareza: 'legendaria',
     icono: '💳',
     alLimitarDeuda: (limite, riesgo) => Math.max(limite, riesgo * 100),
@@ -196,6 +219,59 @@ export const CATALOGO: readonly Baratija[] = [
 
 export const BARATIJAS_POR_OFERTA = 3;
 
+// Un bono se activa al tener `cantidad` baratijas distintas del set; sin
+// cantidad, al tenerlas todas.
+export interface Bono extends Efectos {
+  cantidad?: number;
+  descripcion: string;
+}
+
+export interface Conjunto {
+  id: string;
+  nombre: string;
+  bonos: Bono[];
+}
+
+export const CONJUNTOS: readonly Conjunto[] = [
+  {
+    id: 'apostador-empedernido',
+    nombre: 'Set del apostador empedernido',
+    bonos: [
+      {
+        descripcion: 'Las apuestas ganadas pagan el doble y las perdidas cuestan 1,5 veces lo apostado.',
+        alResolverApuesta: (oro) => (oro > 0 ? oro * 2 : -Math.ceil(-oro * 1.5)),
+      },
+    ],
+  },
+];
+
+export function buscarConjunto(id: string): Conjunto {
+  const conjunto = CONJUNTOS.find((c) => c.id === id);
+  if (!conjunto) throw new Error(`No hay ningún set ${id}`);
+  return conjunto;
+}
+
+export function miembrosDe(conjunto: Conjunto): Baratija[] {
+  return CATALOGO.filter((b) => b.conjunto === conjunto.id);
+}
+
+export function cantidadDelBono(conjunto: Conjunto, bono: Bono): number {
+  return bono.cantidad ?? miembrosDe(conjunto).length;
+}
+
+// Los bonos de set que dan esas baratijas.
+export function bonosActivos(ids: readonly string[]): Bono[] {
+  return CONJUNTOS.flatMap((conjunto) => {
+    const tiene = miembrosDe(conjunto).filter((b) => ids.includes(b.id)).length;
+    return conjunto.bonos.filter((bono) => tiene >= cantidadDelBono(conjunto, bono));
+  });
+}
+
+// Todo lo que cambia las reglas con esas baratijas: ellas y sus bonos de set.
+export function efectosDe(ids: readonly string[]): Efectos[] {
+  return [...baratijasDe(ids), ...bonosActivos(ids)];
+}
+
 export function buscarBaratija(id: string): Baratija {
   const baratija = CATALOGO.find((b) => b.id === id);
   if (!baratija) throw new Error(`No hay ninguna baratija ${id}`);
@@ -210,6 +286,11 @@ export function baratijasDe(ids: readonly string[]): Baratija[] {
 
 export function precioDe(baratija: Baratija): number {
   return DATOS_RAREZA[baratija.rareza].precio;
+}
+
+// Lo que paga el vendedor por una baratija: la mitad de su precio.
+export function valorDeVenta(baratija: Baratija): number {
+  return Math.floor(precioDe(baratija) / 2);
 }
 
 export function sortearRareza(aleatorio: Aleatorio, probabilidades: Probabilidades): Rareza {
@@ -250,17 +331,19 @@ export function sortearDeRareza(aleatorio: Aleatorio, rareza: Rareza, excluir: r
 }
 
 // Las fichas que suma una carta que puntúa, con lo que cambien las baratijas.
-export function fichasConBaratijas(fichas: number, carta: Carta, baratijas: readonly Baratija[]): number {
+export function fichasConBaratijas(fichas: number, carta: Carta, baratijas: readonly Efectos[]): number {
   return baratijas.reduce((actual, b) => (b.alContarCarta ? b.alContarCarta(actual, carta) : actual), fichas);
 }
 
 // Aplica en orden el efecto `efecto` de cada baratija que lo tenga.
-export function aplicar<E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza' | 'alLimitarApuesta'>(
-  baratijas: readonly Baratija[],
+export function aplicar<
+  E extends 'alEmpezarCombate' | 'alPuntuar' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza' | 'alLimitarApuesta' | 'alResolverApuesta',
+>(
+  baratijas: readonly Efectos[],
   efecto: E,
-  valor: Parameters<NonNullable<Baratija[E]>>[0],
-): Parameters<NonNullable<Baratija[E]>>[0] {
-  type Valor = Parameters<NonNullable<Baratija[E]>>[0];
+  valor: Parameters<NonNullable<Efectos[E]>>[0],
+): Parameters<NonNullable<Efectos[E]>>[0] {
+  type Valor = Parameters<NonNullable<Efectos[E]>>[0];
   return baratijas.reduce<Valor>((actual, b) => {
     const funcion = b[efecto] as ((v: Valor) => Valor) | undefined;
     return funcion ? funcion(actual) : actual;

@@ -3,7 +3,7 @@
 // inmutable: cada acción devuelve un combate nuevo.
 
 import { barajar, type Aleatorio } from './aleatorio.ts';
-import { aplicar, baratijasDe } from './baratijas.ts';
+import { aplicar, efectosDe } from './baratijas.ts';
 import type { Carta } from './cartas.ts';
 import { puntuar, type Puntuacion } from './puntuacion.ts';
 
@@ -35,7 +35,7 @@ export function crearCombate(
   { objetivo, mazo, manos = 4, descartes = 3, baratijas = [] }: OpcionesCombate,
 ): Combate {
   const pila = barajar(mazo, aleatorio);
-  const inicio = aplicar(baratijasDe(baratijas), 'alEmpezarCombate', { manos, descartes });
+  const inicio = aplicar(efectosDe(baratijas), 'alEmpezarCombate', { manos, descartes });
   return robar({
     objetivo,
     puntos: 0,
@@ -52,7 +52,7 @@ export function crearCombate(
 export function jugar(combate: Combate, ids: readonly string[]): Combate {
   const cartas = elegidas(combate, ids, MAX_CARTAS_JUGADAS);
   if (combate.manosRestantes === 0) throw new Error('No quedan manos');
-  const jugada = puntuar(cartas, baratijasDe(combate.baratijas));
+  const jugada = puntuar(cartas, efectosDe(combate.baratijas));
   const puntos = combate.puntos + jugada.total;
   const manosRestantes = combate.manosRestantes - 1;
   const estado = puntos >= combate.objetivo ? 'ganado' : manosRestantes === 0 ? 'perdido' : 'jugando';

@@ -10,7 +10,7 @@ import { crearMazo } from './cartas.ts';
 import { ORO_INICIAL, type Partida } from './partida.ts';
 
 export const RANURAS = 3;
-const VERSION = 7;
+const VERSION = 8;
 const PREFIJO = 'pokcam.ranura.';
 
 export interface Almacen {
@@ -62,7 +62,7 @@ export function leerGuardado(texto: string): Guardado | null {
     // de antes de la 4 son de antes de las baratijas, y las de antes de la 5
     // de antes de las rarezas, y las de antes de la 6 de antes de las
     // baratijas que piden un número; las de antes de la 7, de antes de las
-    // apuestas.
+    // apuestas, y las de antes de la 8, de antes de apostar baratijas.
     const partida = { ...guardado.partida };
     if (version < 2) partida.oro = ORO_INICIAL;
     if (version < 3) partida.mazo = crearMazo();
@@ -76,6 +76,7 @@ export function leerGuardado(texto: string): Guardado | null {
       partida.transformaciones = [];
     }
     if (version < 7) partida.apuesta = null;
+    if (version < 8) partida.baratijasApostadas = [];
     return { ...guardado, version: VERSION, partida };
   } catch {
     return null;
