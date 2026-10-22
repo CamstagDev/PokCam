@@ -5,13 +5,18 @@ import { crearMazo } from '../src/juego/cartas.ts';
 import {
   avanzar,
   cerrarOferta,
+  elegirCartaDelRegalo,
   crearPartida,
   enBancarrota,
   nivelDeRiesgo,
   nodosDisponibles,
   objetivoDelCombate,
   resolverCombate,
+  type Partida,
 } from '../src/juego/partida.ts';
+
+// Cierra la oferta del nodo; del regalo de Raimundo se lleva la primera carta.
+const seguir = (p: Partida) => (p.oferta?.evento === 'regaloRaimundo' ? elegirCartaDelRegalo(p, p.oferta.cartas![0]!.id) : cerrarOferta(p));
 
 // Con No gracias, para pasar las recompensas de los élites al recorrer el mapa.
 const conNoGracias = () => ({ ...crearPartida(7), baratijas: ['no-gracias'] });
@@ -19,7 +24,7 @@ const conNoGracias = () => ({ ...crearPartida(7), baratijas: ['no-gracias'] });
 describe('partida', () => {
   it('se recorre desde el inicio hasta el jefe', () => {
     let partida = conNoGracias();
-    while (nodosDisponibles(partida).length > 0) partida = cerrarOferta(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
+    while (nodosDisponibles(partida).length > 0) partida = seguir(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
     expect(partida.visitados).toHaveLength(partida.mapa.pisos.length);
     expect(partida.nodoActual).toBe(partida.mapa.pisos.at(-1)![0]!.id);
   });
@@ -33,7 +38,7 @@ describe('partida', () => {
     let partida = conNoGracias();
     expect(nivelDeRiesgo(partida)).toBe(0);
     while (nodosDisponibles(partida).length > 0) {
-      partida = cerrarOferta(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
+      partida = seguir(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
       const { piso, tipo } = partida.mapa.pisos.flat().find((n) => n.id === partida.nodoActual)!;
       expect(nivelDeRiesgo(partida)).toBe(piso);
       const base = { elite: 500, jefe: 800 }[tipo as 'elite' | 'jefe'] ?? 300;
@@ -68,7 +73,7 @@ describe('partida', () => {
 
   it('al jefe perdido hay que volver a enfrentarlo', () => {
     let partida = conNoGracias();
-    while (nodosDisponibles(partida).length > 0) partida = cerrarOferta(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
+    while (nodosDisponibles(partida).length > 0) partida = seguir(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
     const conJefe = { ...partida, combatePendiente: true };
     expect(resolverCombate(conJefe, false).combatePendiente).toBe(true);
   });

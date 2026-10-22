@@ -6,6 +6,20 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Nombres nuevos: la mano negra es Helman O'Grande; el vendedor de
+  baratijas y la tienda de cartas son Raimundo el vendedor del mundo (el
+  mismo hombre en los dos nodos); el eliminador es Edmundo manos de
+  cinceles; el pintor es Gustavo el austriaco.
+- Eliminar una carta ahora se duplica cada 6 cartas menos (46 → 200,
+  40 → 400, 34 → 800).
+- Los eventos (?) ya hacen algo, uno de dos regalos al azar:
+  - El regalo de Raimundo: hay que elegir 1 de 9 cartas al azar para el
+    mazo. Traen +multi y +fichas, más cuanto mayor el riesgo (entre
+    riesgo / 2 y riesgo × 1,5 modificaciones por carta).
+  - El regalo de Gustavo: duplica los +multi y +fichas de tu carta más
+    modificada (si empatan, una al azar). Si ninguna tiene, se ofende y se
+    va.
+
 - El pintor: al cambiar de palo, ahora eliges el palo nuevo (en los tres
   servicios).
 - El eliminador ahora se llama Raimundo el destructor de mundos. Eliminar

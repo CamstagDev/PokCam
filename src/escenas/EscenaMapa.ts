@@ -4,8 +4,8 @@
 // camino ya hecho, pero nunca se puede subir más allá de esos dos pisos.
 // Los nodos a los que se puede ir laten. Tocar uno avanza: si es un
 // combate abre la mesa, el vendedor abre su tienda de baratijas, el
-// eliminador y la mano negra sus servicios, la tienda la de cartas, y el
-// resto (evento, descanso) por ahora solo avanza. Cada vez que se elige un
+// eliminador, la mano negra y el pintor sus servicios, la tienda la de
+// cartas, el evento su regalo, y el descanso por ahora solo avanza. Cada vez que se elige un
 // nodo la partida se guarda, y al volver al mapa la cámara sube suave
 // hasta el piso nuevo.
 

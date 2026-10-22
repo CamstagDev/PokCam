@@ -23,6 +23,7 @@ import {
   preverApuesta,
   avanzar,
   cerrarOferta,
+  elegirCartaDelRegalo,
   comprarBaratija,
   comprarCarta,
   costoDeCarta,
@@ -54,6 +55,9 @@ import {
   type Partida,
 } from '../src/juego/partida.ts';
 import { puntuar } from '../src/juego/puntuacion.ts';
+
+// Cierra la oferta del nodo; del regalo de Raimundo se lleva la primera carta.
+const seguir = (p: Partida) => (p.oferta?.evento === 'regaloRaimundo' ? elegirCartaDelRegalo(p, p.oferta.cartas![0]!.id) : cerrarOferta(p));
 
 const carta = (id: string): Carta => {
   const [palo, rango] = id.split('-') as [Carta['palo'], string];
@@ -269,7 +273,7 @@ describe('Tarjeta de crédito', () => {
   // Una partida en el piso 3 (riesgo 3), con la tarjeta.
   function enPiso3(oro: number, baratijas = ['tarjeta-de-credito']): Partida {
     let partida = { ...crearPartida(7), baratijas: ['no-gracias'] };
-    for (let i = 0; i < 3; i++) partida = cerrarOferta(resolverCombate(avanzar(partida, nodoActual(partida).siguientes[0]!), true));
+    for (let i = 0; i < 3; i++) partida = seguir(resolverCombate(avanzar(partida, nodoActual(partida).siguientes[0]!), true));
     return { ...partida, oro, baratijas };
   }
 
@@ -588,10 +592,10 @@ describe('el eliminador', () => {
     expect(puedeGirarRuleta(enEliminador(100, ['subsidio']))).toBe(false);
   });
 
-  it('eliminar cuesta 100 con 52 cartas, se duplica cada 8 menos y baja despacio con más', () => {
+  it('eliminar cuesta 100 con 52 cartas, se duplica cada 6 menos y baja despacio con más', () => {
     const partida = enEliminador(300, []);
     const conCartas = (n: number) => ({ ...partida, mazo: Array.from({ length: n }, (_, i) => ({ ...partida.mazo[i % 52]!, id: `c${i}` })) });
-    expect([52, 44, 36, 28, 48, 60, 78, 104].map((n) => costoDeEliminar(conCartas(n)))).toEqual([100, 200, 400, 800, 140, 90, 70, 60]);
+    expect([52, 46, 40, 34, 48, 60, 78, 104].map((n) => costoDeEliminar(conCartas(n)))).toEqual([100, 200, 400, 800, 160, 90, 70, 60]);
   });
 
   it('eliminar una carta, una vez por visita', () => {

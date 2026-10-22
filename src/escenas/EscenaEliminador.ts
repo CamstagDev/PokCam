@@ -1,4 +1,4 @@
-// Raimundo el destructor de mundos (el eliminador, nodo ✂ del mapa): dos servicios, cada uno una vez por
+// Edmundo manos de cinceles (el eliminador, nodo ✂ del mapa): dos servicios, cada uno una vez por
 // visita.
 //   Ruleta rusa  por COSTO_RULETA de oro, entran hasta 6 baratijas del
 //                jugador al azar y la ruleta elimina una.
@@ -49,7 +49,7 @@ export class EscenaEliminador extends Phaser.Scene {
     mostrarBotonesInventario(this, () => partidaActual(this));
     const usados = partida.oferta?.usados ?? [];
 
-    this.add.text(width / 2, 140, 'Raimundo el destructor de mundos', estiloTexto(40)).setOrigin(0.5);
+    this.add.text(width / 2, 140, 'Edmundo manos de cinceles', estiloTexto(40)).setOrigin(0.5);
     this.add.text(width / 2, 190, 'Cada servicio se puede usar una vez', estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
 
     const y = height / 2 + 40;
@@ -67,7 +67,7 @@ export class EscenaEliminador extends Phaser.Scene {
       width / 2 + ANCHO_PANEL / 2 + 30,
       y,
       '✂ Eliminar',
-      `Elige una carta de tu mazo y quítala. Cuesta 100 con 52 cartas, el doble cada 8 cartas menos y algo menos con más cartas.`,
+      `Elige una carta de tu mazo y quítala. Cuesta 100 con 52 cartas, el doble cada 6 cartas menos y algo menos con más cartas.`,
       usados.includes('eliminar') ? 'Usada' : `Elegir carta · ${costoDeEliminar(partida)}`,
       !usados.includes('eliminar') && partida.mazo.length > 1,
       () => this.verMazo(partidaActual(this)),

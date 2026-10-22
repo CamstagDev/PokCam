@@ -5,7 +5,10 @@ import {
   avanzar,
   cartasEnAlquiler,
   costoDeAlquiler,
+  CARTAS_DEL_REGALO,
+  cerrarOferta,
   costoDePersonalizado,
+  elegirCartaDelRegalo,
   modificadorLibre,
   crearPartida,
   ofrecePersonalizado,
@@ -101,5 +104,53 @@ describe('el pintor', () => {
     expect(hecha.oro).toBe(600);
     expect(hecha.mazo.find((c) => c.id === id)!.modificaciones?.multi).toBe(1);
     expect(puedePersonalizar(hecha, mazo[11]!.id)).toBe(false);
+  });
+});
+
+describe('eventos', () => {
+  // Un evento en el piso `piso` con el regalo pedido (se prueban semillas
+  // hasta que toque).
+  function enEvento(evento: 'regaloRaimundo' | 'regaloGustavo', antes: (p: Partida) => Partida = (p) => p, piso = 1): Partida {
+    for (let semilla = 1; ; semilla++) {
+      const partida = antes(crearPartida(semilla));
+      const destino = partida.mapa.pisos[piso]![0]!;
+      destino.tipo = 'evento';
+      const llegada = avanzar({ ...partida, nodoActual: partida.mapa.pisos[piso - 1]![0]!.id, mapa: { ...partida.mapa } }, destino.id);
+      if (llegada.oferta?.evento === evento) return llegada;
+    }
+  }
+
+  it('Raimundo ofrece 9 cartas y hay que llevarse una', () => {
+    const partida = enEvento('regaloRaimundo');
+    const cartas = partida.oferta!.cartas!;
+    expect(cartas).toHaveLength(CARTAS_DEL_REGALO);
+    expect(() => cerrarOferta(partida)).toThrow();
+    const con = elegirCartaDelRegalo(partida, cartas[4]!.id);
+    expect(con.mazo).toHaveLength(53);
+    expect(con.mazo.at(-1)).toEqual(cartas[4]);
+    expect(con.oferta).toBeNull();
+  });
+
+  it('las cartas de Raimundo traen más modificaciones con más riesgo', () => {
+    const total = (p: Partida) => p.oferta!.cartas!.reduce((s, c) => s + modificacionesDe(c), 0);
+    const bajo = enEvento('regaloRaimundo', (p) => p, 2);
+    const alto = enEvento('regaloRaimundo', (p) => p, 12);
+    expect(total(alto)).toBeGreaterThan(total(bajo));
+    for (const c of alto.oferta!.cartas!) expect(modificacionesDe(c)).toBeGreaterThanOrEqual(6);
+  });
+
+  it('Gustavo duplica los modificadores de la carta más modificada', () => {
+    const conMods = (p: Partida) => ({ ...p, mazo: p.mazo.map((c, i) => (i === 3 ? { ...c, modificaciones: { multi: 2, fichas: 1, palo: 1 } } : i === 7 ? { ...c, modificaciones: { fichas: 1 } } : c)) });
+    const partida = enEvento('regaloGustavo', conMods);
+    const id = partida.oferta!.cartaLibre!;
+    const carta = partida.mazo.find((c) => c.id === id)!;
+    expect(carta.modificaciones).toMatchObject({ multi: 4, fichas: 2, palo: 1 });
+    expect(cerrarOferta(partida).oferta).toBeNull();
+  });
+
+  it('sin cartas modificadas, Gustavo se va sin hacer nada', () => {
+    const partida = enEvento('regaloGustavo');
+    expect(partida.oferta!.cartaLibre).toBeUndefined();
+    expect(partida.mazo.every((c) => !c.modificaciones)).toBe(true);
   });
 });

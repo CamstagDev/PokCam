@@ -6,7 +6,7 @@
 import { barajar, crearAleatorio, enteroEntre, type Aleatorio } from '../juego/aleatorio.ts';
 
 // 'vendedor' es el vendedor de baratijas; 'tienda' la de cartas;
-// 'eliminador' (Raimundo el destructor de mundos) quita baratijas (ruleta rusa) o cartas del mazo; 'manoNegra'
+// 'eliminador' (Edmundo manos de cinceles) quita baratijas (ruleta rusa) o cartas del mazo; 'manoNegra'
 // sube el nivel de una mano de póker; 'pintor' le pone modificadores a las
 // cartas.
 export type TipoNodo = 'inicio' | 'combate' | 'elite' | 'tienda' | 'vendedor' | 'eliminador' | 'manoNegra' | 'pintor' | 'evento' | 'descanso' | 'jefe';
@@ -16,12 +16,12 @@ export const DATOS_NODO: Record<TipoNodo, { nombre: string; icono: string; descr
   inicio: { nombre: 'Inicio', icono: '⌂', descripcion: 'Donde empieza cada partida.' },
   combate: { nombre: 'Combate', icono: '♠', descripcion: 'Una mesa de póker: llega al objetivo antes de quedarte sin manos. Ganas o pierdes oro.' },
   elite: { nombre: 'Élite', icono: '♛', descripcion: 'Un combate más difícil. Al ganarlo eliges una baratija de recompensa.' },
-  vendedor: { nombre: 'Vendedor de baratijas', icono: '✦', descripcion: 'Compra, vende y vuelve a tirar baratijas.' },
-  eliminador: { nombre: 'Raimundo el destructor de mundos', icono: '✂', descripcion: 'Ruleta rusa de baratijas o eliminar una carta del mazo.' },
-  manoNegra: { nombre: 'La mano negra', icono: '✋', descripcion: 'Sube un nivel a una de 3 manos de póker.' },
-  pintor: { nombre: 'El pintor', icono: '🖌', descripcion: 'Le pone un modificador a una carta del mazo: +1 multiplicador, +5 fichas o cambiar de palo.' },
-  tienda: { nombre: 'Tienda', icono: '$', descripcion: 'Compra cartas para tu mazo, a 5 × el nivel de riesgo cada una.' },
-  evento: { nombre: 'Evento', icono: '?', descripcion: 'Algo inesperado. Próximamente: por ahora solo se pasa.' },
+  vendedor: { nombre: 'Raimundo el vendedor del mundo', icono: '✦', descripcion: 'Aquí Raimundo vende baratijas: compra, vende y vuelve a tirar.' },
+  eliminador: { nombre: 'Edmundo manos de cinceles', icono: '✂', descripcion: 'Ruleta rusa de baratijas o eliminar una carta del mazo.' },
+  manoNegra: { nombre: "Helman O'Grande", icono: '✋', descripcion: 'Sube un nivel a una de 3 manos de póker.' },
+  pintor: { nombre: 'Gustavo el austriaco', icono: '🖌', descripcion: 'Le pone un modificador a una carta del mazo: +1 multiplicador, +5 fichas o cambiar de palo.' },
+  tienda: { nombre: 'Raimundo el vendedor del mundo', icono: '$', descripcion: 'Aquí Raimundo vende cartas para tu mazo, a 5 × el nivel de riesgo cada una.' },
+  evento: { nombre: 'Evento', icono: '?', descripcion: 'Un regalo: de Raimundo (elige 1 de 9 cartas para tu mazo) o de Gustavo (duplica las modificaciones de tu carta más modificada).' },
   descanso: { nombre: 'Descanso', icono: '☕', descripcion: 'Un respiro antes de seguir. Siempre hay uno antes del jefe.' },
   jefe: { nombre: 'Jefe', icono: '☠', descripcion: 'El último combate. Si lo pierdes, vuelves a enfrentarlo mientras te quede oro.' },
 };

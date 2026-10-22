@@ -1,4 +1,4 @@
-// El pintor (nodo 🖌 del mapa): hace un solo trabajo por visita, a elegir.
+// Gustavo el austriaco (el pintor, nodo 🖌 del mapa): hace un solo trabajo por visita, a elegir.
 //   Pintura libre  muestra una carta del mazo al azar; si se paga, le pone
 //                  un modificador al azar.
 //   Alquiler       el modificador ya está a la vista; se elige a cuál de 6
@@ -58,7 +58,7 @@ export class EscenaPintor extends Phaser.Scene {
     const oferta = partida.oferta;
     const usado = (oferta?.usados?.length ?? 0) > 0;
 
-    this.add.text(width / 2, 140, 'El pintor', estiloTexto(40)).setOrigin(0.5);
+    this.add.text(width / 2, 140, 'Gustavo el austriaco', estiloTexto(40)).setOrigin(0.5);
     const subtitulo = usado ? 'El pintor ya hizo su trabajo en esta visita' : 'Elige uno de sus servicios';
     this.add.text(width / 2, 190, subtitulo, estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
 

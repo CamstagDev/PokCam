@@ -4,7 +4,7 @@
 //   - 99 999 de oro
 //   - empieza con Claire obscure, en el vendedor con Crypto monedas, Bróker
 //     y No gracias
-//   - en los pisos 1 y 2 hay pintor, vendedor, élite, eliminador, mano
+//   - en los pisos 1 y 2 hay evento, pintor, vendedor, élite, eliminador, mano
 //     negra y tienda de cartas
 //
 //   npm run partida:prueba
@@ -17,7 +17,7 @@ import { DATOS_NODO } from '../src/mapa/mapa.ts';
 
 const partida = crearPartida(20261021);
 // Los nodos especiales, repartidos entre los pisos 1 y 2 en este orden.
-const especiales = ['pintor', 'vendedor', 'elite', 'eliminador', 'manoNegra', 'tienda'] as const;
+const especiales = ['evento', 'pintor', 'vendedor', 'elite', 'eliminador', 'manoNegra', 'tienda'] as const;
 [...partida.mapa.pisos[1]!, ...partida.mapa.pisos[2]!].forEach((nodo, i) => {
   nodo.tipo = especiales[i % especiales.length]!;
 });

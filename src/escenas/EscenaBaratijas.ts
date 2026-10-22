@@ -60,7 +60,7 @@ export class EscenaBaratijas extends Phaser.Scene {
     }
     const esElite = oferta.tipo === 'elite';
 
-    this.add.text(width / 2, 140, esElite ? 'Elige una baratija' : 'Vendedor de baratijas', estiloTexto(40)).setOrigin(0.5);
+    this.add.text(width / 2, 140, esElite ? 'Elige una baratija' : 'Raimundo el vendedor del mundo', estiloTexto(40)).setOrigin(0.5);
     this.add
       .text(width / 2, 190, esElite ? 'Recompensa por vencer al élite' : 'Paga con oro lo que quieras llevarte', estiloTexto(22, COLORES.textoSuave))
       .setOrigin(0.5);

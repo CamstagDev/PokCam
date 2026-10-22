@@ -8,6 +8,7 @@ import { EscenaBaratijas } from './escenas/EscenaBaratijas.ts';
 import { EscenaColecciones } from './escenas/EscenaColecciones.ts';
 import { EscenaEliminador } from './escenas/EscenaEliminador.ts';
 import { EscenaManoNegra } from './escenas/EscenaManoNegra.ts';
+import { EscenaEvento } from './escenas/EscenaEvento.ts';
 import { EscenaPintor } from './escenas/EscenaPintor.ts';
 import { EscenaTienda } from './escenas/EscenaTienda.ts';
 import { COLORES } from './escenas/estilo.ts';
@@ -26,5 +27,5 @@ new Phaser.Game({
     height: 720,
   },
   // La primera es la que arranca: el menú principal.
-  scene: [EscenaMenu, EscenaRanuras, EscenaMapa, EscenaMesa, EscenaBaratijas, EscenaEliminador, EscenaManoNegra, EscenaTienda, EscenaPintor, EscenaColecciones],
+  scene: [EscenaMenu, EscenaRanuras, EscenaMapa, EscenaMesa, EscenaBaratijas, EscenaEliminador, EscenaManoNegra, EscenaTienda, EscenaPintor, EscenaEvento, EscenaColecciones],
 });

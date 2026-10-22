@@ -88,8 +88,11 @@ export interface Cripto {
 //   'pintor'      un solo servicio por visita: pintar la `cartaLibre`, poner
 //                 el `modificador` en una de las `opciones` o (con Claire
 //                 obscure) el personalizado
+//   'evento'      un regalo (ver EVENTOS): elegir una de las `cartas` o ver
+//                 la `cartaLibre` que se duplicó (sin ella, no hubo regalo)
 export interface Oferta {
-  tipo: 'elite' | 'vendedor' | 'eliminador' | 'manoNegra' | 'tienda' | 'pintor';
+  tipo: 'elite' | 'vendedor' | 'eliminador' | 'manoNegra' | 'tienda' | 'pintor' | 'evento';
+  evento?: Evento;
   baratijas: string[]; // ids
   tiradas?: number; // las veces que se volvió a tirar el vendedor
   usados?: Servicio[];
@@ -135,6 +138,7 @@ export function avanzar(partida: Partida, id: string): Partida {
   if (tipo === 'vendedor') return { ...siguiente, oferta: sortearOferta(siguiente, 'vendedor') };
   if (tipo === 'eliminador') return { ...siguiente, oferta: { tipo: 'eliminador', baratijas: [], usados: [] } };
   if (tipo === 'tienda') return { ...siguiente, oferta: { tipo: 'tienda', baratijas: [], cartas: sortearCartas(siguiente) } };
+  if (tipo === 'evento') return { ...siguiente, ...sortearEvento(siguiente) };
   if (tipo === 'pintor') return { ...siguiente, oferta: sortearPintor(siguiente) };
   if (tipo === 'manoNegra') return { ...siguiente, oferta: { tipo: 'manoNegra', baratijas: [], usados: [], manos: sortearManos(siguiente) } };
   return siguiente;
@@ -307,6 +311,7 @@ export function volverATirar(partida: Partida): Partida {
 export function cerrarOferta(partida: Partida): Partida {
   const esElite = partida.oferta?.tipo === 'elite';
   if (esElite && !puedePasarRecompensa(partida)) throw new Error('Hay que elegir una baratija');
+  if (partida.oferta?.evento === 'regaloRaimundo') throw new Error('Hay que elegir una carta del regalo');
   return { ...partida, oro: partida.oro + (esElite ? ORO_POR_PASAR : 0), oferta: null };
 }
 
@@ -314,7 +319,7 @@ export function puedePasarRecompensa(partida: Partida): boolean {
   return efectosDe(partida.baratijas).some((e) => e.pasarRecompensa);
 }
 
-// Raimundo el destructor de mundos (el eliminador). La ruleta rusa cuesta COSTO_RULETA: muestra hasta
+// Edmundo manos de cinceles (el eliminador). La ruleta rusa cuesta COSTO_RULETA: muestra hasta
 // BARATIJAS_EN_RULETA baratijas del jugador al azar y elimina una de ellas.
 export const COSTO_RULETA = 100;
 export const BARATIJAS_EN_RULETA = 6;
@@ -353,11 +358,11 @@ export function girarRuleta(partida: Partida): Ruleta {
 // redondeado a decenas: COSTO_ELIMINAR con MAZO_COMPLETO cartas; con
 // menos se duplica cada CARTAS_PARA_DUPLICAR cartas menos (exponencial) y
 // con más baja despacio (logarítmico). El mazo nunca queda vacío.
-//   n ≤ 52: 100 × 2^((52 − n) / 8)    44 → 200, 36 → 400, 28 → 800
+//   n ≤ 52: 100 × 2^((52 − n) / 6)    46 → 200, 40 → 400, 34 → 800
 //   n > 52: 100 / (1 + ln(n / 52))    60 → 90, 78 → 70, 104 → 60
 export const COSTO_ELIMINAR = 100;
 export const MAZO_COMPLETO = 52;
-export const CARTAS_PARA_DUPLICAR = 8;
+export const CARTAS_PARA_DUPLICAR = 6;
 
 export function costoDeEliminar(partida: Partida): number {
   const n = partida.mazo.length;
@@ -638,6 +643,58 @@ export function puedePersonalizar(partida: Partida, id: string): boolean {
 export function personalizar(partida: Partida, id: string, modificador: Modificador, palo?: Palo): Partida {
   if (!puedePersonalizar(partida, id)) throw new Error(`No se puede personalizar ${id}`);
   return pintar(usar(partida, 'personalizado', costoDePersonalizado(partida)), id, modificador, palo);
+}
+
+// Los eventos (nodo ?), uno al azar al llegar:
+//   regaloRaimundo  hay que elegir 1 de CARTAS_DEL_REGALO cartas al azar
+//                   para el mazo; traen más modificaciones (+1 multi o +5
+//                   fichas) cuanto mayor el riesgo: entre riesgo / 2 y
+//                   riesgo × 1,5.
+//   regaloGustavo   duplica los +multi y +fichas de la carta que más tiene
+//                   (si empatan, una al azar); si ninguna tiene, se ofende
+//                   y se va.
+export const EVENTOS = ['regaloRaimundo', 'regaloGustavo'] as const;
+export type Evento = (typeof EVENTOS)[number];
+export const CARTAS_DEL_REGALO = 9;
+// De cada 10 modificaciones de las cartas del regalo, cuántas son +multi.
+const PROBABILIDAD_MULTI_DEL_REGALO = 0.3;
+
+function sortearEvento(partida: Partida): Pick<Partida, 'mazo' | 'oferta'> {
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 53 + partida.visitados.length * 37);
+  const evento = EVENTOS[Math.floor(aleatorio() * EVENTOS.length)]!;
+  if (evento === 'regaloRaimundo') {
+    const riesgo = nivelDeRiesgo(partida);
+    const paso = partida.visitados.length;
+    const cartas = Array.from({ length: CARTAS_DEL_REGALO }, (_, i): Carta => {
+      const palo = PALOS[Math.floor(aleatorio() * PALOS.length)]!;
+      const rango = RANGOS[Math.floor(aleatorio() * RANGOS.length)]!;
+      const cuantas = Math.floor(riesgo / 2) + Math.floor(aleatorio() * (riesgo + 1));
+      let multi = 0;
+      for (let k = 0; k < cuantas; k++) if (aleatorio() < PROBABILIDAD_MULTI_DEL_REGALO) multi++;
+      const fichas = cuantas - multi;
+      const modificaciones = cuantas > 0 ? { ...(multi > 0 && { multi }), ...(fichas > 0 && { fichas }) } : undefined;
+      return { id: `${palo}-${rango}-r${paso}-${i}`, palo, rango, ...(modificaciones && { modificaciones }) };
+    });
+    return { mazo: partida.mazo, oferta: { tipo: 'evento', evento, baratijas: [], cartas } };
+  }
+  // Gustavo: la carta con más +multi y +fichas.
+  const peso = (c: Carta) => (c.modificaciones?.multi ?? 0) + (c.modificaciones?.fichas ?? 0);
+  const maximo = Math.max(0, ...partida.mazo.map(peso));
+  const candidatas = maximo > 0 ? partida.mazo.filter((c) => peso(c) === maximo) : [];
+  const elegida = candidatas[Math.floor(aleatorio() * candidatas.length)];
+  if (!elegida) return { mazo: partida.mazo, oferta: { tipo: 'evento', evento, baratijas: [] } };
+  const duplicar = (n?: number) => (n ? n * 2 : n);
+  const mazo = partida.mazo.map((c) =>
+    c.id === elegida.id ? { ...c, modificaciones: { ...c.modificaciones, multi: duplicar(c.modificaciones?.multi), fichas: duplicar(c.modificaciones?.fichas) } } : c,
+  );
+  return { mazo, oferta: { tipo: 'evento', evento, baratijas: [], cartaLibre: elegida.id } };
+}
+
+export function elegirCartaDelRegalo(partida: Partida, id: string): Partida {
+  const oferta = partida.oferta;
+  const carta = oferta?.evento === 'regaloRaimundo' ? oferta.cartas?.find((c) => c.id === id) : undefined;
+  if (!carta) throw new Error(`${id} no está en el regalo`);
+  return { ...partida, mazo: [...partida.mazo, carta], oferta: null };
 }
 
 // El nivel de riesgo es el piso en el que está el jugador (el inicio es el

@@ -31,7 +31,7 @@ export class EscenaTienda extends Phaser.Scene {
     const cartas = partida.oferta?.cartas ?? [];
     const costo = costoDeCarta(partida);
 
-    this.add.text(width / 2, 140, 'Tienda de cartas', estiloTexto(40)).setOrigin(0.5);
+    this.add.text(width / 2, 140, 'Raimundo el vendedor del mundo', estiloTexto(40)).setOrigin(0.5);
     this.add.text(width / 2, 190, `Cada carta cuesta ${costo} de oro y pasa a tu mazo`, estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
     if (cartas.length === 0) {
       this.add.text(width / 2, height / 2, 'Ya no queda nada a la venta.', estiloTexto(26, COLORES.textoSuave)).setOrigin(0.5);

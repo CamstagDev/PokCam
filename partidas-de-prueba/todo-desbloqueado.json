@@ -1,6 +1,6 @@
 {
   "version": 11,
-  "guardadoEn": 1792626230213,
+  "guardadoEn": 1792628824902,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -23,7 +23,7 @@
             "id": "p1-1",
             "piso": 1,
             "columna": 1,
-            "tipo": "pintor",
+            "tipo": "evento",
             "siguientes": [
               "p2-1",
               "p2-0"
@@ -33,7 +33,7 @@
             "id": "p1-2",
             "piso": 1,
             "columna": 2,
-            "tipo": "vendedor",
+            "tipo": "pintor",
             "siguientes": [
               "p2-2",
               "p2-1"
@@ -43,7 +43,7 @@
             "id": "p1-3",
             "piso": 1,
             "columna": 3,
-            "tipo": "elite",
+            "tipo": "vendedor",
             "siguientes": [
               "p2-2"
             ]
@@ -54,7 +54,7 @@
             "id": "p2-0",
             "piso": 2,
             "columna": 0,
-            "tipo": "eliminador",
+            "tipo": "elite",
             "siguientes": [
               "p3-2",
               "p3-3"
@@ -64,7 +64,7 @@
             "id": "p2-1",
             "piso": 2,
             "columna": 1,
-            "tipo": "manoNegra",
+            "tipo": "eliminador",
             "siguientes": [
               "p3-2"
             ]
@@ -73,7 +73,7 @@
             "id": "p2-2",
             "piso": 2,
             "columna": 2,
-            "tipo": "tienda",
+            "tipo": "manoNegra",
             "siguientes": [
               "p3-2",
               "p3-3"

@@ -1,4 +1,4 @@
-// La mano negra (nodo ✋ del mapa): al llegar se sortean 3 manos de póker y
+// Helman O'Grande (la mano negra, nodo ✋ del mapa): al llegar se sortean 3 manos de póker y
 // se puede subir un nivel a una de ellas, una vez por visita. Cada ficha
 // muestra la mano en su nivel y cómo queda en el siguiente. Al mejorar, la
 // ficha se da vuelta y del otro lado está la mano en su nivel nuevo; un
@@ -37,7 +37,7 @@ export class EscenaManoNegra extends Phaser.Scene {
     const usada = partida.oferta?.usados?.includes('mejorar') ?? false;
     const costo = costoDeMejorar(partida);
 
-    this.add.text(width / 2, 140, 'La mano negra', estiloTexto(40)).setOrigin(0.5);
+    this.add.text(width / 2, 140, "Helman O'Grande", estiloTexto(40)).setOrigin(0.5);
     const subtitulo = usada ? 'Ya mejoraste una mano en esta visita' : `Sube un nivel a una de estas manos por ${costo} de oro`;
     this.add.text(width / 2, 190, subtitulo, estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
 
