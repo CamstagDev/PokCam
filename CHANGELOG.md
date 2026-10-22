@@ -6,6 +6,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- El mapa se ve como un tablero inclinado hacia atrás, en perspectiva:
+  los pisos lejanos se ven más chicos y más angostos (INCLINACION en
+  src/escenas/EscenaMapa.ts, hoy 60°).
+
 - En la mesa, "Jugar mano" y "Descartar" se separaron para que los
   botones redondos de Valor, Apostar y Palo ya no se les encimen.
 - La ventana de la apuesta tiene un botón "Máx" que apuesta todo el oro
