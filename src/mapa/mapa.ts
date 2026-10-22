@@ -23,7 +23,7 @@ export const DATOS_NODO: Record<TipoNodo, { nombre: string; icono: string; descr
   tienda: { nombre: 'Raimundo el vendedor del mundo', icono: '$', descripcion: 'Aquí Raimundo vende cartas para tu mazo, a 5 × el nivel de riesgo cada una.' },
   evento: { nombre: 'Evento', icono: '?', descripcion: 'Un regalo: de Raimundo (elige 1 de 9 cartas para tu mazo) o de Gustavo (duplica las modificaciones de tu carta más modificada).' },
   descanso: { nombre: 'Descanso', icono: '☕', descripcion: 'Un respiro antes de seguir. Siempre hay uno antes del jefe.' },
-  jefe: { nombre: 'Jefe', icono: '☠', descripcion: 'El último combate. Si lo pierdes, vuelves a enfrentarlo mientras te quede oro.' },
+  jefe: { nombre: 'Jefe', icono: '☠', descripcion: 'El último combate del mundo: al vencerlo empieza el mundo siguiente. Si lo pierdes, vuelves a enfrentarlo mientras te quede oro.' },
 };
 
 export interface Nodo {

@@ -6,6 +6,14 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Mundos: vencer al jefe ya no termina la partida, empieza el mundo 2
+  (y así sucesivamente) con un mapa nuevo. Se conserva todo: oro, mazo,
+  baratijas, niveles de las manos… y el riesgo sigue subiendo desde el
+  piso del jefe. En cada mundo nuevo las baratijas comunes salen 15
+  puntos menos (60 % → 45 % → 30 %…) y eso se reparte entre las otras
+  rarezas en proporción a lo que ya tenían. El mapa muestra el mundo y
+  las ranuras también.
+
 - La mano empieza ordenada por valor (el botón Valor viene marcado).
 - Los nodos del mapa son fichas de póker de colores, un color por tipo
   de nodo; las que se pueden elegir tienen una luz que recorre el borde.

@@ -1,6 +1,6 @@
 {
-  "version": 11,
-  "guardadoEn": 1792628824902,
+  "version": 12,
+  "guardadoEn": 1792713441974,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -845,6 +845,8 @@
       "rara": 0.1,
       "legendaria": 0.05
     },
+    "mundo": 1,
+    "riesgoBase": 0,
     "eleccion": null,
     "transformaciones": [],
     "apuesta": null,

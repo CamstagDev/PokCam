@@ -11,7 +11,7 @@ import { nivelesIniciales } from './manos.ts';
 import { ORO_INICIAL, type Partida } from './partida.ts';
 
 export const RANURAS = 3;
-const VERSION = 11;
+const VERSION = 12;
 const PREFIJO = 'pokcam.ranura.';
 
 export interface Almacen {
@@ -30,6 +30,7 @@ export interface Guardado {
 export interface Resumen {
   ranura: number;
   guardadoEn: number;
+  mundo: number;
   piso: number; // en el que está el jugador, contando el inicio como 0
   pisos: number; // del mapa, contando el inicio y el jefe
   oro: number;
@@ -66,7 +67,8 @@ export function leerGuardado(texto: string): Guardado | null {
     // apuestas, las de antes de la 8, de antes de apostar
     // baratijas, las de antes de la 9, de antes de contar la
     // racha, las de antes de la 10, de antes de los niveles de las manos, y
-    // las de antes de la 11, de antes de Crypto monedas.
+    // las de antes de la 11, de antes de Crypto monedas, y las de antes de
+    // la 12, de antes de los mundos.
     const partida = { ...guardado.partida };
     if (version < 2) partida.oro = ORO_INICIAL;
     if (version < 3) partida.mazo = crearMazo();
@@ -84,6 +86,10 @@ export function leerGuardado(texto: string): Guardado | null {
     if (version < 9) partida.racha = 0;
     if (version < 10) partida.niveles = nivelesIniciales();
     if (version < 11) partida.cripto = { predicciones: [], ultima: null };
+    if (version < 12) {
+      partida.mundo = 1;
+      partida.riesgoBase = 0;
+    }
     return { ...guardado, version: VERSION, partida };
   } catch {
     return null;
@@ -99,7 +105,7 @@ export function resumir(almacen: Almacen, ranura: number): Resumen | null {
   if (!guardado) return null;
   const { partida } = guardado;
   const piso = partida.mapa.pisos.findIndex((fila) => fila.some((n) => n.id === partida.nodoActual));
-  return { ranura, guardadoEn: guardado.guardadoEn, piso, pisos: partida.mapa.pisos.length, oro: partida.oro };
+  return { ranura, guardadoEn: guardado.guardadoEn, mundo: partida.mundo, piso, pisos: partida.mapa.pisos.length, oro: partida.oro };
 }
 
 // Las 3 ranuras en orden, null en las vacías.

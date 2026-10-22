@@ -196,7 +196,7 @@ export class EscenaMapa extends Phaser.Scene {
 
     // Barra fija de arriba, con su propia cámara.
     this.add.rectangle(0, 0, width, BARRA, COLORES.fondo).setOrigin(0).setDepth(40);
-    this.add.text(width / 2, 50, 'Elige tu camino', estiloTexto(30)).setOrigin(0.5).setDepth(41);
+    this.add.text(width / 2, 50, `Mundo ${partida.mundo}`, estiloTexto(30)).setOrigin(0.5).setDepth(41);
     crearBoton(this, 90, 50, 'Menú', COLORES.borde, () => this.scene.start('menu'), 130).setDepth(41);
     mostrarOro(this, partida.oro);
     mostrarCripto(this, partida);

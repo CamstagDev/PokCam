@@ -52,7 +52,7 @@ export class EscenaRanuras extends Phaser.Scene {
     this.add.text(x, y - 70, `Ranura ${ranura + 1}`, estiloTexto(30)).setOrigin(0.5);
 
     if (resumen) {
-      this.add.text(x, y - 15, `Piso ${resumen.piso} de ${resumen.pisos - 1}`, estiloTexto(24)).setOrigin(0.5);
+      this.add.text(x, y - 15, `${resumen.mundo > 1 ? `Mundo ${resumen.mundo} · ` : ''}Piso ${resumen.piso} de ${resumen.pisos - 1}`, estiloTexto(24)).setOrigin(0.5);
       this.add.text(x, y + 22, `${resumen.oro} de oro`, estiloTexto(22, COLORES.oro)).setOrigin(0.5);
       this.add.text(x, y + 60, fecha(resumen.guardadoEn), estiloTexto(18, COLORES.textoSuave)).setOrigin(0.5);
     } else {

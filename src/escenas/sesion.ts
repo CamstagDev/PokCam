@@ -41,7 +41,7 @@ export function jugarPartida(escena: Phaser.Scene, partida: Partida, ranura: num
   agregarNodosVistos(almacen, partida.visitados.map((id) => buscarNodo(partida.mapa, id).tipo));
 }
 
-// Al terminar la partida (derrota o jefe vencido) su ranura queda libre.
+// Al terminar la partida (en bancarrota) su ranura queda libre.
 export function terminarPartida(escena: Phaser.Scene): void {
   borrar(almacen, escena.registry.get('ranura') as number);
 }

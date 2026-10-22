@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { crearAleatorio } from '../src/juego/aleatorio.ts';
 import { TAMANO_MANO, crearCombate, descartar, jugar } from '../src/juego/combate.ts';
+import { PROBABILIDADES_INICIALES, probabilidadComun } from '../src/juego/baratijas.ts';
 import { crearMazo } from '../src/juego/cartas.ts';
 import {
   avanzar,
@@ -9,8 +10,10 @@ import {
   crearPartida,
   enBancarrota,
   nivelDeRiesgo,
+  nodoActual,
   nodosDisponibles,
   objetivoDelCombate,
+  probabilidadesDelMundoSiguiente,
   resolverCombate,
   type Partida,
 } from '../src/juego/partida.ts';
@@ -21,10 +24,19 @@ const seguir = (p: Partida) => (p.oferta?.evento === 'regaloRaimundo' ? elegirCa
 // Con No gracias, para pasar las recompensas de los élites al recorrer el mapa.
 const conNoGracias = () => ({ ...crearPartida(7), baratijas: ['no-gracias'] });
 
+// Recorre el mapa ganando todo hasta quedar frente al jefe (sin pelearlo).
+function hastaElJefe(partida: Partida): Partida {
+  while (nodoActual(partida).tipo !== 'jefe') {
+    partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
+    if (nodoActual(partida).tipo !== 'jefe') partida = seguir(resolverCombate(partida, true));
+  }
+  return partida;
+}
+
 describe('partida', () => {
   it('se recorre desde el inicio hasta el jefe', () => {
     let partida = conNoGracias();
-    while (nodosDisponibles(partida).length > 0) partida = seguir(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
+    partida = hastaElJefe(partida);
     expect(partida.visitados).toHaveLength(partida.mapa.pisos.length);
     expect(partida.nodoActual).toBe(partida.mapa.pisos.at(-1)![0]!.id);
   });
@@ -37,13 +49,46 @@ describe('partida', () => {
   it('el nivel de riesgo es el piso, y cada nivel sube 50 el objetivo', () => {
     let partida = conNoGracias();
     expect(nivelDeRiesgo(partida)).toBe(0);
-    while (nodosDisponibles(partida).length > 0) {
-      partida = seguir(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
+    while (nodoActual(partida).tipo !== 'jefe') {
+      partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
       const { piso, tipo } = partida.mapa.pisos.flat().find((n) => n.id === partida.nodoActual)!;
       expect(nivelDeRiesgo(partida)).toBe(piso);
       const base = { elite: 500, jefe: 800 }[tipo as 'elite' | 'jefe'] ?? 300;
       expect(objetivoDelCombate(partida)).toBe(base + 50 * piso);
+      if (tipo !== 'jefe') partida = seguir(resolverCombate(partida, true));
     }
+  });
+
+  it('vencer al jefe empieza el mundo 2 con todo lo demás y el riesgo desde el jefe', () => {
+    const frenteAlJefe = { ...hastaElJefe(conNoGracias()), oro: 900 };
+    const pisoDelJefe = nodoActual(frenteAlJefe).piso;
+    const mundo2 = resolverCombate(frenteAlJefe, true);
+    expect(mundo2.mundo).toBe(2);
+    expect(mundo2.mapa).not.toEqual(frenteAlJefe.mapa);
+    expect(mundo2.nodoActual).toBe(mundo2.mapa.pisos[0]![0]!.id);
+    expect(mundo2.visitados).toEqual([mundo2.nodoActual]);
+    expect(mundo2.combatePendiente).toBe(false);
+    expect(mundo2.oro).toBe(1000); // +100 del jefe
+    expect(mundo2.baratijas).toEqual(frenteAlJefe.baratijas);
+    expect(mundo2.mazo).toEqual(frenteAlJefe.mazo);
+    expect(nivelDeRiesgo(mundo2)).toBe(pisoDelJefe);
+    const primerCombate = avanzar(mundo2, nodosDisponibles(mundo2)[0]!.id);
+    expect(nivelDeRiesgo(primerCombate)).toBe(pisoDelJefe + 1);
+    expect(objetivoDelCombate(primerCombate)).toBe(300 + 50 * (pisoDelJefe + 1));
+  });
+
+  it('cada mundo baja 15 puntos las comunes y los reparte entre las otras rarezas', () => {
+    const antes = PROBABILIDADES_INICIALES; // comunes 60 %
+    const despues = probabilidadesDelMundoSiguiente(antes);
+    expect(probabilidadComun(despues)).toBeCloseTo(0.45);
+    // En proporción a lo que ya tenían: 25 : 10 : 5.
+    expect(despues.infrecuente).toBeCloseTo(0.25 + 0.15 * (25 / 40));
+    expect(despues.rara).toBeCloseTo(0.1 + 0.15 * (10 / 40));
+    expect(despues.legendaria).toBeCloseTo(0.05 + 0.15 * (5 / 40));
+    // Nunca quedan comunes negativas.
+    let p = antes;
+    for (let i = 0; i < 10; i++) p = probabilidadesDelMundoSiguiente(p);
+    expect(probabilidadComun(p)).toBeCloseTo(0);
   });
 
   it('empieza con el mazo de 52 cartas, que es el que se reparte en el combate', () => {
@@ -73,7 +118,7 @@ describe('partida', () => {
 
   it('al jefe perdido hay que volver a enfrentarlo', () => {
     let partida = conNoGracias();
-    while (nodosDisponibles(partida).length > 0) partida = seguir(resolverCombate(avanzar(partida, nodosDisponibles(partida)[0]!.id), true));
+    partida = hastaElJefe(partida);
     const conJefe = { ...partida, combatePendiente: true };
     expect(resolverCombate(conJefe, false).combatePendiente).toBe(true);
   });

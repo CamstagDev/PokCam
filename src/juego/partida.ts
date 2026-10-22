@@ -4,6 +4,7 @@
 import { barajar, crearAleatorio } from './aleatorio.ts';
 import {
   PROBABILIDADES_INICIALES,
+  probabilidadComun,
   aplicar,
   baratijasDe,
   buscarBaratija,
@@ -49,6 +50,11 @@ export interface Partida {
   // Las de cada rareza al ofrecer baratijas, sin contar lo que cambien las
   // baratijas (ver probabilidadesDeRareza).
   probabilidades: Probabilidades;
+  // El mundo en el que va (1, 2, …) y el riesgo que traen los mundos ya
+  // vencidos: al vencer al jefe se empieza el siguiente mundo, con un mapa
+  // nuevo, y el riesgo sigue subiendo desde el piso del jefe.
+  mundo: number;
+  riesgoBase: number;
   // Una baratija recién conseguida que espera que el jugador elija un
   // número (de 1 a maximo) antes de seguir.
   eleccion: { baratija: string; maximo: number } | null;
@@ -117,7 +123,7 @@ const OFERTA_DEL_SERVICIO: Record<Servicio, Oferta['tipo']> = {
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0, niveles: nivelesIniciales(), cripto: { predicciones: [], ultima: null } };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, mundo: 1, riesgoBase: 0, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0, niveles: nivelesIniciales(), cripto: { predicciones: [], ultima: null } };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -172,12 +178,45 @@ export function resolverCombate(partida: Partida, gano: boolean): Partida {
     racha: gano ? Math.max(partida.racha, 0) + 1 : Math.min(partida.racha, 0) - 1,
     ...avanzarTransformaciones(sinPerdidas),
   };
+  if (gano && nodo.tipo === 'jefe') return siguienteMundo(resuelto);
   // Vencer a un élite ofrece elegir 1 de 3 baratijas.
   if (gano && nodo.tipo === 'elite') {
     const baratijas = sortearOferta(resuelto, 'elite');
     if (baratijas.baratijas.length > 0) return { ...resuelto, oferta: baratijas };
   }
   return resuelto;
+}
+
+// Cada mundo nuevo baja COMUNES_MENOS_POR_MUNDO la probabilidad de las
+// baratijas comunes, y lo que pierden se reparte entre las otras rarezas en
+// proporción a lo que ya tenían.
+export const COMUNES_MENOS_POR_MUNDO = 0.15;
+
+export function probabilidadesDelMundoSiguiente(probabilidades: Probabilidades): Probabilidades {
+  const otras = probabilidades.infrecuente + probabilidades.rara + probabilidades.legendaria;
+  const baja = Math.min(COMUNES_MENOS_POR_MUNDO, probabilidadComun(probabilidades));
+  if (otras <= 0 || baja <= 0) return probabilidades;
+  const repartir = (p: number) => p + (baja * p) / otras;
+  return { infrecuente: repartir(probabilidades.infrecuente), rara: repartir(probabilidades.rara), legendaria: repartir(probabilidades.legendaria) };
+}
+
+// Después del jefe: un mapa nuevo desde su inicio, con todo lo demás (oro,
+// mazo, baratijas, niveles…) igual. El riesgo arranca donde estaba el jefe.
+export function siguienteMundo(partida: Partida): Partida {
+  const mundo = partida.mundo + 1;
+  const mapa = generarMapa(partida.mapa.semilla * 7919 + mundo);
+  const inicio = mapa.pisos[0]![0]!;
+  return {
+    ...partida,
+    mapa,
+    mundo,
+    riesgoBase: nivelDeRiesgo(partida),
+    nodoActual: inicio.id,
+    visitados: [inicio.id],
+    combatePendiente: false,
+    oferta: null,
+    probabilidades: probabilidadesDelMundoSiguiente(partida.probabilidades),
+  };
 }
 
 function valorDeBaratijas(ids: readonly string[]): number {
@@ -698,9 +737,10 @@ export function elegirCartaDelRegalo(partida: Partida, id: string): Partida {
 }
 
 // El nivel de riesgo es el piso en el que está el jugador (el inicio es el
-// 0). Aquí se sumarán los modificadores de riesgo.
+// 0), más el de los mundos ya vencidos. Aquí se sumarán los modificadores
+// de riesgo.
 export function nivelDeRiesgo(partida: Partida): number {
-  return nodoActual(partida).piso;
+  return partida.riesgoBase + nodoActual(partida).piso;
 }
 
 // Los puntos que pide el combate del nodo actual.

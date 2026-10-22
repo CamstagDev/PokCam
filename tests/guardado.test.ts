@@ -34,7 +34,7 @@ describe('guardado', () => {
     let partida = crearPartida(7);
     partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
     guardar(almacen, 1, partida, 1234);
-    expect(cargar(almacen, 1)).toEqual({ version: 11, guardadoEn: 1234, partida });
+    expect(cargar(almacen, 1)).toEqual({ version: 12, guardadoEn: 1234, partida });
     expect(cargar(almacen, 0)).toBeNull();
   });
 
@@ -43,7 +43,7 @@ describe('guardado', () => {
     let partida = crearPartida(7);
     partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
     guardar(almacen, 2, partida, 99);
-    expect(resumirTodas(almacen)).toEqual([null, null, { ranura: 2, guardadoEn: 99, piso: 1, pisos: partida.mapa.pisos.length, oro: 300 }]);
+    expect(resumirTodas(almacen)).toEqual([null, null, { ranura: 2, guardadoEn: 99, mundo: 1, piso: 1, pisos: partida.mapa.pisos.length, oro: 300 }]);
   });
 
   it('sobrescribir reemplaza la partida de la ranura', () => {
@@ -122,7 +122,7 @@ describe('guardado', () => {
 
     const destino = almacenDePrueba();
     expect(importarRanura(destino, 2, texto)).toBe(true);
-    expect(cargar(destino, 2)).toEqual({ version: 11, guardadoEn: 77, partida });
+    expect(cargar(destino, 2)).toEqual({ version: 12, guardadoEn: 77, partida });
     expect(leerColeccion(destino).sort()).toEqual(['diversidad', 'subsidio']);
     expect(leerNodosVistos(destino).sort()).toEqual(['combate', 'vendedor']);
   });

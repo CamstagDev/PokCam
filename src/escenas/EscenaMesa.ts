@@ -231,15 +231,17 @@ export class EscenaMesa extends Phaser.Scene {
     const partida = resolverCombate(partidaActual(this), gano);
     const quebrado = enBancarrota(partida);
     const jefeVencido = gano && this.tipo === 'jefe';
-    const finDePartida = quebrado || jefeVencido;
+    // Vencer al jefe no termina la partida: resolverCombate la pasa al
+    // mundo siguiente.
+    const finDePartida = quebrado;
     const titulo = jefeVencido ? '¡Venciste al jefe!' : gano ? '¡Combate ganado!' : quebrado ? 'Te quedaste sin oro' : 'Perdiste el combate';
     const diferencia = partida.oro - antes;
 
     this.botonJugar.activar(false);
     this.botonDescartar.activar(false);
     this.botonMenu.activar(false);
-    // Al terminar la partida (bancarrota o jefe vencido) su ranura queda
-    // libre; si no, se guarda con el oro nuevo.
+    // Al terminar la partida (bancarrota) su ranura queda libre; si no, se
+    // guarda con el oro nuevo.
     if (finDePartida) terminarPartida(this);
     else jugarPartida(this, partida);
     this.oro.cambiar(partida.oro);
@@ -248,7 +250,8 @@ export class EscenaMesa extends Phaser.Scene {
     this.add.text(width / 2, height / 2 - 80, titulo, estiloTexto(48, gano ? COLORES.acento : COLORES.multi)).setOrigin(0.5);
     const oro = `${diferencia >= 0 ? '+' : '−'}${Math.abs(diferencia)} de oro`;
     const sinBaratijas = perdidas.length > 0 ? `\nPerdiste ${perdidas.map((b) => `${b.icono} ${b.nombre}`).join(', ')}` : '';
-    const detalle = quebrado ? 'Fin de la partida' : oro + sinBaratijas;
+    const mundoNuevo = jefeVencido ? `\nSigues en el mundo ${partida.mundo}` : '';
+    const detalle = quebrado ? 'Fin de la partida' : oro + sinBaratijas + mundoNuevo;
     this.add
       .text(width / 2, height / 2 - 20, detalle, { ...estiloTexto(28, quebrado ? COLORES.textoSuave : COLORES.oro), align: 'center' })
       .setOrigin(0.5);
