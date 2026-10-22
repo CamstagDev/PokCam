@@ -81,8 +81,9 @@ export class EscenaMesa extends Phaser.Scene {
     const { width } = this.scale;
     this.marcador = this.add.text(40, 30, '', estiloTexto(24)).setLineSpacing(8);
     this.jugada = this.add.text(width / 2, 250, '', estiloTexto(34)).setOrigin(0.5);
-    this.botonJugar = crearBoton(this, width / 2 - 170, 660, 'Jugar mano', COLORES.fichas, () => this.accion(jugar));
-    this.botonDescartar = crearBoton(this, width / 2 + 170, 660, 'Descartar', COLORES.multi, () => this.accion(descartar));
+    // Bien separados para que Valor, Apostar y Palo quepan entre los dos.
+    this.botonJugar = crearBoton(this, width / 2 - 240, 660, 'Jugar mano', COLORES.fichas, () => this.accion(jugar));
+    this.botonDescartar = crearBoton(this, width / 2 + 240, 660, 'Descartar', COLORES.multi, () => this.accion(descartar));
     this.botonesOrden.set('valor', crearBotonRedondo(this, width / 2 - 64, 652, 'A↓', 'Valor', () => this.ordenar('valor')));
     this.botonesOrden.set('palo', crearBotonRedondo(this, width / 2 + 64, 652, '♠♥', 'Palo', () => this.ordenar('palo')));
     // La partida ya está guardada con este combate pendiente: al continuar

@@ -6,6 +6,11 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- En la mesa, "Jugar mano" y "Descartar" se separaron para que los
+  botones redondos de Valor, Apostar y Palo ya no se les encimen.
+- La ventana de la apuesta tiene un botón "Máx" que apuesta todo el oro
+  que se puede.
+
 - Nombres nuevos: la mano negra es Helman O'Grande; el vendedor de
   baratijas y la tienda de cartas son Raimundo el vendedor del mundo (el
   mismo hombre en los dos nodos); el eliminador es Edmundo manos de

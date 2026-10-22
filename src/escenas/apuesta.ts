@@ -20,7 +20,7 @@ const ANCHO_FICHA = 96;
 const POR_FILA = 6;
 
 // La pregunta de la apuesta al empezar un combate: cuánto oro apostar, de 0
-// a `maximo`, con botones de ±10 y ±100, y qué baratijas, tocándolas.
+// a `maximo`, con botones de ±10, ±100 y Máx, y qué baratijas, tocándolas.
 // Debajo se ve cómo queda el oro al ganar y al perder. Tapa la mesa hasta
 // que se elige.
 export function preguntarApuesta(
@@ -70,9 +70,10 @@ export function preguntarApuesta(
     cantidad = Phaser.Math.Clamp(cantidad + delta, 0, maximo);
     refrescar();
   };
-  // << resta 100, < resta 10, > suma 10, >> suma 100.
-  const pasos = ([[-100, '<<'], [-10, '<'], [10, '>'], [100, '>>']] as const).map(([delta, etiqueta], i) => {
-    const boton = crearBoton(escena, width / 2 + (i - 1.5) * 120, yValor + 75, etiqueta, COLORES.borde, () => cambiar(delta), 100);
+  // << resta 100, < resta 10, > suma 10, >> suma 100 y Máx apuesta todo
+  // lo que se puede.
+  const pasos = ([[-100, '<<'], [-10, '<'], [10, '>'], [100, '>>'], [Infinity, 'Máx']] as const).map(([delta, etiqueta], i) => {
+    const boton = crearBoton(escena, width / 2 + (i - 2) * 120, yValor + 75, etiqueta, COLORES.borde, () => cambiar(delta), 100);
     if (maximo === 0) boton.activar(false);
     return boton;
   });
