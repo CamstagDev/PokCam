@@ -27,8 +27,14 @@ const LUZ = 0xfff1b8;
 export interface FichaDePoker {
   contenedor: Phaser.GameObjects.Container;
   cara: Phaser.GameObjects.Arc; // la que recibe los toques
+  icono: Phaser.GameObjects.Text;
   // Mueve la luz del borde (si la tiene) según el tiempo, en ms.
   animar(tiempo: number): void;
+}
+
+// Las rayas del canto, del mismo color que las del borde.
+function blancoDeCanto(tipo: TipoNodo): number {
+  return tipo === 'inicio' || tipo === 'evento' ? 0x8a6d3b : 0xf6f3ea;
 }
 
 function oscurecer(color: number, factor: number): number {
@@ -45,11 +51,17 @@ export function crearFichaDePoker(
 ): FichaDePoker {
   const color = COLOR_DE_FICHA[tipo];
   const clara = tipo === 'inicio' || tipo === 'evento';
-  const canto = escena.add.circle(0, radio * 0.2, radio, oscurecer(color, 0.55));
+  // El canto: la ficha repetida más abajo y la franja entre las dos. Como
+  // la ficha se achata al acostarla, se dibuja alto para que se note.
+  const grosor = radio * 0.42;
+  const canto = escena.add.graphics();
+  canto.fillStyle(oscurecer(color, 0.55)).fillCircle(0, grosor, radio).fillRect(-radio, 0, radio * 2, grosor);
+  canto.fillStyle(blancoDeCanto(tipo), 0.85);
+  for (const x of [-0.72, -0.2, 0.32, 0.8]) canto.fillRect(radio * x - radio * 0.07, radio * 0.25, radio * 0.14, grosor);
   const cara = escena.add.circle(0, 0, radio, color);
   const dibujo = escena.add.graphics();
   // Rayas del borde, alternadas con el color de la ficha.
-  const blanco = clara ? 0x8a6d3b : 0xf6f3ea;
+  const blanco = blancoDeCanto(tipo);
   dibujo.lineStyle(radio * 0.2, blanco);
   for (let i = 0; i < RAYAS; i++) {
     const inicio = (i / RAYAS) * Math.PI * 2;
@@ -85,6 +97,7 @@ export function crearFichaDePoker(
   return {
     contenedor,
     cara,
+    icono: texto,
     animar(tiempo) {
       if (!resplandor || !destello) return;
       resplandor.setAlpha(0.6 + 0.4 * Math.sin((tiempo / 500) * Math.PI));

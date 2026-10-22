@@ -181,9 +181,12 @@ export class EscenaMapa extends Phaser.Scene {
         ficha.contenedor.setVisible(visible);
         if (!visible) continue;
         const { x, y, s } = proyectar(xDe(nodo), yPlano);
-        // Chatas, como apoyadas en el tablero inclinado.
+        // Acostadas sobre el tablero: un círculo inclinado como él se ve
+        // chato, de alto × cos(INCLINACION).
         const tamano = s * (late ? latido : 1);
-        ficha.contenedor.setPosition(x, y).setScale(tamano, tamano * (0.75 + 0.25 * Math.cos(angulo))).setDepth(y);
+        ficha.contenedor.setPosition(x, y).setScale(tamano, tamano * Math.cos(angulo)).setDepth(y);
+        // El icono casi derecho, para que se lea bien aunque la ficha esté acostada.
+        ficha.icono.setScale(1, 0.85 / Math.cos(angulo));
         ficha.animar(this.time.now);
       }
     };

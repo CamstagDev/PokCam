@@ -9,6 +9,8 @@ la versión nueva (ver scripts/nueva-version.mjs).
 - La mano empieza ordenada por valor (el botón Valor viene marcado).
 - Los nodos del mapa son fichas de póker de colores, un color por tipo
   de nodo; las que se pueden elegir tienen una luz que recorre el borde.
+  Están acostadas sobre el tablero (tan chatas como lo inclinado del
+  tablero), con el canto a la vista y el icono derecho para que se lea.
 
 - El mapa ahora es una mesa de póker: paño verde con textura y más
   claro al centro, baranda de madera y una mesa de madera alrededor. Los
