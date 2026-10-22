@@ -6,6 +6,13 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- El pintor: al cambiar de palo, ahora eliges el palo nuevo (en los tres
+  servicios).
+- El eliminador ahora se llama Raimundo el destructor de mundos. Eliminar
+  una carta cuesta 100 con 52 cartas en el mazo, el doble por cada 8 cartas
+  menos (44 → 200, 36 → 400) y baja despacio con más (60 → 90, 104 → 60),
+  redondeado a decenas. Ya no depende de la carta ni del riesgo.
+
 - Nodo nuevo, El pintor 🖌: hace un solo trabajo por visita.
   - Pintura libre (100 de oro): muestra una carta del mazo al azar y, si
     pagas, le pone un modificador al azar.

@@ -6,6 +6,7 @@ import {
   cartasEnAlquiler,
   costoDeAlquiler,
   costoDePersonalizado,
+  modificadorLibre,
   crearPartida,
   ofrecePersonalizado,
   personalizar,
@@ -69,13 +70,21 @@ describe('el pintor', () => {
     expect(() => alquilar(partida, partida.mazo.find((c) => !partida.oferta!.opciones!.includes(c.id))!.id)).toThrow();
   });
 
-  it('cambiar de palo pasa la carta a otro palo', () => {
+  it('cambiar de palo pasa la carta al palo elegido, que tiene que ser otro', () => {
     const partida = { ...enPintor(), oferta: { ...enPintor().oferta!, modificador: 'palo' as const } };
     const id = cartasEnAlquiler(partida)[0]!.id;
     const antes = partida.mazo.find((c) => c.id === id)!;
-    const despues = alquilar(partida, id).mazo.find((c) => c.id === id)!;
-    expect(despues.palo).not.toBe(antes.palo);
+    const otro = antes.palo === 'picas' ? 'corazones' : 'picas';
+    expect(() => alquilar(partida, id)).toThrow();
+    expect(() => alquilar(partida, id, antes.palo)).toThrow();
+    const despues = alquilar(partida, id, otro).mazo.find((c) => c.id === id)!;
+    expect(despues.palo).toBe(otro);
     expect(despues.modificaciones?.palo).toBe(1);
+  });
+
+  it('la pintura libre usa el modificador sorteado de la visita', () => {
+    const partida = enPintor();
+    expect(pintarLibre(partida, 'diamantes').modificador).toBe(modificadorLibre(partida));
   });
 
   it('Personalizado solo con Claire obscure, por 100 × las modificaciones del mazo', () => {

@@ -1,9 +1,9 @@
-// El eliminador (nodo ✂ del mapa): dos servicios, cada uno una vez por
+// Raimundo el destructor de mundos (el eliminador, nodo ✂ del mapa): dos servicios, cada uno una vez por
 // visita.
 //   Ruleta rusa  por COSTO_RULETA de oro, entran hasta 6 baratijas del
 //                jugador al azar y la ruleta elimina una.
-//   Eliminar     se elige una carta del mazo y se quita, por sus fichas ×
-//                el nivel de riesgo.
+//   Eliminar     se elige una carta del mazo y se quita; cuesta más cuantas
+//                menos cartas tenga el mazo (ver costoDeEliminar).
 // "Seguir" vuelve al mapa. La partida se guarda después de cada servicio.
 
 import Phaser from 'phaser';
@@ -49,7 +49,7 @@ export class EscenaEliminador extends Phaser.Scene {
     mostrarBotonesInventario(this, () => partidaActual(this));
     const usados = partida.oferta?.usados ?? [];
 
-    this.add.text(width / 2, 140, 'El eliminador', estiloTexto(40)).setOrigin(0.5);
+    this.add.text(width / 2, 140, 'Raimundo el destructor de mundos', estiloTexto(40)).setOrigin(0.5);
     this.add.text(width / 2, 190, 'Cada servicio se puede usar una vez', estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
 
     const y = height / 2 + 40;
@@ -67,8 +67,8 @@ export class EscenaEliminador extends Phaser.Scene {
       width / 2 + ANCHO_PANEL / 2 + 30,
       y,
       '✂ Eliminar',
-      `Elige una carta de tu mazo y quítala. Cuesta sus fichas × el riesgo (${Math.max(1, nivelDeRiesgo(partida))}).`,
-      usados.includes('eliminar') ? 'Usada' : 'Elegir carta',
+      `Elige una carta de tu mazo y quítala. Cuesta 100 con 52 cartas, el doble cada 8 cartas menos y algo menos con más cartas.`,
+      usados.includes('eliminar') ? 'Usada' : `Elegir carta · ${costoDeEliminar(partida)}`,
       !usados.includes('eliminar') && partida.mazo.length > 1,
       () => this.verMazo(partidaActual(this)),
     );
@@ -134,11 +134,11 @@ export class EscenaEliminador extends Phaser.Scene {
     saltar();
   }
 
-  // El mazo por palo, de mayor a menor; debajo de cada carta, lo que cuesta
-  // eliminarla. Tocar una pide confirmación.
+  // El mazo por palo, de mayor a menor. Tocar una carta pide confirmación.
   private verMazo(partida: Partida): void {
     const { width } = this.scale;
-    const capa = abrirCapa(this, 'Elige una carta para eliminar');
+    const costo = costoDeEliminar(partida);
+    const capa = abrirCapa(this, `Elige una carta para eliminar (${costo} de oro)`);
     const ordenadas = ordenarMano(partida.mazo, 'palo');
     const ancho = 62;
     const alto = 86;
@@ -149,10 +149,9 @@ export class EscenaEliminador extends Phaser.Scene {
       cartas.forEach((carta, i) => {
         const x = inicio + i * separacion;
         const y = 150 + fila * (alto + 38);
-        const costo = costoDeEliminar(partida, carta);
         const puede = puedeEliminarCarta(partida, carta.id);
         const objeto = dibujarCarta(this, x, y, carta, ancho, alto).setAlpha(puede ? 1 : 0.4);
-        capa.add([objeto, this.add.text(x, y + alto / 2 + 12, String(costo), estiloTexto(16, COLORES.oro)).setOrigin(0.5)]);
+        capa.add(objeto);
         if (!puede) return;
         objeto.setSize(ancho, alto).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
           const nombre = `${nombreRango(carta.rango)}${SIMBOLO_PALO[carta.palo]}`;

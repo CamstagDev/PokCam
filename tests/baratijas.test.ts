@@ -588,14 +588,20 @@ describe('el eliminador', () => {
     expect(puedeGirarRuleta(enEliminador(100, ['subsidio']))).toBe(false);
   });
 
-  it('eliminar una carta cuesta sus fichas × el nivel de riesgo, una vez por visita', () => {
-    const partida = enEliminador(300, []); // piso 1: riesgo 1
+  it('eliminar cuesta 100 con 52 cartas, se duplica cada 8 menos y baja despacio con más', () => {
+    const partida = enEliminador(300, []);
+    const conCartas = (n: number) => ({ ...partida, mazo: Array.from({ length: n }, (_, i) => ({ ...partida.mazo[i % 52]!, id: `c${i}` })) });
+    expect([52, 44, 36, 28, 48, 60, 78, 104].map((n) => costoDeEliminar(conCartas(n)))).toEqual([100, 200, 400, 800, 140, 90, 70, 60]);
+  });
+
+  it('eliminar una carta, una vez por visita', () => {
+    const partida = enEliminador(300, []);
     const rey = partida.mazo.find((c) => c.id === 'corazones-13')!;
-    expect(costoDeEliminar(partida, rey)).toBe(10);
+    expect(costoDeEliminar(partida)).toBe(100);
     const sinRey = eliminarCarta(partida, rey.id);
     expect(sinRey.mazo).toHaveLength(51);
     expect(sinRey.mazo.some((c) => c.id === rey.id)).toBe(false);
-    expect(sinRey.oro).toBe(290);
+    expect(sinRey.oro).toBe(200);
     expect(puedeEliminarCarta(sinRey, 'picas-2')).toBe(false);
     expect(puedeEliminarCarta(partida, 'no-existe')).toBe(false);
   });

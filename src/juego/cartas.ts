@@ -1,7 +1,5 @@
 // La baraja francesa de 52 cartas.
 
-import type { Aleatorio } from './aleatorio.ts';
-
 export const PALOS = ['picas', 'corazones', 'treboles', 'diamantes'] as const;
 export type Palo = (typeof PALOS)[number];
 
@@ -21,7 +19,7 @@ export interface Carta {
 // cuenta como una modificación (dos veces +1 multiplicador son 2):
 //   'multi'   +1 al multiplicador cuando la carta puntúa
 //   'fichas'  +FICHAS_POR_MODIFICACION fichas
-//   'palo'    pasa a otro palo, al azar
+//   'palo'    pasa al palo que elija el jugador (otro que el que tiene)
 export const MODIFICADORES = ['multi', 'fichas', 'palo'] as const;
 export type Modificador = (typeof MODIFICADORES)[number];
 export const FICHAS_POR_MODIFICACION = 5;
@@ -41,11 +39,12 @@ export function multiDeCarta(carta: Carta): number {
   return carta.modificaciones?.multi ?? 0;
 }
 
-export function modificar(carta: Carta, modificador: Modificador, aleatorio: Aleatorio): Carta {
+// Con 'palo' hace falta el palo nuevo, distinto del que tiene.
+export function modificar(carta: Carta, modificador: Modificador, palo?: Palo): Carta {
   const modificaciones = { ...carta.modificaciones, [modificador]: (carta.modificaciones?.[modificador] ?? 0) + 1 };
   if (modificador !== 'palo') return { ...carta, modificaciones };
-  const otros = PALOS.filter((p) => p !== carta.palo);
-  return { ...carta, palo: otros[Math.floor(aleatorio() * otros.length)]!, modificaciones };
+  if (!palo || palo === carta.palo) throw new Error('Hace falta un palo distinto del de la carta');
+  return { ...carta, palo, modificaciones };
 }
 
 export function nombreDeCarta(carta: Carta): string {

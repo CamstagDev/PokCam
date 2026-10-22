@@ -5,11 +5,12 @@
 //                  cartas del mazo ponérselo.
 //   Personalizado  solo con Claire obscure: se elige el modificador y la
 //                  carta, de todo el mazo.
+// Si el modificador es cambiar de palo, el jugador elige el palo nuevo.
 // Después del trabajo se ve cómo quedó la carta y se sigue al mapa.
 // "Seguir" vuelve al mapa sin pintar nada.
 
 import Phaser from 'phaser';
-import { MODIFICADORES, NOMBRE_MODIFICADOR, PALOS, nombreDeCarta, ordenarMano, type Carta, type Modificador } from '../juego/cartas.ts';
+import { MODIFICADORES, NOMBRE_MODIFICADOR, PALOS, SIMBOLO_PALO, nombreDeCarta, ordenarMano, type Carta, type Modificador, type Palo } from '../juego/cartas.ts';
 import {
   COSTO_PINTURA_LIBRE,
   alquilar,
@@ -17,6 +18,7 @@ import {
   cerrarOferta,
   costoDeAlquiler,
   costoDePersonalizado,
+  modificadorLibre,
   nivelDeRiesgo,
   ofrecePersonalizado,
   personalizar,
@@ -38,6 +40,8 @@ import { mostrarRiesgo } from './riesgo.ts';
 import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
 
 const ALTO_PANEL = 360;
+
+const NOMBRE_PALO: Record<Palo, string> = { picas: 'Picas', corazones: 'Corazones', treboles: 'Tréboles', diamantes: 'Diamantes' };
 
 export class EscenaPintor extends Phaser.Scene {
   constructor() {
@@ -72,8 +76,13 @@ export class EscenaPintor extends Phaser.Scene {
     this.panel(x, y, ancho, '🖌 Pintura libre', 'Toma esta carta de tu mazo y le pone un modificador al azar.');
     if (libre) dibujarCarta(this, x, arriba + 190, libre, 76, 106);
     crearBoton(this, x, abajo - 44, `Pintar · ${COSTO_PINTURA_LIBRE}`, COLORES.oro, () => {
-      const { partida: pintada, modificador } = pintarLibre(partidaActual(this));
-      this.terminar(pintada, oferta!.cartaLibre!, modificador);
+      const pintarCon = (palo?: Palo) => {
+        const { partida: pintada, modificador } = pintarLibre(partidaActual(this), palo);
+        this.terminar(pintada, oferta!.cartaLibre!, modificador);
+      };
+      // Al tocar Pintar ya se aceptó: si toca cambiar de palo, no hay vuelta atrás.
+      if (modificadorLibre(partida) === 'palo') this.elegirPalo(libre!, `Cambiar de palo a ${nombreDeCarta(libre!)} por ${COSTO_PINTURA_LIBRE} de oro`, pintarCon, false);
+      else pintarCon();
     }, 240).activar(puedePintarLibre(partida));
 
     // Alquiler de servicio: el modificador sorteado, en una de 6 cartas.
@@ -121,9 +130,7 @@ export class EscenaPintor extends Phaser.Scene {
       capa.add(objeto);
       objeto.setSize(110, 154).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
         capa.destroy(); // la confirmación queda debajo de la capa
-        confirmar(this, `¿${NOMBRE_MODIFICADOR[modificador]} a ${nombreDeCarta(carta)} por ${costo} de oro?`, 'Pintar', COLORES.oro, () => {
-          this.terminar(alquilar(partidaActual(this), carta.id), carta.id, modificador);
-        });
+        this.preguntar(carta, modificador, costo, (palo) => this.terminar(alquilar(partidaActual(this), carta.id, palo), carta.id, modificador));
       });
     });
   }
@@ -145,12 +152,38 @@ export class EscenaPintor extends Phaser.Scene {
         capa.add(objeto);
         objeto.setSize(ancho, alto).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
           capa.destroy();
-          confirmar(this, `¿${NOMBRE_MODIFICADOR[modificador]} a ${nombreDeCarta(carta)} por ${costo} de oro?`, 'Pintar', COLORES.oro, () => {
-            this.terminar(personalizar(partidaActual(this), carta.id, modificador), carta.id, modificador);
-          });
+          this.preguntar(carta, modificador, costo, (palo) => this.terminar(personalizar(partidaActual(this), carta.id, modificador, palo), carta.id, modificador));
         });
       });
     });
+  }
+
+  // Confirma el trabajo; si es cambiar de palo, elegir el palo es la
+  // confirmación.
+  private preguntar(carta: Carta, modificador: Modificador, costo: number, alAceptar: (palo?: Palo) => void): void {
+    if (modificador === 'palo') this.elegirPalo(carta, `Cambiar de palo a ${nombreDeCarta(carta)} por ${costo} de oro`, alAceptar, true);
+    else confirmar(this, `¿${NOMBRE_MODIFICADOR[modificador]} a ${nombreDeCarta(carta)} por ${costo} de oro?`, 'Pintar', COLORES.oro, () => alAceptar());
+  }
+
+  // Un botón por cada palo que no es el de la carta, y Cancelar si se puede.
+  private elegirPalo(carta: Carta, titulo: string, alElegir: (palo: Palo) => void, cancelable: boolean): void {
+    const { width, height } = this.scale;
+    const capa = this.add.container(0, 0).setDepth(200);
+    capa.add([
+      this.add.rectangle(width / 2, height / 2, width, height, COLORES.fondo, 0.94).setInteractive(),
+      this.add.text(width / 2, 120, titulo, estiloTexto(32)).setOrigin(0.5),
+      this.add.text(width / 2, 170, '¿A qué palo?', estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5),
+      dibujarCarta(this, width / 2, 300, carta, 100, 140),
+    ]);
+    const otros = PALOS.filter((p) => p !== carta.palo);
+    otros.forEach((palo, i) => {
+      const x = width / 2 + (i - (otros.length - 1) / 2) * 240;
+      capa.add(crearBoton(this, x, 460, `${SIMBOLO_PALO[palo]} ${NOMBRE_PALO[palo]}`, COLORES.oro, () => {
+        capa.destroy();
+        alElegir(palo);
+      }, 210));
+    });
+    if (cancelable) capa.add(crearBoton(this, width / 2, height - 80, 'Cancelar', COLORES.borde, () => capa.destroy(), 240));
   }
 
   // Guarda la partida y muestra cómo quedó la carta; de ahí se sigue al mapa.
