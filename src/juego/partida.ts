@@ -28,7 +28,7 @@ export const ORO_POR_COMBATE: Partial<Record<TipoNodo, number>> = { combate: 100
 // Puntos a alcanzar en cada tipo de combate con riesgo 0; cada nivel de
 // riesgo suma OBJETIVO_POR_RIESGO.
 export const OBJETIVO_BASE: Partial<Record<TipoNodo, number>> = { combate: 300, elite: 500, jefe: 800 };
-export const OBJETIVO_POR_RIESGO = 100;
+export const OBJETIVO_POR_RIESGO = 50;
 
 export interface Partida {
   mapa: Mapa;

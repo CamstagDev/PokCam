@@ -34,7 +34,7 @@ describe('partida', () => {
     expect(() => avanzar(partida, partida.mapa.pisos.at(-1)![0]!.id)).toThrow();
   });
 
-  it('el nivel de riesgo es el piso, y cada nivel sube 100 el objetivo', () => {
+  it('el nivel de riesgo es el piso, y cada nivel sube 50 el objetivo', () => {
     let partida = conNoGracias();
     expect(nivelDeRiesgo(partida)).toBe(0);
     while (nodosDisponibles(partida).length > 0) {
@@ -42,7 +42,7 @@ describe('partida', () => {
       const { piso, tipo } = partida.mapa.pisos.flat().find((n) => n.id === partida.nodoActual)!;
       expect(nivelDeRiesgo(partida)).toBe(piso);
       const base = { elite: 500, jefe: 800 }[tipo as 'elite' | 'jefe'] ?? 300;
-      expect(objetivoDelCombate(partida)).toBe(base + 100 * piso);
+      expect(objetivoDelCombate(partida)).toBe(base + 50 * piso);
     }
   });
 

@@ -132,7 +132,7 @@ la versión nueva (ver scripts/nueva-version.mjs).
   de un segundo y solo a toques que empiezan en el mapa.
 
 - Nivel de riesgo: es el piso del mapa en el que se está (el inicio es
-  el 0) y se ve arriba, junto al oro. Cada nivel sube 100 el objetivo de
+  el 0) y se ve arriba, junto al oro. Cada nivel sube 50 el objetivo de
   los combates (300 / 500 / 800 de base para combate / élite / jefe).
 - El mazo ahora es parte de la partida y se guarda con ella; cada
   combate reparte de ese mazo. Las partidas guardadas de antes siguen
