@@ -6,6 +6,12 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- El mapa ahora es una mesa de póker: paño verde con textura y más
+  claro al centro, baranda de madera y una mesa de madera alrededor. Los
+  caminos sin recorrer se ven como tiza. El paño, la baranda y el entorno
+  son piezas separadas (src/escenas/fondoMapa.ts) para poder cambiar
+  cada una por otra más adelante.
+
 - El mapa se ve como un tablero inclinado hacia atrás, en perspectiva:
   los pisos lejanos se ven más chicos y más angostos (INCLINACION en
   src/escenas/EscenaMapa.ts, hoy 60°).

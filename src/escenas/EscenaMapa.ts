@@ -20,6 +20,7 @@ import { mostrarCripto } from './cripto.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
+import { FONDO_MAPA, type Tablero } from './fondoMapa.ts';
 import { irAPartida, jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
 
 
@@ -80,10 +81,34 @@ export class EscenaMapa extends Phaser.Scene {
     };
     const enPantalla = (yPlano: number) => yPlano > -RADIO * 3 && yPlano < pivote + 200;
 
-    // El tablero y las líneas de los pisos se vuelven a dibujar en cada
-    // cuadro, igual que los caminos.
-    const tablero = this.add.graphics();
+    // El fondo va en piezas separadas (ver fondoMapa.ts): el entorno se
+    // dibuja una vez; la baranda, el paño, las líneas de los pisos y los
+    // caminos se vuelven a dibujar en cada cuadro.
+    const { entorno, baranda, pano } = FONDO_MAPA;
+    const ancho = ENTRE_COLUMNAS * partida.mapa.columnas;
+    const fondo = this.add.graphics();
+    entorno.dibujar(fondo, width, height);
+    const graficosBaranda = this.add.graphics();
+    const graficosPano = this.add.graphics();
+    const lineas = this.add.graphics();
     const caminos = this.add.graphics();
+    const lejos = -400; // la y del plano del borde del fondo del tablero
+    const cerca = pivote + 250; // y la del borde de adelante
+    const tablero: Tablero = {
+      ancho: width,
+      alto: height,
+      contorno: (margen) => [
+        proyectar(width / 2 - ancho / 2 - margen, lejos - margen),
+        proyectar(width / 2 + ancho / 2 + margen, lejos - margen),
+        proyectar(width / 2 + ancho / 2 + margen, cerca + margen),
+        proyectar(width / 2 - ancho / 2 - margen, cerca + margen),
+      ],
+      proyectar,
+      desplazamiento: 0,
+      centroX: width / 2,
+      mitad: ancho / 2,
+      cerca,
+    };
 
     let arrastrado = 0;
     let agarre: { y: number; scroll: number } | undefined;
@@ -114,15 +139,17 @@ export class EscenaMapa extends Phaser.Scene {
 
     const dibujar = () => {
       const plano = (piso: number) => yDe(piso) - vista.y;
-      tablero.clear();
-      const ancho = ENTRE_COLUMNAS * partida.mapa.columnas;
-      const esquinas = [proyectar(width / 2 - ancho / 2, -400), proyectar(width / 2 + ancho / 2, -400), proyectar(width / 2 + ancho / 2, pivote + 250), proyectar(width / 2 - ancho / 2, pivote + 250)];
-      tablero.fillStyle(COLORES.panel, 0.45).fillPoints(esquinas.map(({ x, y }) => new Phaser.Math.Vector2(x, y)), true);
+      tablero.desplazamiento = vista.y;
+      graficosBaranda.clear();
+      baranda.dibujar(graficosBaranda, tablero);
+      graficosPano.clear();
+      pano.dibujar(graficosPano, tablero);
+      lineas.clear();
       for (let piso = 0; piso <= pisoVisible; piso++) {
         if (!enPantalla(plano(piso))) continue;
         const izquierda = proyectar(width / 2 - ancho / 2, plano(piso));
         const derecha = proyectar(width / 2 + ancho / 2, plano(piso));
-        tablero.lineStyle(2, COLORES.borde, 0.5).lineBetween(izquierda.x, izquierda.y, derecha.x, derecha.y);
+        lineas.lineStyle(2, pano.camino, 0.12).lineBetween(izquierda.x, izquierda.y, derecha.x, derecha.y);
       }
 
       caminos.clear();
@@ -136,7 +163,7 @@ export class EscenaMapa extends Phaser.Scene {
             const hasta = proyectar(xDe(otro), plano(otro.piso));
             const recorrido = partida.visitados.includes(nodo.id) && partida.visitados.includes(id);
             const grosor = (recorrido ? 6 : 4) * (desde.s + hasta.s) / 2;
-            caminos.lineStyle(grosor, recorrido ? COLORES.acento : COLORES.borde);
+            caminos.lineStyle(grosor, recorrido ? COLORES.acento : pano.camino, recorrido ? 1 : 0.55);
             caminos.lineBetween(desde.x, desde.y, hasta.x, hasta.y);
           }
         }
