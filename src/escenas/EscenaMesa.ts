@@ -1,6 +1,6 @@
 // La mesa de un combate: la mano de 8 cartas abajo, se tocan de 1 a 5 para
 // elegirlas y se juegan o se descartan. Entre los dos botones, otros dos
-// redondos ordenan la mano por valor o por palo; el orden elegido se
+// redondos ordenan la mano por valor o por palo; empieza por valor y el orden elegido se
 // mantiene con las cartas que se roban después. Arriba, cuánto falta para el
 // objetivo. Las reglas están en juego/combate.ts; aquí solo se dibujan.
 
@@ -53,7 +53,7 @@ export class EscenaMesa extends Phaser.Scene {
   private oro!: Marcador;
   // Mientras se espera la apuesta no se puede tocar la mano.
   private bloqueada = false;
-  private orden: Orden | null = null;
+  private orden: Orden = 'valor'; // la mano empieza ordenada por valor
   private botonesOrden = new Map<Orden, BotonRedondo>();
   private botonApostar: BotonRedondo | null = null;
 
@@ -65,7 +65,7 @@ export class EscenaMesa extends Phaser.Scene {
     this.tipo = datos.tipo;
     this.elegidas.clear();
     this.cartas.clear();
-    this.orden = null;
+    this.orden = 'valor';
     this.botonesOrden.clear();
     this.botonApostar = null;
     this.bloqueada = false;
@@ -86,6 +86,8 @@ export class EscenaMesa extends Phaser.Scene {
     this.botonDescartar = crearBoton(this, width / 2 + 240, 660, 'Descartar', COLORES.multi, () => this.accion(descartar));
     this.botonesOrden.set('valor', crearBotonRedondo(this, width / 2 - 64, 652, 'A↓', 'Valor', () => this.ordenar('valor')));
     this.botonesOrden.set('palo', crearBotonRedondo(this, width / 2 + 64, 652, '♠♥', 'Palo', () => this.ordenar('palo')));
+    this.botonesOrden.get(this.orden)!.marcar(true);
+    this.combate = { ...this.combate, mano: ordenarMano(this.combate.mano, this.orden) };
     // La partida ya está guardada con este combate pendiente: al continuar
     // se vuelve a él, pero desde el principio.
     this.botonMenu = crearBoton(this, width - 90, 50, 'Menú', COLORES.borde, () =>
@@ -139,7 +141,7 @@ export class EscenaMesa extends Phaser.Scene {
     for (const id of ids) this.cartas.delete(id);
     this.elegidas.clear();
     this.combate = hacer(this.combate, ids);
-    if (this.orden) this.combate = { ...this.combate, mano: ordenarMano(this.combate.mano, this.orden) };
+    this.combate = { ...this.combate, mano: ordenarMano(this.combate.mano, this.orden) };
     this.actualizar();
     if (hacer === jugar) {
       this.tweens.add({ targets: this.jugada, scale: { from: 1.3, to: 1 }, duration: 250, ease: 'Back.easeOut' });

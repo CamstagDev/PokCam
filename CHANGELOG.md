@@ -6,6 +6,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- La mano empieza ordenada por valor (el botón Valor viene marcado).
+- Los nodos del mapa son fichas de póker de colores, un color por tipo
+  de nodo; las que se pueden elegir tienen una luz que recorre el borde.
+
 - El mapa ahora es una mesa de póker: paño verde con textura y más
   claro al centro, baranda de madera y una mesa de madera alrededor. Los
   caminos sin recorrer se ven como tiza. El paño, la baranda y el entorno

@@ -21,6 +21,7 @@ import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { FONDO_MAPA, type Tablero } from './fondoMapa.ts';
+import { crearFichaDePoker, type FichaDePoker } from './fichaDePoker.ts';
 import { irAPartida, jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
 
 
@@ -115,20 +116,23 @@ export class EscenaMapa extends Phaser.Scene {
     let listo = false;
     this.time.delayedCall(ESPERA_AL_ENTRAR, () => (listo = true));
     const disponibles = new Set(nodosDisponibles(partida).map((n) => n.id));
-    const dibujados: { nodo: Nodo; circulo: Phaser.GameObjects.Arc; icono: Phaser.GameObjects.Text; late: boolean }[] = [];
+    const dibujados: { nodo: Nodo; ficha: FichaDePoker; late: boolean }[] = [];
     for (const fila of partida.mapa.pisos) {
       for (const nodo of fila) {
         if (nodo.piso > pisoVisible) continue;
         const actual = nodo.id === partida.nodoActual;
         const visitado = partida.visitados.includes(nodo.id);
-        const relleno = actual ? COLORES.acento : visitado ? COLORES.borde : COLORES.panel;
-        const circulo = this.add.circle(0, 0, RADIO, relleno).setStrokeStyle(4, disponibles.has(nodo.id) ? COLORES.acento : COLORES.borde);
-        const icono = this.add.text(0, 0, DATOS_NODO[nodo.tipo].icono, estiloTexto(46, visitado && !actual ? COLORES.textoSuave : COLORES.texto)).setOrigin(0.5);
         const late = disponibles.has(nodo.id);
-        dibujados.push({ nodo, circulo, icono, late });
+        const ficha = crearFichaDePoker(this, nodo.tipo, DATOS_NODO[nodo.tipo].icono, RADIO, {
+          conLuz: late,
+          borde: actual ? COLORES.acento : undefined,
+        });
+        // Las ya recorridas quedan apagadas.
+        if (visitado && !actual) ficha.contenedor.setAlpha(0.5);
+        dibujados.push({ nodo, ficha, late });
 
         if (late) {
-          circulo.setInteractive({ useHandCursor: true }).on('pointerup', () => {
+          ficha.cara.setInteractive({ useHandCursor: true }).on('pointerup', () => {
             // Solo cuenta si el toque empezó en el mapa (no es el final del
             // clic que lo abrió) y pasó un momento desde que apareció.
             if (listo && agarre && arrastrado < ARRASTRE_MINIMO) this.ir(partida, nodo);
@@ -171,18 +175,16 @@ export class EscenaMapa extends Phaser.Scene {
 
       // Los nodos a los que se puede ir laten.
       const latido = 1 + 0.06 * (1 + Math.sin((this.time.now / 600) * Math.PI));
-      for (const { nodo, circulo, icono, late } of dibujados) {
+      for (const { nodo, ficha, late } of dibujados) {
         const yPlano = plano(nodo.piso);
         const visible = enPantalla(yPlano);
-        circulo.setVisible(visible);
-        icono.setVisible(visible);
+        ficha.contenedor.setVisible(visible);
         if (!visible) continue;
         const { x, y, s } = proyectar(xDe(nodo), yPlano);
-        // Un poco más chatos que redondos, como apoyados en el tablero.
-        circulo.setPosition(x, y).setScale(s * (late ? latido : 1), s * (late ? latido : 1) * (0.75 + 0.25 * Math.cos(angulo)));
-        icono.setPosition(x, y).setScale(s);
-        circulo.setDepth(y);
-        icono.setDepth(y + 0.5);
+        // Chatas, como apoyadas en el tablero inclinado.
+        const tamano = s * (late ? latido : 1);
+        ficha.contenedor.setPosition(x, y).setScale(tamano, tamano * (0.75 + 0.25 * Math.cos(angulo))).setDepth(y);
+        ficha.animar(this.time.now);
       }
     };
     this.events.on(Phaser.Scenes.Events.UPDATE, dibujar);
