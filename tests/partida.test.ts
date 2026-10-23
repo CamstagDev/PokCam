@@ -60,7 +60,9 @@ describe('partida', () => {
   });
 
   it('vencer al jefe empieza el mundo 2 con todo lo demás y el riesgo desde el jefe', () => {
-    const frenteAlJefe = { ...hastaElJefe(conNoGracias()), oro: 900 };
+    // Con las baratijas del jefe ya en la mano, no hay premio que cambie nada.
+    const llegada = hastaElJefe(conNoGracias());
+    const frenteAlJefe = { ...llegada, oro: 900, baratijas: [...llegada.baratijas, 'as-bajo-la-manga', 'faroleo', 'mazo-limpio'] };
     const pisoDelJefe = nodoActual(frenteAlJefe).piso;
     const mundo2 = resolverCombate(frenteAlJefe, true);
     expect(mundo2.mundo).toBe(2);

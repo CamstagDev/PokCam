@@ -21,6 +21,7 @@ import {
   valorDeVenta,
 } from './baratijas.ts';
 import { MODIFICADORES, PALOS, RANGOS, crearMazo, modificacionesDe, modificar, type Carta, type Modificador, type Palo } from './cartas.ts';
+import { jefeDelMundo } from './jefes.ts';
 import { TIPOS_DE_MANO, nivelesIniciales, type Niveles, type TipoMano } from './manos.ts';
 import { buscarNodo, generarMapa, type Mapa, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
 
@@ -187,13 +188,24 @@ export function resolverCombate(partida: Partida, gano: boolean, memoria: Memori
     racha: gano ? Math.max(partida.racha, 0) + 1 : Math.min(partida.racha, 0) - 1,
     ...avanzarTransformaciones(sinPerdidas),
   };
-  if (gano && nodo.tipo === 'jefe') return siguienteMundo(resuelto);
+  if (gano && nodo.tipo === 'jefe') {
+    const premio = premioDelJefe(resuelto);
+    return siguienteMundo(premio ? conseguir(resuelto, premio) : resuelto);
+  }
   // Vencer a un élite ofrece elegir 1 de 3 baratijas.
   if (gano && nodo.tipo === 'elite') {
     const baratijas = sortearOferta(resuelto, 'elite');
     if (baratijas.baratijas.length > 0) return { ...resuelto, oferta: baratijas };
   }
   return resuelto;
+}
+
+// Al vencer al jefe del mundo, una de sus baratijas que el jugador no
+// tenga, al azar (ninguna si ya las tiene todas).
+export function premioDelJefe(partida: Partida): string | null {
+  const libres = jefeDelMundo(partida.mundo).baratijas.filter((id) => !partida.baratijas.includes(id));
+  const aleatorio = crearAleatorio(partida.mapa.semilla * 59 + partida.mundo * 41 + partida.visitados.length);
+  return libres[Math.floor(aleatorio() * libres.length)] ?? null;
 }
 
 // Cada mundo nuevo baja COMUNES_MENOS_POR_MUNDO la probabilidad de las
@@ -293,9 +305,10 @@ export function elegirBaratija(partida: Partida, id: string): Partida {
 // queda esperando la respuesta (ver responderEleccion).
 function conseguir(partida: Partida, id: string): Partida {
   const baratijas = [...partida.baratijas, id];
-  const pregunta = buscarBaratija(id).pregunta;
+  const { pregunta, alConseguir } = buscarBaratija(id);
   const maximo = pregunta ? pregunta.maximo(baratijas) : 0;
-  return { ...partida, baratijas, eleccion: maximo >= 1 ? { baratija: id, maximo } : null };
+  const mazo = alConseguir ? alConseguir(partida.mazo) : partida.mazo;
+  return { ...partida, baratijas, mazo, eleccion: maximo >= 1 ? { baratija: id, maximo } : null };
 }
 
 export function responderEleccion(partida: Partida, numero: number): Partida {

@@ -30,6 +30,14 @@
 //   cripto            si es true, el oro se vuelve cripto (ver partida.ts)
 //   venderBaratijas   si es true, se le pueden vender baratijas al vendedor
 //   pintorPersonalizado  si es true, el pintor ofrece "Personalizado"
+//   asExtra           si es true, cada combate empieza con un As de más en
+//                     la mano, que no es del mazo
+//   faroles           cuántas manos por combate pueden farolear (puntuar
+//                     como el tipo de mano siguiente)
+//
+// Una baratija también puede cambiar el mazo al conseguirla
+// (`alConseguir`), y ser de un jefe (`deJefe`): esas solo se consiguen
+// venciéndolo, nunca en ofertas.
 //
 // Una baratija puede pertenecer a un set (`conjunto`, el id de uno de
 // CONJUNTOS). Cada set da bonos según cuántas de sus baratijas se tengan;
@@ -162,6 +170,8 @@ export interface Efectos {
   cripto?: boolean; // el oro sube o baja según predicciones (ver partida.ts)
   venderBaratijas?: boolean; // deja vender baratijas al vendedor
   pintorPersonalizado?: boolean; // el pintor ofrece el servicio Personalizado
+  asExtra?: boolean; // un As de más en la mano al empezar cada combate
+  faroles?: number; // manos por combate que puntúan como el tipo siguiente
 }
 
 export interface Baratija extends Efectos {
@@ -178,6 +188,8 @@ export interface Baratija extends Efectos {
   alElegirNumero?(cambio: CambioDeBaratijas, numero: number, aleatorio: Aleatorio): CambioDeBaratijas;
   recordar?(recuerdo: Recuerdo, suceso: Suceso): Recuerdo;
   estado?(mesa: Mesa): string;
+  alConseguir?(mazo: readonly Carta[]): Carta[];
+  deJefe?: string; // id del jefe que la da
 }
 
 // Callo: la mano más jugada (o las empatadas) y cuántas veces.
@@ -484,6 +496,36 @@ export const CATALOGO: readonly Baratija[] = [
     estado: (mesa) => `Ahora: ×${factorDeFuego(mesa)}`,
   },
   {
+    id: 'as-bajo-la-manga',
+    nombre: 'As bajo la manga',
+    descripcion: 'Cada combate empieza con un As de más en la mano. Al terminar el combate desaparece.',
+    rareza: 'infrecuente',
+    icono: '🂡',
+    deJefe: 'tahur',
+    asExtra: true,
+  },
+  {
+    id: 'faroleo',
+    nombre: 'Faroleo',
+    descripcion: 'Una vez por combate, una mano puntúa como el tipo siguiente (par → doble par, color → full…).',
+    rareza: 'infrecuente',
+    icono: '🎭',
+    deJefe: 'tahur',
+    faroles: 1,
+  },
+  {
+    id: 'mazo-limpio',
+    nombre: 'Mazo limpio',
+    descripcion: 'Al conseguirla se van de tu mazo todos los 2, 3 y 4.',
+    rareza: 'infrecuente',
+    icono: '🧹',
+    deJefe: 'tahur',
+    alConseguir: (mazo) => {
+      const limpio = mazo.filter((c) => c.rango > 4);
+      return limpio.length > 0 ? limpio : [...mazo];
+    },
+  },
+  {
     id: 'tarjeta-de-credito',
     nombre: 'Tarjeta de crédito',
     descripcion: 'Puedes deber hasta riesgo × 100 de oro. En deuda, cada paso en el mapa cuesta riesgo × 10 % de lo que debes.',
@@ -645,7 +687,7 @@ export function sortearDeRareza(aleatorio: Aleatorio, rareza: Rareza, excluir: r
   const indice = RAREZAS.indexOf(rareza);
   const orden = [...RAREZAS.slice(0, indice + 1).reverse(), ...RAREZAS.slice(indice + 1)];
   for (const buscada of orden) {
-    const libres = CATALOGO.filter((b) => b.rareza === buscada && !excluir.includes(b.id));
+    const libres = CATALOGO.filter((b) => b.rareza === buscada && !b.deJefe && !excluir.includes(b.id));
     if (libres.length > 0) return barajar(libres, aleatorio)[0]!.id;
   }
   return null;

@@ -26,6 +26,7 @@ export interface Combate {
   riesgo: number;
   mundo: number;
   manosJugadas: number;
+  faroles: number; // los que quedan en este combate (Faroleo)
   // La de las baratijas de la partida, con lo que recuerden de este
   // combate; al terminarlo vuelve a la partida (ver resolverCombate).
   memoria: Memoria;
@@ -48,8 +49,9 @@ export function crearCombate(
   { objetivo, mazo, manos = 4, descartes = 3, baratijas = [], niveles, riesgo = 0, mundo = 1, memoria = {} }: OpcionesCombate,
 ): Combate {
   const pila = barajar(mazo, aleatorio);
-  const inicio = aplicar(efectosDe(baratijas), 'alEmpezarCombate', { manos, descartes });
-  return robar({
+  const efectos = efectosDe(baratijas);
+  const inicio = aplicar(efectos, 'alEmpezarCombate', { manos, descartes });
+  const repartido = robar({
     objetivo,
     puntos: 0,
     manosRestantes: inicio.manos,
@@ -64,13 +66,21 @@ export function crearCombate(
     riesgo,
     mundo,
     manosJugadas: 0,
+    faroles: efectos.reduce((suma, e) => suma + (e.faroles ?? 0), 0),
     memoria,
   });
+  // As bajo la manga: un As de picas de más, que no es del mazo.
+  if (!efectos.some((e) => e.asExtra)) return repartido;
+  return { ...repartido, mano: [...repartido.mano, { id: AS_EXTRA, palo: 'picas', rango: 14 }] };
 }
 
-export function jugar(combate: Combate, ids: readonly string[]): Combate {
+export const AS_EXTRA = 'as-bajo-la-manga';
+
+// Con `farol`, la mano puntúa como el tipo siguiente (si quedan faroles).
+export function jugar(combate: Combate, ids: readonly string[], farol = false): Combate {
   const cartas = elegidas(combate, ids, MAX_CARTAS_JUGADAS);
   if (combate.manosRestantes === 0) throw new Error('No quedan manos');
+  if (farol && combate.faroles === 0) throw new Error('No quedan faroles');
   const mesa = {
     mazo: combate.mazo,
     restantes: combate.pila.length,
@@ -80,12 +90,12 @@ export function jugar(combate: Combate, ids: readonly string[]): Combate {
     manosJugadas: combate.manosJugadas,
     memoria: combate.memoria,
   };
-  const jugada = puntuar(cartas, efectosDe(combate.baratijas), mesa, combate.niveles);
+  const jugada = puntuar(cartas, efectosDe(combate.baratijas), mesa, combate.niveles, farol);
   const memoria = recordar(combate.memoria, combate.baratijas, { tipo: 'mano', mano: jugada.tipo, total: jugada.total, objetivo: combate.objetivo });
   const puntos = combate.puntos + jugada.total;
   const manosRestantes = combate.manosRestantes - 1;
   const estado = puntos >= combate.objetivo ? 'ganado' : manosRestantes === 0 ? 'perdido' : 'jugando';
-  return robar({ ...combate, ...sinCartas(combate, ids), puntos, manosRestantes, estado, ultimaJugada: jugada, manosJugadas: combate.manosJugadas + 1, memoria });
+  return robar({ ...combate, ...sinCartas(combate, ids), puntos, manosRestantes, estado, ultimaJugada: jugada, manosJugadas: combate.manosJugadas + 1, faroles: combate.faroles - (farol ? 1 : 0), memoria });
 }
 
 export function descartar(combate: Combate, ids: readonly string[]): Combate {

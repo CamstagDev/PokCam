@@ -6,6 +6,23 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Los jefes ahora son una partida de póker de 3 duelos. En cada duelo se
+  comparan los puntos de cada lado; tú repartes tus manos como quieras
+  (varias en un duelo, ninguna en otro) y "Cerrar duelo" pasa al
+  siguiente. Gana quien gane más duelos. Sin manos, los duelos que faltan
+  van con 0.
+- El primer jefe es El Tahúr 🃏: mazo del 7 al As, una mano por duelo (la
+  mejor que pueda) y la muestra antes de que juegues. Sus manos suben un
+  nivel cada 4 de riesgo. En un empate, cada uno roba una carta y gana la
+  de más fichas (con modificaciones); si empatan, otra vez. Por ahora es
+  el jefe de todos los mundos.
+- Al vencerlo te llevas una de sus baratijas al azar (solo se consiguen
+  así):
+  - As bajo la manga 🂡: cada combate empieza con un As de más en la mano.
+  - Faroleo 🎭: una vez por combate, con el botón Farolear, la mano
+    puntúa como el tipo siguiente.
+  - Mazo limpio 🧹: al conseguirla se van todos los 2, 3 y 4 del mazo.
+
 - Las baratijas ahora tienen memoria: recuerdan lo que pasa en la partida
   (manos jugadas, apuestas, cartas eliminadas, combates) y se guarda con
   ella. Al perder una baratija se olvida lo que recordaba. En "Tus
