@@ -1,7 +1,8 @@
 // Los nodos del mapa como fichas de póker apoyadas en el paño: un canto
 // más oscuro abajo (se ve el grosor al inclinar el tablero), la cara del
 // color del tipo de nodo, rayas blancas en el borde y el icono en el
-// centro. Las que se pueden elegir llevan una luz que recorre el borde.
+// centro. Las que se pueden elegir llevan una luz en el borde, quieta, que
+// se prende al pasar el mouse por encima.
 
 import Phaser from 'phaser';
 import type { TipoNodo } from '../mapa/mapa.ts';
@@ -28,8 +29,8 @@ export interface FichaDePoker {
   contenedor: Phaser.GameObjects.Container;
   cara: Phaser.GameObjects.Arc; // la que recibe los toques
   icono: Phaser.GameObjects.Text;
-  // Mueve la luz del borde (si la tiene) según el tiempo, en ms.
-  animar(tiempo: number): void;
+  // Prende o apaga la luz del borde (si la tiene).
+  iluminar(prendida: boolean): void;
 }
 
 // Las rayas del canto, del mismo color que las del borde.
@@ -79,7 +80,7 @@ export function crearFichaDePoker(
   let resplandor: Phaser.GameObjects.Graphics | undefined;
   let destello: Phaser.GameObjects.Graphics | undefined;
   if (conLuz) {
-    // Un aro que brilla suave y un destello que da vueltas por el borde.
+    // Un aro que brilla y un destello fijo arriba, apagados hasta iluminar.
     resplandor = escena.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
     resplandor.lineStyle(radio * 0.34, LUZ, 0.25).strokeCircle(0, 0, radio * 1.1);
     resplandor.lineStyle(radio * 0.14, LUZ, 0.8).strokeCircle(0, 0, radio * 1.04);
@@ -90,6 +91,9 @@ export function crearFichaDePoker(
       destello.arc(0, 0, radio * 1.04, -0.5 + i * 0.08, 0.5 - i * 0.08);
       destello.strokePath();
     }
+    destello.setRotation(-Math.PI / 2);
+    resplandor.setVisible(false);
+    destello.setVisible(false);
     partes.push(resplandor, destello);
   }
   const contenedor = escena.add.container(0, 0, partes);
@@ -98,10 +102,9 @@ export function crearFichaDePoker(
     contenedor,
     cara,
     icono: texto,
-    animar(tiempo) {
-      if (!resplandor || !destello) return;
-      resplandor.setAlpha(0.6 + 0.4 * Math.sin((tiempo / 500) * Math.PI));
-      destello.setRotation((tiempo / 1400) * Math.PI * 2);
+    iluminar(prendida) {
+      resplandor?.setVisible(prendida);
+      destello?.setVisible(prendida);
     },
   };
 }

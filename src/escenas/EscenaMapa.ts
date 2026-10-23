@@ -3,7 +3,7 @@
 // cámara muy cerca: solo se ven el piso actual
 // y los dos siguientes. Arrastrando (o con la rueda) se baja a mirar el
 // camino ya hecho, pero nunca se puede subir más allá de esos dos pisos.
-// Los nodos a los que se puede ir laten. Tocar uno avanza: si es un
+// Los nodos a los que se puede ir se iluminan al pasar el mouse. Tocar uno avanza: si es un
 // combate abre la mesa, el vendedor abre su tienda de baratijas, el
 // eliminador, la mano negra y el pintor sus servicios, la tienda la de
 // cartas, el evento su regalo, y el descanso por ahora solo avanza. Cada vez que se elige un
@@ -116,7 +116,7 @@ export class EscenaMapa extends Phaser.Scene {
     let listo = false;
     this.time.delayedCall(ESPERA_AL_ENTRAR, () => (listo = true));
     const disponibles = new Set(nodosDisponibles(partida).map((n) => n.id));
-    const dibujados: { nodo: Nodo; ficha: FichaDePoker; late: boolean }[] = [];
+    const dibujados: { nodo: Nodo; ficha: FichaDePoker }[] = [];
     for (const fila of partida.mapa.pisos) {
       for (const nodo of fila) {
         if (nodo.piso > pisoVisible) continue;
@@ -129,7 +129,7 @@ export class EscenaMapa extends Phaser.Scene {
         });
         // Las ya recorridas quedan apagadas.
         if (visitado && !actual) ficha.contenedor.setAlpha(0.5);
-        dibujados.push({ nodo, ficha, late });
+        dibujados.push({ nodo, ficha });
 
         if (late) {
           ficha.cara.setInteractive({ useHandCursor: true }).on('pointerup', () => {
@@ -137,6 +137,8 @@ export class EscenaMapa extends Phaser.Scene {
             // clic que lo abrió) y pasó un momento desde que apareció.
             if (listo && agarre && arrastrado < ARRASTRE_MINIMO) this.ir(partida, nodo);
           });
+          // La luz del borde, solo mientras el mouse está encima.
+          ficha.cara.on('pointerover', () => ficha.iluminar(true)).on('pointerout', () => ficha.iluminar(false));
         }
       }
     }
@@ -173,9 +175,7 @@ export class EscenaMapa extends Phaser.Scene {
         }
       }
 
-      // Los nodos a los que se puede ir laten.
-      const latido = 1 + 0.06 * (1 + Math.sin((this.time.now / 600) * Math.PI));
-      for (const { nodo, ficha, late } of dibujados) {
+      for (const { nodo, ficha } of dibujados) {
         const yPlano = plano(nodo.piso);
         const visible = enPantalla(yPlano);
         ficha.contenedor.setVisible(visible);
@@ -183,11 +183,9 @@ export class EscenaMapa extends Phaser.Scene {
         const { x, y, s } = proyectar(xDe(nodo), yPlano);
         // Acostadas sobre el tablero: un círculo inclinado como él se ve
         // chato, de alto × cos(INCLINACION).
-        const tamano = s * (late ? latido : 1);
-        ficha.contenedor.setPosition(x, y).setScale(tamano, tamano * Math.cos(angulo)).setDepth(y);
+        ficha.contenedor.setPosition(x, y).setScale(s, s * Math.cos(angulo)).setDepth(y);
         // El icono casi derecho, para que se lea bien aunque la ficha esté acostada.
         ficha.icono.setScale(1, 0.85 / Math.cos(angulo));
-        ficha.animar(this.time.now);
       }
     };
     this.events.on(Phaser.Scenes.Events.UPDATE, dibujar);
