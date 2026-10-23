@@ -436,10 +436,11 @@ describe('vender y volver a tirar en el vendedor', () => {
 });
 
 describe('sets de baratijas', () => {
-  it('el apostador empedernido son All In, Tasador y Racha', () => {
+  it('el apostador empedernido son All In, Tasador, Racha y la Ruleta de la suerte; el bono es con 3', () => {
     const apostador = CONJUNTOS.find((c) => c.id === 'apostador-empedernido')!;
     expect(apostador.nombre).toBe('Set del apostador empedernido');
-    expect(miembrosDe(apostador).map((b) => b.id).sort()).toEqual(['all-in', 'racha', 'tasador']);
+    expect(miembrosDe(apostador).map((b) => b.id).sort()).toEqual(['all-in', 'racha', 'ruleta-de-la-suerte', 'tasador']);
+    expect(bonosActivos(['all-in', 'ruleta-de-la-suerte', 'racha'])).toHaveLength(1);
     expect(bonosActivos(['all-in', 'tasador'])).toEqual([]);
     expect(bonosActivos(['tasador', 'racha', 'all-in'])).toHaveLength(1);
   });

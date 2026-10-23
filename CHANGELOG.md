@@ -6,6 +6,30 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Las baratijas ahora tienen memoria: recuerdan lo que pasa en la partida
+  (manos jugadas, apuestas, cartas eliminadas, combates) y se guarda con
+  ella. Al perder una baratija se olvida lo que recordaba. En "Tus
+  baratijas" se ve cómo va cada una ("Ahora: …"), de a 8 por página.
+- Baratijas nuevas que crecen durante la partida:
+  - Callo (infrecuente): tu mano más jugada suma +2 fichas por cada vez
+    que la jugaste.
+  - Coleccionista (infrecuente): +0,5 multi por cada baratija que tengas.
+  - Veterano (infrecuente): +10 fichas por cada nivel de riesgo.
+  - Minimalista (infrecuente): +3 multi por cada carta que elimines con
+    Edmundo.
+  - Ruleta de la suerte (rara, Set del apostador empedernido): multi ×0,1
+    más por apuesta ganada y ×0,2 menos por perdida (mínimo ×0,25). El
+    bono del set sigue siendo con 3 de sus baratijas.
+  - Bola de nieve (rara): multi ×0,25 más por cada mano que llega sola al
+    objetivo; perder un combate lo reinicia.
+  - Obra maestra (rara, Set del artista): multi ×0,2 más por cada carta
+    modificada del mazo.
+  - Especialista (rara): eliges una mano; multi ×1,5 en ella (×2 en nivel 2,
+    ×3 desde el 3) y las demás pierden la mitad de eso (×0,75, ×0,5, ×0).
+  - Fichas al fuego (rara): la primera mano de cada combate tiene multi
+    ×3, y ×1 más por cada mundo vencido.
+- El total de una mano se redondea cuando el multiplicador tiene decimales.
+
 - Mundos: vencer al jefe ya no termina la partida, empieza el mundo 2
   (y así sucesivamente) con un mapa nuevo. Se conserva todo: oro, mazo,
   baratijas, niveles de las manos… y el riesgo sigue subiendo desde el

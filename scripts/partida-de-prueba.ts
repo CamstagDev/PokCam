@@ -2,7 +2,8 @@
 // importar desde "Importar" en las ranuras y probar cosas:
 //   - la colección completa (todas las baratijas y los nodos desbloqueados)
 //   - 99 999 de oro
-//   - empieza con Claire obscure, en el vendedor con Crypto monedas, Bróker
+//   - empieza con Claire obscure, Callo, Coleccionista y Especialista (en
+//     par), en el vendedor con Crypto monedas, Bróker
 //     y No gracias
 //   - en los pisos 1 y 2 hay evento, pintor, vendedor, élite, eliminador, mano
 //     negra y tienda de cartas
@@ -23,9 +24,9 @@ const especiales = ['evento', 'pintor', 'vendedor', 'elite', 'eliminador', 'mano
 });
 
 const exportado: Exportado = {
-  version: 12,
+  version: 13,
   guardadoEn: Date.now(),
-  partida: { ...partida, oro: 99_999, baratijas: ['claire-obscure'], oferta: { tipo: 'vendedor', baratijas: ['crypto-monedas', 'broker', 'no-gracias'] } },
+  partida: { ...partida, oro: 99_999, baratijas: ['claire-obscure', 'callo', 'coleccionista', 'especialista'], memoria: { callo: { par: 3 }, especialista: { eleccion: 2 } }, oferta: { tipo: 'vendedor', baratijas: ['crypto-monedas', 'broker', 'no-gracias'] } },
   coleccion: CATALOGO.map((b) => b.id),
   nodos: Object.keys(DATOS_NODO),
 };

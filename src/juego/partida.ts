@@ -9,10 +9,14 @@ import {
   baratijasDe,
   buscarBaratija,
   efectosDe,
+  recordar,
   precioDe,
   sortearBaratijas,
   sortearDeRareza,
+  type Memoria,
+  type Mesa,
   type Probabilidades,
+  type Suceso,
   type Transformacion,
   valorDeVenta,
 } from './baratijas.ts';
@@ -69,6 +73,8 @@ export interface Partida {
   racha: number;
   niveles: Niveles; // el de cada mano de póker, desde 1
   cripto: Cripto; // con Crypto monedas
+  // Lo que recuerda cada baratija, por su id (ver "Memoria" en baratijas.ts).
+  memoria: Memoria;
 }
 
 // Con Crypto monedas, cada paso en el mapa deja una predicción (sube o
@@ -123,7 +129,7 @@ const OFERTA_DEL_SERVICIO: Record<Servicio, Oferta['tipo']> = {
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, mundo: 1, riesgoBase: 0, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0, niveles: nivelesIniciales(), cripto: { predicciones: [], ultima: null } };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, mundo: 1, riesgoBase: 0, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0, niveles: nivelesIniciales(), cripto: { predicciones: [], ultima: null }, memoria: {} };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -152,8 +158,9 @@ export function avanzar(partida: Partida, id: string): Partida {
 
 // Suma o resta el oro del combate en curso y resuelve la apuesta. Un
 // combate perdido también queda atrás, salvo el jefe: a ese hay que volver
-// a enfrentarlo mientras quede oro.
-export function resolverCombate(partida: Partida, gano: boolean): Partida {
+// a enfrentarlo mientras quede oro. `memoria` es la que dejó el combate
+// (con lo que las baratijas recordaron de sus manos).
+export function resolverCombate(partida: Partida, gano: boolean, memoria: Memoria = partida.memoria ?? {}): Partida {
   const nodo = nodoActual(partida);
   const oro = ORO_POR_COMBATE[nodo.tipo] ?? 0;
   const efectos = efectosDe(partida.baratijas);
@@ -168,7 +175,9 @@ export function resolverCombate(partida: Partida, gano: boolean): Partida {
     gano ? apostado : -apostado,
   );
   const apuesta = apostado === 0 ? 0 : resultado + (gano ? 0 : enBaratijas);
-  const sinPerdidas = gano ? partida : quitarBaratijas(partida, apostadas);
+  const sucesos: Suceso[] = [...(apostado > 0 ? [{ tipo: 'apuesta' as const, gano }] : []), { tipo: 'combate', gano }];
+  const recordada = sucesos.reduce((m, suceso) => recordar(m, partida.baratijas, suceso), memoria);
+  const sinPerdidas = gano ? { ...partida, memoria: recordada } : quitarBaratijas({ ...partida, memoria: recordada }, apostadas);
   const resuelto = {
     ...sinPerdidas,
     oro: partida.oro + combate + apuesta,
@@ -223,12 +232,15 @@ function valorDeBaratijas(ids: readonly string[]): number {
   return baratijasDe(ids).reduce((suma, b) => suma + valorDeVenta(b), 0);
 }
 
-// Sin esas baratijas, ni en las transformaciones pendientes.
+// Sin esas baratijas, ni en las transformaciones pendientes, y olvidando lo
+// que recordaban.
 function quitarBaratijas(partida: Partida, ids: readonly string[]): Partida {
   if (ids.length === 0) return partida;
+  const baratijas = partida.baratijas.filter((id) => !ids.includes(id));
   return {
     ...partida,
-    baratijas: partida.baratijas.filter((id) => !ids.includes(id)),
+    baratijas,
+    memoria: Object.fromEntries(Object.entries(partida.memoria ?? {}).filter(([id]) => baratijas.includes(id))),
     transformaciones: partida.transformaciones.map((t) => ({ ...t, ids: t.ids.filter((id) => !ids.includes(id)) })),
   };
 }
@@ -294,7 +306,8 @@ export function responderEleccion(partida: Partida, numero: number): Partida {
   const efecto = buscarBaratija(eleccion.baratija).alElegirNumero;
   const aleatorio = crearAleatorio(partida.mapa.semilla * 13 + partida.visitados.length * 3 + numero);
   const cambio = efecto ? efecto({ baratijas: partida.baratijas, transformaciones: partida.transformaciones }, numero, aleatorio) : partida;
-  return { ...partida, baratijas: cambio.baratijas, transformaciones: cambio.transformaciones, eleccion: null };
+  const memoria = { ...partida.memoria, [eleccion.baratija]: { ...partida.memoria?.[eleccion.baratija], eleccion: numero } };
+  return { ...partida, baratijas: cambio.baratijas, transformaciones: cambio.transformaciones, eleccion: null, memoria };
 }
 
 // Se puede comprar si está a la venta y pagarla no deja la partida en
@@ -415,7 +428,8 @@ export function puedeEliminarCarta(partida: Partida, id: string): boolean {
 
 export function eliminarCarta(partida: Partida, id: string): Partida {
   if (!puedeEliminarCarta(partida, id)) throw new Error(`No se puede eliminar ${id}`);
-  return { ...usar(partida, 'eliminar', costoDeEliminar(partida)), mazo: partida.mazo.filter((c) => c.id !== id) };
+  const memoria = recordar(partida.memoria ?? {}, partida.baratijas, { tipo: 'eliminarCarta' });
+  return { ...usar(partida, 'eliminar', costoDeEliminar(partida)), mazo: partida.mazo.filter((c) => c.id !== id), memoria };
 }
 
 // Sin deuda permitida, la partida se pierde con 0 de oro o menos; con
@@ -734,6 +748,19 @@ export function elegirCartaDelRegalo(partida: Partida, id: string): Partida {
   const carta = oferta?.evento === 'regaloRaimundo' ? oferta.cartas?.find((c) => c.id === id) : undefined;
   if (!carta) throw new Error(`${id} no está en el regalo`);
   return { ...partida, mazo: [...partida.mazo, carta], oferta: null };
+}
+
+// La mesa fuera de un combate, para mostrar cómo van las baratijas.
+export function mesaDePartida(partida: Partida): Mesa {
+  return {
+    mazo: partida.mazo,
+    restantes: partida.mazo.length,
+    baratijas: partida.baratijas.length,
+    riesgo: nivelDeRiesgo(partida),
+    mundo: partida.mundo,
+    niveles: partida.niveles,
+    memoria: partida.memoria ?? {},
+  };
 }
 
 // El nivel de riesgo es el piso en el que está el jugador (el inicio es el

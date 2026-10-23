@@ -9,7 +9,7 @@ import { crearAleatorio } from '../juego/aleatorio.ts';
 import { ordenarMano, type Carta, type Orden } from '../juego/cartas.ts';
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
 import { MANOS, evaluarMano } from '../juego/manos.ts';
-import { baratijasDe, bonosActivos } from '../juego/baratijas.ts';
+import { baratijasDe, bonosActivos, formatear } from '../juego/baratijas.ts';
 import type { Partida } from '../juego/partida.ts';
 import {
   apostar,
@@ -76,7 +76,15 @@ export class EscenaMesa extends Phaser.Scene {
     // El oro entra en la semilla para que reintentar al jefe (con menos oro)
     // reparta otras cartas; continuar la misma partida reparte las mismas.
     const aleatorio = crearAleatorio(partida.mapa.semilla + partida.visitados.length + partida.oro);
-    this.combate = crearCombate(aleatorio, { objetivo: objetivoDelCombate(partida), mazo: partida.mazo, baratijas: partida.baratijas, niveles: partida.niveles });
+    this.combate = crearCombate(aleatorio, {
+      objetivo: objetivoDelCombate(partida),
+      mazo: partida.mazo,
+      baratijas: partida.baratijas,
+      niveles: partida.niveles,
+      riesgo: nivelDeRiesgo(partida),
+      mundo: partida.mundo,
+      memoria: partida.memoria,
+    });
 
     const { width } = this.scale;
     this.marcador = this.add.text(40, 30, '', estiloTexto(24)).setLineSpacing(8);
@@ -164,7 +172,7 @@ export class EscenaMesa extends Phaser.Scene {
       this.jugada.setText(MANOS[evaluarMano(cartas).tipo].nombre);
     } else if (c.ultimaJugada) {
       const j = c.ultimaJugada;
-      this.jugada.setText(`${MANOS[j.tipo].nombre}: ${j.fichas} × ${j.multi} = ${j.total}`);
+      this.jugada.setText(`${MANOS[j.tipo].nombre}: ${j.fichas} × ${formatear(j.multi)} = ${j.total}`);
     } else {
       this.jugada.setText('');
     }
@@ -228,7 +236,7 @@ export class EscenaMesa extends Phaser.Scene {
     const gano = this.combate.estado === 'ganado';
     const antes = partidaActual(this).oro;
     const perdidas = gano ? [] : baratijasDe(partidaActual(this).baratijasApostadas);
-    const partida = resolverCombate(partidaActual(this), gano);
+    const partida = resolverCombate(partidaActual(this), gano, this.combate.memoria);
     const quebrado = enBancarrota(partida);
     const jefeVencido = gano && this.tipo === 'jefe';
     // Vencer al jefe no termina la partida: resolverCombate la pasa al

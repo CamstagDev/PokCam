@@ -1,6 +1,6 @@
 {
-  "version": 12,
-  "guardadoEn": 1792713441974,
+  "version": 13,
+  "guardadoEn": 1792776868302,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -830,7 +830,10 @@
       }
     ],
     "baratijas": [
-      "claire-obscure"
+      "claire-obscure",
+      "callo",
+      "coleccionista",
+      "especialista"
     ],
     "oferta": {
       "tipo": "vendedor",
@@ -866,6 +869,14 @@
     "cripto": {
       "predicciones": [],
       "ultima": null
+    },
+    "memoria": {
+      "callo": {
+        "par": 3
+      },
+      "especialista": {
+        "eleccion": 2
+      }
     }
   },
   "coleccion": [
@@ -883,6 +894,15 @@
     "racha",
     "estetico",
     "simetrico",
+    "callo",
+    "coleccionista",
+    "veterano",
+    "minimalista",
+    "ruleta-de-la-suerte",
+    "bola-de-nieve",
+    "obra-maestra",
+    "especialista",
+    "fichas-al-fuego",
     "tarjeta-de-credito",
     "crypto-monedas",
     "de-zero-a-heroe"

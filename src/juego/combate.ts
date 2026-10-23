@@ -3,7 +3,7 @@
 // inmutable: cada acción devuelve un combate nuevo.
 
 import { barajar, type Aleatorio } from './aleatorio.ts';
-import { aplicar, efectosDe } from './baratijas.ts';
+import { aplicar, efectosDe, recordar, type Memoria } from './baratijas.ts';
 import type { Carta } from './cartas.ts';
 import type { Niveles } from './manos.ts';
 import { puntuar, type Puntuacion } from './puntuacion.ts';
@@ -23,6 +23,12 @@ export interface Combate {
   baratijas: readonly string[]; // ids de las del jugador, que cambian la puntuación
   mazo: readonly Carta[]; // el de la partida entero, que algunas baratijas miran
   niveles?: Partial<Niveles>; // los de las manos en la partida (sin dato, nivel 1)
+  riesgo: number;
+  mundo: number;
+  manosJugadas: number;
+  // La de las baratijas de la partida, con lo que recuerden de este
+  // combate; al terminarlo vuelve a la partida (ver resolverCombate).
+  memoria: Memoria;
 }
 
 export interface OpcionesCombate {
@@ -32,11 +38,14 @@ export interface OpcionesCombate {
   descartes?: number;
   baratijas?: readonly string[]; // ids
   niveles?: Partial<Niveles>;
+  riesgo?: number;
+  mundo?: number;
+  memoria?: Memoria;
 }
 
 export function crearCombate(
   aleatorio: Aleatorio,
-  { objetivo, mazo, manos = 4, descartes = 3, baratijas = [], niveles }: OpcionesCombate,
+  { objetivo, mazo, manos = 4, descartes = 3, baratijas = [], niveles, riesgo = 0, mundo = 1, memoria = {} }: OpcionesCombate,
 ): Combate {
   const pila = barajar(mazo, aleatorio);
   const inicio = aplicar(efectosDe(baratijas), 'alEmpezarCombate', { manos, descartes });
@@ -52,17 +61,31 @@ export function crearCombate(
     baratijas,
     mazo,
     niveles,
+    riesgo,
+    mundo,
+    manosJugadas: 0,
+    memoria,
   });
 }
 
 export function jugar(combate: Combate, ids: readonly string[]): Combate {
   const cartas = elegidas(combate, ids, MAX_CARTAS_JUGADAS);
   if (combate.manosRestantes === 0) throw new Error('No quedan manos');
-  const jugada = puntuar(cartas, efectosDe(combate.baratijas), { mazo: combate.mazo, restantes: combate.pila.length }, combate.niveles);
+  const mesa = {
+    mazo: combate.mazo,
+    restantes: combate.pila.length,
+    baratijas: combate.baratijas.length,
+    riesgo: combate.riesgo,
+    mundo: combate.mundo,
+    manosJugadas: combate.manosJugadas,
+    memoria: combate.memoria,
+  };
+  const jugada = puntuar(cartas, efectosDe(combate.baratijas), mesa, combate.niveles);
+  const memoria = recordar(combate.memoria, combate.baratijas, { tipo: 'mano', mano: jugada.tipo, total: jugada.total, objetivo: combate.objetivo });
   const puntos = combate.puntos + jugada.total;
   const manosRestantes = combate.manosRestantes - 1;
   const estado = puntos >= combate.objetivo ? 'ganado' : manosRestantes === 0 ? 'perdido' : 'jugando';
-  return robar({ ...combate, ...sinCartas(combate, ids), puntos, manosRestantes, estado, ultimaJugada: jugada });
+  return robar({ ...combate, ...sinCartas(combate, ids), puntos, manosRestantes, estado, ultimaJugada: jugada, manosJugadas: combate.manosJugadas + 1, memoria });
 }
 
 export function descartar(combate: Combate, ids: readonly string[]): Combate {

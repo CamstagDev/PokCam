@@ -6,7 +6,7 @@ import Phaser from 'phaser';
 import { DATOS_RAREZA, RAREZAS, baratijasDe, buscarConjunto, probabilidadComun, type Baratija, type Rareza } from '../juego/baratijas.ts';
 import { PALOS, ordenarMano } from '../juego/cartas.ts';
 import { datosDeMano, type TipoMano } from '../juego/manos.ts';
-import { probabilidadesDeRareza, type Partida } from '../juego/partida.ts';
+import { mesaDePartida, probabilidadesDeRareza, type Partida } from '../juego/partida.ts';
 import { crearBotonRedondo } from './boton.ts';
 import { dibujarCarta } from './carta.ts';
 import { abrirCapa } from './capa.ts';
@@ -23,10 +23,26 @@ export function mostrarBotonesInventario(escena: Phaser.Scene, partida: () => Pa
   ].map((boton) => boton.setDepth(60));
 }
 
-function verBaratijas(escena: Phaser.Scene, partida: Partida): void {
+// De a POR_PAGINA fichas (4 por fila); con más, ◀ y ▶ pasan de página.
+const POR_PAGINA = 8;
+
+function verBaratijas(escena: Phaser.Scene, partida: Partida, pagina = 0): void {
   const { width, height } = escena.scale;
-  const baratijas = baratijasDe(partida.baratijas);
-  const capa = abrirCapa(escena, `Tus baratijas (${baratijas.length})`);
+  const todas = baratijasDe(partida.baratijas);
+  const capa = abrirCapa(escena, `Tus baratijas (${todas.length})`);
+  const paginas = Math.ceil(todas.length / POR_PAGINA);
+  const baratijas = todas.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
+  if (paginas > 1) {
+    const cambiar = (otra: number) => {
+      capa.destroy();
+      verBaratijas(escena, partida, (otra + paginas) % paginas);
+    };
+    capa.add([
+      crearBotonRedondo(escena, width / 2 - 150, height - 50, '◀', '', () => cambiar(pagina - 1)),
+      crearBotonRedondo(escena, width / 2 + 150, height - 50, '▶', '', () => cambiar(pagina + 1)),
+      escena.add.text(width / 2 + 190, height - 50, `${pagina + 1} de ${paginas}`, estiloTexto(18, COLORES.textoSuave)).setOrigin(0, 0.5),
+    ]);
+  }
 
   // Con qué probabilidad sale cada rareza en cada lugar de una oferta.
   const probabilidades = probabilidadesDeRareza(partida);
@@ -43,15 +59,15 @@ function verBaratijas(escena: Phaser.Scene, partida: Partida): void {
     return;
   }
   // En filas de 4 fichas.
-  const ancho = 300;
+  const ancho = 290;
   const alto = 170;
-  const porFila = 3;
+  const porFila = 4;
   baratijas.forEach((baratija, i) => {
     const fila = Math.floor(i / porFila);
     const enFila = Math.min(porFila, baratijas.length - fila * porFila);
-    const x = width / 2 + ((i % porFila) - (enFila - 1) / 2) * (ancho + 20);
-    const y = 210 + fila * (alto + 20);
-    capa.add(fichaDeBaratija(escena, x, y, baratija, ancho, alto));
+    const x = width / 2 + ((i % porFila) - (enFila - 1) / 2) * (ancho + 12);
+    const y = 205 + fila * (alto + 14);
+    capa.add(fichaDeBaratija(escena, x, y, baratija, ancho, alto, baratija.estado?.(mesaDePartida(partida))));
     // Las que esperan transformarse dicen en cuántos combates.
     const espera = partida.transformaciones.find((t) => t.ids.includes(baratija.id));
     if (espera) {
@@ -78,6 +94,7 @@ export function fichaDeBaratija(
   baratija: Baratija,
   ancho = 300,
   alto = 170,
+  estado?: string, // cómo va su efecto, abajo a la izquierda
 ): Phaser.GameObjects.Container {
   const color = COLOR_RAREZA[baratija.rareza];
   const fondo = escena.add.rectangle(0, 0, ancho, alto, COLORES.panel).setStrokeStyle(2, color);
@@ -92,6 +109,9 @@ export function fichaDeBaratija(
     const set = buscarConjunto(baratija.conjunto).nombre;
     partes.push(escena.add.text(ancho / 2 - 14, alto / 2 - 8, set, estiloTexto(13, COLORES.acento)).setOrigin(1, 1));
   }
+  // Con el nombre del set al lado no cabe el "Ahora:".
+  const textoEstado = baratija.conjunto ? estado?.replace(/^Ahora: /, '') : estado;
+  if (textoEstado) partes.push(escena.add.text(-ancho / 2 + 20, alto / 2 - 8, textoEstado, estiloTexto(14, COLORES.oro)).setOrigin(0, 1));
   return escena.add.container(x, y, partes).setSize(ancho, alto);
 }
 

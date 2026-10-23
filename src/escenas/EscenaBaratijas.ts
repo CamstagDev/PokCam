@@ -142,6 +142,18 @@ export class EscenaBaratijas extends Phaser.Scene {
     const baratija = buscarBaratija(id);
     this.add.text(width / 2, 140, baratija.pregunta?.texto ?? 'Elige un número', estiloTexto(32)).setOrigin(0.5);
     fichaDeBaratija(this, width / 2, height / 2 - 30, baratija, ANCHO, ALTO);
+    const opciones = baratija.pregunta?.opciones;
+    if (opciones) {
+      // Una fila de botones con nombre, de 5 en 5.
+      const porFila = 5;
+      for (let numero = 1; numero <= maximo; numero++) {
+        const fila = Math.floor((numero - 1) / porFila);
+        const enFila = Math.min(porFila, maximo - fila * porFila);
+        const x = width / 2 + (((numero - 1) % porFila) - (enFila - 1) / 2) * 216;
+        crearBoton(this, x, height / 2 + 110 + fila * 70, opciones[numero - 1] ?? String(numero), COLORES.acento, () => this.guardarYSeguir(responderEleccion(partida, numero)), 204);
+      }
+      return;
+    }
     const separacion = 80;
     for (let numero = 1; numero <= maximo; numero++) {
       const x = width / 2 + (numero - (maximo + 1) / 2) * separacion;
