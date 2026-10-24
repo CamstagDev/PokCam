@@ -6,6 +6,9 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- En el mapa, los caminos que salen de donde estás brillan en dorado y
+  laten despacio; los demás caminos y las fichas que no puedes tomar
+  quedan más apagados.
 - Eliminar una carta ahora parte de 150 de oro (antes 100) con 52 cartas.
 - Edmundo deja eliminar varias cartas en la misma visita, de a una. Cada
   una más en la visita cuesta ×1,5 y, además, encarece para siempre las

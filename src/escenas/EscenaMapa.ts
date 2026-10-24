@@ -34,6 +34,7 @@ const ABAJO = 130; // margen bajo el piso del inicio
 const BARRA = 100; // alto de la barra fija de arriba (título, menú, oro)
 const ARRASTRE_MINIMO = 10; // por debajo de esto, soltar sobre un nodo es tocarlo
 const ESPERA_AL_ENTRAR = 1000; // ms sin aceptar toques en los nodos al abrir el mapa
+const PERIODO_LATIDO = 1600; // ms de cada latido de los caminos que se pueden tomar
 const INCLINACION = 60; // grados que el tablero se inclina hacia atrás (0 = plano, de frente)
 const FOCAL = 800; // distancia de la cámara: más chica, más fuerte la perspectiva
 const ESCALA_CERCA = 1.1; // tamaño del piso actual (1 = el de un mapa plano)
@@ -129,6 +130,8 @@ export class EscenaMapa extends Phaser.Scene {
         });
         // Las ya recorridas quedan apagadas.
         if (visitado && !actual) ficha.contenedor.setAlpha(0.5);
+        // Las de adelante que no se pueden tomar, un poco apagadas.
+        else if (!visitado && !late) ficha.contenedor.setAlpha(0.7);
         dibujados.push({ nodo, ficha });
 
         if (late) {
@@ -142,6 +145,9 @@ export class EscenaMapa extends Phaser.Scene {
         }
       }
     }
+
+    // Entre 0.55 y 1, una vuelta cada PERIODO_LATIDO ms.
+    const latido = () => 0.775 + 0.225 * Math.sin((this.time.now / PERIODO_LATIDO) * Math.PI * 2);
 
     const dibujar = () => {
       const plano = (piso: number) => yDe(piso) - vista.y;
@@ -168,8 +174,12 @@ export class EscenaMapa extends Phaser.Scene {
             const desde = proyectar(xDe(nodo), plano(nodo.piso));
             const hasta = proyectar(xDe(otro), plano(otro.piso));
             const recorrido = partida.visitados.includes(nodo.id) && partida.visitados.includes(id);
-            const grosor = (recorrido ? 6 : 4) * (desde.s + hasta.s) / 2;
-            caminos.lineStyle(grosor, recorrido ? COLORES.acento : pano.camino, recorrido ? 1 : 0.55);
+            // Los que salen del nodo actual (los que se pueden tomar) brillan
+            // en oro y laten despacio; los demás por delante quedan apagados.
+            const abierto = nodo.id === partida.nodoActual && disponibles.has(id);
+            const grosor = (recorrido || abierto ? 6 : 4) * (desde.s + hasta.s) / 2;
+            if (abierto) caminos.lineStyle(grosor, COLORES.oro, latido());
+            else caminos.lineStyle(grosor, recorrido ? COLORES.acento : pano.camino, recorrido ? 1 : 0.3);
             caminos.lineBetween(desde.x, desde.y, hasta.x, hasta.y);
           }
         }
