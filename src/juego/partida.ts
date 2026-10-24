@@ -33,7 +33,9 @@ export const ORO_POR_COMBATE: Partial<Record<TipoNodo, number>> = { combate: 100
 
 // Puntos a alcanzar en cada tipo de combate con riesgo 0; cada nivel de
 // riesgo suma OBJETIVO_POR_RIESGO.
-export const OBJETIVO_BASE: Partial<Record<TipoNodo, number>> = { combate: 300, elite: 500, jefe: 800 };
+export const OBJETIVO_BASE: Partial<Record<TipoNodo, number>> = { combate: 300, elite: 300, jefe: 800 };
+// Por ahora los élites son combates comunes que se juegan con este riesgo de más.
+export const RIESGO_EXTRA_ELITE = 3;
 export const OBJETIVO_POR_RIESGO = 50;
 
 export interface Partida {
@@ -60,6 +62,9 @@ export interface Partida {
   // nuevo, y el riesgo sigue subiendo desde el piso del jefe.
   mundo: number;
   riesgoBase: number;
+  // Lo que encarece eliminar cartas para siempre: +1 por cada carta
+  // eliminada después de la primera en una misma visita (ver costoDeEliminar).
+  recargoEliminar: number;
   // Una baratija recién conseguida que espera que el jugador elija un
   // número (de 1 a maximo) antes de seguir.
   eleccion: { baratija: string; maximo: number } | null;
@@ -109,6 +114,7 @@ export interface Oferta {
   baratijas: string[]; // ids
   tiradas?: number; // las veces que se volvió a tirar el vendedor
   usados?: Servicio[];
+  eliminadas?: number; // cartas eliminadas en esta visita al eliminador
   manos?: TipoMano[];
   cartas?: Carta[];
   cartaLibre?: string; // id de una carta del mazo
@@ -130,7 +136,7 @@ const OFERTA_DEL_SERVICIO: Record<Servicio, Oferta['tipo']> = {
 export function crearPartida(semilla: number): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, mundo: 1, riesgoBase: 0, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0, niveles: nivelesIniciales(), cripto: { predicciones: [], ultima: null }, memoria: {} };
+  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, mundo: 1, riesgoBase: 0, recargoEliminar: 0, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0, niveles: nivelesIniciales(), cripto: { predicciones: [], ultima: null }, memoria: {} };
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -423,26 +429,46 @@ export function girarRuleta(partida: Partida): Ruleta {
 // redondeado a decenas: COSTO_ELIMINAR con MAZO_COMPLETO cartas; con
 // menos se duplica cada CARTAS_PARA_DUPLICAR cartas menos (exponencial) y
 // con más baja despacio (logarítmico). El mazo nunca queda vacío.
-//   n ≤ 52: 100 × 2^((52 − n) / 6)    46 → 200, 40 → 400, 34 → 800
-//   n > 52: 100 / (1 + ln(n / 52))    60 → 90, 78 → 70, 104 → 60
-export const COSTO_ELIMINAR = 100;
+//   n ≤ 52: 150 × 2^((52 − n) / 6)    46 → 300, 40 → 600, 34 → 1200
+//   n > 52: 150 / (1 + ln(n / 52))    60 → 130, 78 → 110, 104 → 90
+// Se pueden eliminar varias en la misma visita, de a una, pero cada una
+// cuesta además × RECARGO_ELIMINAR^(recargo + las ya eliminadas en esta
+// visita), y cada eliminación después de la primera de una visita sube el
+// recargo de la partida para siempre. Una o dos por visita está bien;
+// vaciar un palo entero de una vez cuesta una barbaridad.
+export const COSTO_ELIMINAR = 150;
+export const RECARGO_ELIMINAR = 1.5;
 export const MAZO_COMPLETO = 52;
 export const CARTAS_PARA_DUPLICAR = 6;
 
 export function costoDeEliminar(partida: Partida): number {
   const n = partida.mazo.length;
   const factor = n <= MAZO_COMPLETO ? 2 ** ((MAZO_COMPLETO - n) / CARTAS_PARA_DUPLICAR) : 1 / (1 + Math.log(n / MAZO_COMPLETO));
-  return Math.round((COSTO_ELIMINAR * factor) / 10) * 10;
+  const recargo = RECARGO_ELIMINAR ** ((partida.recargoEliminar ?? 0) + eliminadasEnLaVisita(partida));
+  return Math.round((COSTO_ELIMINAR * factor * recargo) / 10) * 10;
+}
+
+function eliminadasEnLaVisita(partida: Partida): number {
+  return partida.oferta?.tipo === 'eliminador' ? (partida.oferta.eliminadas ?? 0) : 0;
 }
 
 export function puedeEliminarCarta(partida: Partida, id: string): boolean {
-  return partida.mazo.some((c) => c.id === id) && partida.mazo.length > 1 && puedeUsar(partida, 'eliminar', costoDeEliminar(partida));
+  if (partida.oferta?.tipo !== 'eliminador' || !partida.mazo.some((c) => c.id === id) || partida.mazo.length <= 1) return false;
+  return !enBancarrota({ ...partida, oro: partida.oro - costoDeEliminar(partida) });
 }
 
 export function eliminarCarta(partida: Partida, id: string): Partida {
   if (!puedeEliminarCarta(partida, id)) throw new Error(`No se puede eliminar ${id}`);
   const memoria = recordar(partida.memoria ?? {}, partida.baratijas, { tipo: 'eliminarCarta' });
-  return { ...usar(partida, 'eliminar', costoDeEliminar(partida)), mazo: partida.mazo.filter((c) => c.id !== id), memoria };
+  const eliminadas = eliminadasEnLaVisita(partida);
+  return {
+    ...partida,
+    oro: partida.oro - costoDeEliminar(partida),
+    oferta: { ...partida.oferta!, eliminadas: eliminadas + 1 },
+    recargoEliminar: (partida.recargoEliminar ?? 0) + (eliminadas > 0 ? 1 : 0),
+    mazo: partida.mazo.filter((c) => c.id !== id),
+    memoria,
+  };
 }
 
 // Sin deuda permitida, la partida se pierde con 0 de oro o menos; con
@@ -783,10 +809,16 @@ export function nivelDeRiesgo(partida: Partida): number {
   return partida.riesgoBase + nodoActual(partida).piso;
 }
 
+// El riesgo con el que se juega el combate del nodo actual: el de la
+// partida, y en un élite RIESGO_EXTRA_ELITE más.
+export function riesgoDelCombate(partida: Partida): number {
+  return nivelDeRiesgo(partida) + (nodoActual(partida).tipo === 'elite' ? RIESGO_EXTRA_ELITE : 0);
+}
+
 // Los puntos que pide el combate del nodo actual.
 export function objetivoDelCombate(partida: Partida): number {
   const base = OBJETIVO_BASE[nodoActual(partida).tipo] ?? OBJETIVO_BASE.combate!;
-  return base + OBJETIVO_POR_RIESGO * nivelDeRiesgo(partida);
+  return base + OBJETIVO_POR_RIESGO * riesgoDelCombate(partida);
 }
 
 export function nodoActual(partida: Partida): Nodo {

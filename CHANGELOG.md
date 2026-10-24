@@ -6,6 +6,13 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- Eliminar una carta ahora parte de 150 de oro (antes 100) con 52 cartas.
+- Edmundo deja eliminar varias cartas en la misma visita, de a una. Cada
+  una más en la visita cuesta ×1,5 y, además, encarece para siempre las
+  eliminaciones de toda la partida. Una o dos está bien; vaciar un palo
+  de una vez cuesta una barbaridad.
+- Los combates de élite son combates normales que se juegan con 3 de
+  riesgo más (el objetivo y el riesgo que se ve en la mesa lo reflejan).
 - Los jefes ahora son una partida de póker de 3 duelos. En cada duelo se
   comparan los puntos de cada lado; tú repartes tus manos como quieras
   (varias en un duelo, ninguna en otro) y "Cerrar duelo" pasa al

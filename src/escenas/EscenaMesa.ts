@@ -23,8 +23,8 @@ import {
   enBancarrota,
   hayQueApostar,
   maximoApostable,
-  nivelDeRiesgo,
   objetivoDelCombate,
+  riesgoDelCombate,
   preverApuesta,
   puedeApostarBaratijas,
   resolverCombate,
@@ -99,7 +99,7 @@ export class EscenaMesa extends Phaser.Scene {
       mazo: partida.mazo,
       baratijas: partida.baratijas,
       niveles: partida.niveles,
-      riesgo: nivelDeRiesgo(partida),
+      riesgo: riesgoDelCombate(partida),
       mundo: partida.mundo,
       memoria: partida.memoria,
     };
@@ -138,7 +138,7 @@ export class EscenaMesa extends Phaser.Scene {
       ), 130);
     this.oro = mostrarOro(this, partida.oro);
     mostrarCripto(this, partida);
-    mostrarRiesgo(this, nivelDeRiesgo(partida));
+    mostrarRiesgo(this, riesgoDelCombate(partida));
     mostrarBotonesInventario(this, () => partidaActual(this));
     this.actualizar();
     // Mientras no se apostó en este combate, entre Valor y Palo queda el

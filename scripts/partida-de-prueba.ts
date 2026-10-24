@@ -24,7 +24,7 @@ const especiales = ['evento', 'pintor', 'vendedor', 'elite', 'eliminador', 'mano
 });
 
 const exportado: Exportado = {
-  version: 13,
+  version: 14,
   guardadoEn: Date.now(),
   partida: { ...partida, oro: 99_999, baratijas: ['claire-obscure', 'callo', 'coleccionista', 'especialista'], memoria: { callo: { par: 3 }, especialista: { eleccion: 2 } }, oferta: { tipo: 'vendedor', baratijas: ['crypto-monedas', 'broker', 'no-gracias'] } },
   coleccion: CATALOGO.map((b) => b.id),

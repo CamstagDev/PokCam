@@ -1,6 +1,6 @@
 {
-  "version": 13,
-  "guardadoEn": 1792776868302,
+  "version": 14,
+  "guardadoEn": 1792801057773,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -850,6 +850,7 @@
     },
     "mundo": 1,
     "riesgoBase": 0,
+    "recargoEliminar": 0,
     "eleccion": null,
     "transformaciones": [],
     "apuesta": null,
@@ -903,6 +904,9 @@
     "obra-maestra",
     "especialista",
     "fichas-al-fuego",
+    "as-bajo-la-manga",
+    "faroleo",
+    "mazo-limpio",
     "tarjeta-de-credito",
     "crypto-monedas",
     "de-zero-a-heroe"

@@ -593,22 +593,44 @@ describe('el eliminador', () => {
     expect(puedeGirarRuleta(enEliminador(100, ['subsidio']))).toBe(false);
   });
 
-  it('eliminar cuesta 100 con 52 cartas, se duplica cada 6 menos y baja despacio con más', () => {
+  it('eliminar cuesta 150 con 52 cartas, se duplica cada 6 menos y baja despacio con más', () => {
     const partida = enEliminador(300, []);
     const conCartas = (n: number) => ({ ...partida, mazo: Array.from({ length: n }, (_, i) => ({ ...partida.mazo[i % 52]!, id: `c${i}` })) });
-    expect([52, 46, 40, 34, 48, 60, 78, 104].map((n) => costoDeEliminar(conCartas(n)))).toEqual([100, 200, 400, 800, 160, 90, 70, 60]);
+    expect([52, 46, 40, 34, 48, 60, 78, 104].map((n) => costoDeEliminar(conCartas(n)))).toEqual([150, 300, 600, 1200, 240, 130, 110, 90]);
   });
 
-  it('eliminar una carta, una vez por visita', () => {
+  it('eliminar una carta cobra y la saca del mazo', () => {
     const partida = enEliminador(300, []);
     const rey = partida.mazo.find((c) => c.id === 'corazones-13')!;
-    expect(costoDeEliminar(partida)).toBe(100);
+    expect(costoDeEliminar(partida)).toBe(150);
     const sinRey = eliminarCarta(partida, rey.id);
     expect(sinRey.mazo).toHaveLength(51);
     expect(sinRey.mazo.some((c) => c.id === rey.id)).toBe(false);
-    expect(sinRey.oro).toBe(200);
-    expect(puedeEliminarCarta(sinRey, 'picas-2')).toBe(false);
+    expect(sinRey.oro).toBe(150);
+    expect(sinRey.recargoEliminar).toBe(0);
     expect(puedeEliminarCarta(partida, 'no-existe')).toBe(false);
+  });
+
+  it('se pueden eliminar varias en la visita, cada una ×1,5 y la segunda en adelante encarece para siempre', () => {
+    let partida = enEliminador(100000, []);
+    const costos: number[] = [];
+    for (const id of ['picas-2', 'picas-3', 'picas-4', 'picas-5']) {
+      costos.push(costoDeEliminar(partida));
+      partida = eliminarCarta(partida, id);
+    }
+    // 2^(1/6) por carta menos y ×1,5 por cada una ya eliminada en la visita
+    // y por cada punto de recargo, que también sube con cada repetición.
+    expect(costos).toEqual([150, 250, 640, 1610]);
+    expect(partida.recargoEliminar).toBe(3);
+    // En la próxima visita el contador de la visita vuelve a 0, pero el
+    // recargo queda: ×1,5³ sobre el precio por tamaño del mazo.
+    const otraVisita = { ...partida, oferta: { ...partida.oferta!, eliminadas: 0 } };
+    expect(costoDeEliminar(otraVisita)).toBe(Math.round((150 * 2 ** (4 / 6) * 1.5 ** 3) / 10) * 10);
+  });
+
+  it('no deja eliminar si el pago lleva a la bancarrota', () => {
+    const partida = enEliminador(150, []);
+    expect(puedeEliminarCarta(partida, 'picas-2')).toBe(false);
   });
 });
 

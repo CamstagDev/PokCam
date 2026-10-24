@@ -14,6 +14,7 @@ import {
   cerrarOferta,
   costoDeEliminar,
   eliminarCarta,
+  enBancarrota,
   girarRuleta,
   nivelDeRiesgo,
   puedeEliminarCarta,
@@ -50,7 +51,7 @@ export class EscenaEliminador extends Phaser.Scene {
     const usados = partida.oferta?.usados ?? [];
 
     this.add.text(width / 2, 140, 'Edmundo manos de cinceles', estiloTexto(40)).setOrigin(0.5);
-    this.add.text(width / 2, 190, 'Cada servicio se puede usar una vez', estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
+    this.add.text(width / 2, 190, 'La ruleta, una vez por visita; cartas, las que puedas pagar', estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
 
     const y = height / 2 + 40;
     const sinBaratijas = partida.baratijas.length === 0;
@@ -67,9 +68,9 @@ export class EscenaEliminador extends Phaser.Scene {
       width / 2 + ANCHO_PANEL / 2 + 30,
       y,
       '✂ Eliminar',
-      `Elige una carta de tu mazo y quítala. Cuesta 100 con 52 cartas, el doble cada 6 cartas menos y algo menos con más cartas.`,
-      usados.includes('eliminar') ? 'Usada' : `Elegir carta · ${costoDeEliminar(partida)}`,
-      !usados.includes('eliminar') && partida.mazo.length > 1,
+      `Quita una carta de tu mazo: 150 con 52 cartas, el doble cada 6 menos. Puedes quitar varias, pero cada una más en la visita cuesta ×1,5 y encarece las siguientes para siempre.`,
+      `${(partida.oferta?.eliminadas ?? 0) > 0 ? 'Otra carta' : 'Elegir carta'} · ${costoDeEliminar(partida)}`,
+      partida.mazo.length > 1 && !enBancarrota({ ...partida, oro: partida.oro - costoDeEliminar(partida) }),
       () => this.verMazo(partidaActual(this)),
     );
 
@@ -156,7 +157,8 @@ export class EscenaEliminador extends Phaser.Scene {
         objeto.setSize(ancho, alto).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
           const nombre = `${nombreRango(carta.rango)}${SIMBOLO_PALO[carta.palo]}`;
           capa.destroy(); // la confirmación queda debajo de la capa
-          confirmar(this, `¿Eliminar ${nombre} por ${costo} de oro?`, 'Eliminar', COLORES.multi, () => {
+          const recargo = (partida.oferta?.eliminadas ?? 0) > 0 ? '\nEsta encarece eliminar cartas para siempre.' : '';
+          confirmar(this, `¿Eliminar ${nombre} por ${costo} de oro?${recargo}`, 'Eliminar', COLORES.multi, () => {
             jugarPartida(this, eliminarCarta(partidaActual(this), carta.id));
             this.scene.restart();
           });

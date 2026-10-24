@@ -53,8 +53,10 @@ describe('partida', () => {
       partida = avanzar(partida, nodosDisponibles(partida)[0]!.id);
       const { piso, tipo } = partida.mapa.pisos.flat().find((n) => n.id === partida.nodoActual)!;
       expect(nivelDeRiesgo(partida)).toBe(piso);
-      const base = { elite: 500, jefe: 800 }[tipo as 'elite' | 'jefe'] ?? 300;
-      expect(objetivoDelCombate(partida)).toBe(base + 50 * piso);
+      // La élite es un combate normal que se juega con 3 de riesgo más.
+      const base = tipo === 'jefe' ? 800 : 300;
+      const riesgo = piso + (tipo === 'elite' ? 3 : 0);
+      expect(objetivoDelCombate(partida)).toBe(base + 50 * riesgo);
       if (tipo !== 'jefe') partida = seguir(resolverCombate(partida, true));
     }
   });

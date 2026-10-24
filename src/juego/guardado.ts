@@ -11,7 +11,7 @@ import { nivelesIniciales } from './manos.ts';
 import { ORO_INICIAL, type Partida } from './partida.ts';
 
 export const RANURAS = 3;
-const VERSION = 13;
+const VERSION = 14;
 const PREFIJO = 'pokcam.ranura.';
 
 export interface Almacen {
@@ -92,6 +92,7 @@ export function leerGuardado(texto: string): Guardado | null {
       partida.riesgoBase = 0;
     }
     if (version < 13) partida.memoria = {};
+    if (version < 14) partida.recargoEliminar = 0;
     return { ...guardado, version: VERSION, partida };
   } catch {
     return null;
