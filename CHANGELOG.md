@@ -291,3 +291,9 @@ la versión nueva (ver scripts/nueva-version.mjs).
   blanco (artista).
 - Las cartas puntúan de a una, en orden; algunas baratijas dan oro al
   puntuar y se cobra enseguida.
+- 14 baratijas comunes nuevas: Mano de hierro, Calcetín de la suerte,
+  Parejita, A la tercera va la vencida, Escalera de mano, Brocha gorda,
+  Casa llena, Solitario, Calderilla, Propina, Descarte rápido, Cartas
+  marcadas (la próxima carta se ve en la mesa), Cupón (también en la
+  tienda de cartas) y Mapa del tesoro (un combate de lo que queda del
+  mapa pasa a ser evento, y uno más en cada mundo).

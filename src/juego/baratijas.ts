@@ -298,6 +298,9 @@ const darOro = (mano: ManoPuntuada, n: number): ManoPuntuada => ({ ...mano, oro:
 function fichasEn(tipos: readonly TipoMano[], n: number): (mano: ManoPuntuada) => ManoPuntuada {
   return (mano) => (tipos.includes(mano.tipo) ? sumarFichas(mano, n) : mano);
 }
+function multiEn(tipos: readonly TipoMano[], n: number): (mano: ManoPuntuada) => ManoPuntuada {
+  return (mano) => (tipos.includes(mano.tipo) ? sumarMulti(mano, n) : mano);
+}
 
 // Cuenta las manos jugadas (Callo, Recompensa, Telescopio).
 function contarManos(r: Recuerdo, s: Suceso): Recuerdo {
@@ -973,6 +976,120 @@ export const CATALOGO: readonly Baratija[] = [
     icono: '⬜',
     conjunto: 'artista',
     alContarCarta: (fichas, carta) => (modificacionesDe(carta) === 0 ? fichas + 3 : fichas),
+  },
+
+  // --- Comunes ---
+  {
+    id: 'mano-de-hierro',
+    nombre: 'Mano de hierro',
+    descripcion: '+1 mano, −1 descarte.',
+    rareza: 'comun',
+    icono: '🦾',
+    alEmpezarCombate: (inicio) => ({ manos: inicio.manos + 1, descartes: inicio.descartes - 1 }),
+  },
+  {
+    id: 'calcetin-de-la-suerte',
+    nombre: 'Calcetín de la suerte',
+    descripcion: 'Las cartas 7 que puntúan dan +5 fichas.',
+    rareza: 'comun',
+    icono: '🧦',
+    alContarCarta: (fichas, carta) => (carta.rango === 7 ? fichas + 5 : fichas),
+  },
+  {
+    id: 'parejita',
+    nombre: 'Parejita',
+    descripcion: 'Los pares dan +2 multi.',
+    rareza: 'comun',
+    icono: '💑',
+    alPuntuar: multiEn(['par'], 2),
+  },
+  {
+    id: 'a-la-tercera-va-la-vencida',
+    nombre: 'A la tercera va la vencida',
+    descripcion: 'Los tríos dan +20 fichas.',
+    rareza: 'comun',
+    icono: '🥉',
+    alPuntuar: fichasEn(['trio'], 20),
+  },
+  {
+    id: 'escalera-de-mano',
+    nombre: 'Escalera de mano',
+    descripcion: 'Las escaleras dan +3 multi.',
+    rareza: 'comun',
+    icono: '🪜',
+    alPuntuar: multiEn(['escalera', 'escaleraColor'], 3),
+  },
+  {
+    id: 'brocha-gorda',
+    nombre: 'Brocha gorda',
+    descripcion: 'Los colores dan +25 fichas.',
+    rareza: 'comun',
+    icono: '🪣',
+    alPuntuar: fichasEn(['color', 'escaleraColor'], 25),
+  },
+  {
+    id: 'casa-llena',
+    nombre: 'Casa llena',
+    descripcion: 'Los full dan +3 multi.',
+    rareza: 'comun',
+    icono: '🏠',
+    alPuntuar: multiEn(['full'], 3),
+  },
+  {
+    id: 'solitario',
+    nombre: 'Solitario',
+    descripcion: 'Si juegas una sola carta, ×3 multi.',
+    rareza: 'comun',
+    icono: '🧍',
+    alPuntuar: (mano) => (mano.cartasJugadas.length === 1 ? porMulti(mano, 3) : mano),
+  },
+  {
+    id: 'calderilla',
+    nombre: 'Calderilla',
+    descripcion: 'Cada carta 2 que puntúa da 5 de oro.',
+    rareza: 'comun',
+    icono: '💴',
+    alPuntuarCarta: (mano, carta) => (carta.rango === 2 ? darOro(mano, 5) : mano),
+  },
+  {
+    id: 'propina',
+    nombre: 'Propina',
+    descripcion: 'Al ganar, cada mano que te sobra da 10 de oro.',
+    rareza: 'comun',
+    icono: '💶',
+    alTerminarCombate: (r) => (r.gano ? 10 * r.manosRestantes : 0),
+  },
+  {
+    id: 'descarte-rapido',
+    nombre: 'Descarte rápido',
+    descripcion: 'Cada descarte suma +2 fichas a la siguiente mano.',
+    rareza: 'comun',
+    icono: '💨',
+    alPuntuar: (mano, mesa) => sumarFichas(mano, 2 * (mesa.descartesPrevios ?? 0)),
+  },
+  {
+    id: 'cartas-marcadas',
+    nombre: 'Cartas marcadas',
+    descripcion: 'Ves la próxima carta del mazo.',
+    rareza: 'comun',
+    icono: '👁',
+    verSiguiente: true,
+  },
+  {
+    id: 'cupon',
+    nombre: 'Cupón',
+    descripcion: 'La primera compra en cada tienda cuesta 25\u00a0% menos.',
+    rareza: 'comun',
+    icono: '🎟',
+    alComprar: (precio, primera) => (primera ? precio * 0.75 : precio),
+  },
+  {
+    id: 'mapa-del-tesoro',
+    nombre: 'Mapa del tesoro',
+    descripcion: '+1 evento en cada mundo.',
+    rareza: 'comun',
+    icono: '🗺',
+    tesoro: 1,
   },
 ];
 
