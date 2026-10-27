@@ -297,3 +297,8 @@ la versión nueva (ver scripts/nueva-version.mjs).
   marcadas (la próxima carta se ve en la mesa), Cupón (también en la
   tienda de cartas) y Mapa del tesoro (un combate de lo que queda del
   mapa pasa a ser evento, y uno más en cada mundo).
+- 14 baratijas infrecuentes nuevas: Cuenta atrás, Reciclaje, Eco, Doble
+  filo, Monocromo, Escalera corta (escaleras y colores de 4 cartas),
+  Puente (escaleras que se saltan un número), Arqueólogo, Gemelos,
+  Inversión, Vista de lince (9 cartas en la mano), Descuento de veterano,
+  Seguro y Precisión.

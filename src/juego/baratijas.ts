@@ -85,7 +85,7 @@
 // nuevo y se llama desde la regla correspondiente.
 
 import { barajar, type Aleatorio } from './aleatorio.ts';
-import { esDePalo, modificacionesDe, type Carta, type Palo } from './cartas.ts';
+import { esDePalo, mismoColor, modificacionesDe, type Carta, type Palo } from './cartas.ts';
 import { MANOS, TIPOS_DE_MANO, type Niveles, type TipoMano } from './manos.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
 
@@ -1090,6 +1090,124 @@ export const CATALOGO: readonly Baratija[] = [
     rareza: 'comun',
     icono: '🗺',
     tesoro: 1,
+  },
+
+  // --- Infrecuentes ---
+  {
+    id: 'cuenta-atras',
+    nombre: 'Cuenta atrás',
+    descripcion: '−1 mano, pero cada mano da ×1,5 multi.',
+    rareza: 'infrecuente',
+    icono: '⏱',
+    alEmpezarCombate: (inicio) => ({ ...inicio, manos: inicio.manos - 1 }),
+    alPuntuar: (mano) => porMulti(mano, 1.5),
+  },
+  {
+    id: 'reciclaje',
+    nombre: 'Reciclaje',
+    descripcion: 'Las cartas descartadas vuelven al fondo del mazo.',
+    rareza: 'infrecuente',
+    icono: '♻',
+    reciclaje: true,
+  },
+  {
+    id: 'eco',
+    nombre: 'Eco',
+    descripcion: 'La última carta que puntúa en cada mano puntúa dos veces.',
+    rareza: 'infrecuente',
+    icono: '🔊',
+    eco: 1,
+  },
+  {
+    id: 'doble-filo',
+    nombre: 'Doble filo',
+    descripcion: 'Las cartas con modificador de fichas también dan +1 multi.',
+    rareza: 'infrecuente',
+    icono: '🗡',
+    alPuntuarCarta: (mano, carta) => ((carta.modificaciones?.fichas ?? 0) > 0 ? sumarMulti(mano, 1) : mano),
+  },
+  {
+    id: 'monocromo',
+    nombre: 'Monocromo',
+    descripcion: 'Si todas las cartas jugadas son del mismo color, +4 multi.',
+    rareza: 'infrecuente',
+    icono: '⚫',
+    alPuntuar: (mano) => (mismoColor(mano.cartasJugadas) ? sumarMulti(mano, 4) : mano),
+  },
+  {
+    id: 'escalera-corta',
+    nombre: 'Escalera corta',
+    descripcion: 'Las escaleras y los colores se pueden hacer con 4 cartas.',
+    rareza: 'infrecuente',
+    icono: '📏',
+    escaleraCorta: true,
+  },
+  {
+    id: 'puente',
+    nombre: 'Puente',
+    descripcion: 'Las escaleras pueden saltarse un número (3-4-6-7-8).',
+    rareza: 'infrecuente',
+    icono: '🌉',
+    puente: true,
+  },
+  {
+    id: 'arqueologo',
+    nombre: 'Arqueólogo',
+    descripcion: 'Las cartas del 2 al 5 que puntúan dan el doble de fichas.',
+    rareza: 'infrecuente',
+    icono: '🦴',
+    alContarCarta: (fichas, carta) => (carta.rango <= 5 ? fichas * 2 : fichas),
+  },
+  {
+    id: 'gemelos',
+    nombre: 'Gemelos',
+    descripcion: 'En una mano con par, la segunda carta del par puntúa dos veces.',
+    rareza: 'infrecuente',
+    icono: '👯',
+    gemelos: 1,
+  },
+  {
+    id: 'inversion',
+    nombre: 'Inversión',
+    descripcion: 'Pagas 50 de oro al empezar cada combate; si lo ganas, recibes 150.',
+    rareza: 'infrecuente',
+    icono: '💹',
+    // Se cobra todo al terminar: ganado, +150 − 50; perdido, −50.
+    alGanarCombate: (oro) => oro + 100,
+    alPerderCombate: (oro) => oro + 50,
+  },
+  {
+    id: 'vista-de-lince',
+    nombre: 'Vista de lince',
+    descripcion: 'La mano tiene 9 cartas en vez de 8.',
+    rareza: 'infrecuente',
+    icono: '🐆',
+    cartasExtra: 1,
+  },
+  {
+    id: 'descuento-de-veterano',
+    nombre: 'Descuento de veterano',
+    descripcion: 'Las tiendas cuestan riesgo × 5\u00a0% menos (hasta 50\u00a0%).',
+    rareza: 'infrecuente',
+    icono: '🏷',
+    alComprar: (precio, _primera, riesgo) => precio * (1 - Math.min(0.5, 0.05 * riesgo)),
+    estado: (mesa) => `Ahora: −${Math.round(Math.min(50, 5 * (mesa.riesgo ?? 0)))}\u00a0%`,
+  },
+  {
+    id: 'seguro',
+    nombre: 'Seguro',
+    descripcion: 'La primera derrota de cada mundo no cuesta oro.',
+    rareza: 'infrecuente',
+    icono: '☂',
+    seguro: true,
+  },
+  {
+    id: 'precision',
+    nombre: 'Precisión',
+    descripcion: 'Si una mano deja el combate a menos de 10\u00a0% por encima del objetivo, +100 de oro.',
+    rareza: 'infrecuente',
+    icono: '📐',
+    precision: 100,
   },
 ];
 
