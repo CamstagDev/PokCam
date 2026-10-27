@@ -11,7 +11,7 @@ import { nivelesIniciales } from './manos.ts';
 import { ORO_INICIAL, type Partida } from './partida.ts';
 
 export const RANURAS = 3;
-const VERSION = 14;
+const VERSION = 15;
 const PREFIJO = 'pokcam.ranura.';
 
 export interface Almacen {
@@ -69,7 +69,8 @@ export function leerGuardado(texto: string): Guardado | null {
     // racha, las de antes de la 10, de antes de los niveles de las manos, y
     // las de antes de la 11, de antes de Crypto monedas, y las de antes de
     // la 12, de antes de los mundos, y las de antes de la 13, de antes de la
-    // memoria de las baratijas.
+    // memoria de las baratijas, las de antes de la 14, de antes del recargo
+    // por eliminar, y las de antes de la 15, de antes del soborno.
     const partida = { ...guardado.partida };
     if (version < 2) partida.oro = ORO_INICIAL;
     if (version < 3) partida.mazo = crearMazo();
@@ -93,6 +94,7 @@ export function leerGuardado(texto: string): Guardado | null {
     }
     if (version < 13) partida.memoria = {};
     if (version < 14) partida.recargoEliminar = 0;
+    if (version < 15) partida.soborno = false;
     return { ...guardado, version: VERSION, partida };
   } catch {
     return null;

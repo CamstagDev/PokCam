@@ -268,3 +268,26 @@ la versión nueva (ver scripts/nueva-version.mjs).
 - Baratija legendaria Tarjeta de crédito: se puede quedar en deuda hasta
   riesgo × 100 de oro; mientras se deba, cada paso en el mapa cuesta
   riesgo × 10 % de la deuda. El oro en deuda se ve en rojo.
+- 8 sets nuevos de baratijas, cada uno con su bono:
+  - Realeza: El Rey (K +3 multi), La Reina (Q +20 fichas) y La Jota (cada
+    J, 1 en 4 de dar 25 de oro). Con las 3, cada figura aplica los tres.
+  - Bajos fondos: Cobro de piso (+25 por combate ganado sin descartar),
+    Soborno (botón 🤝 en la mesa: pagas 10 % de tu oro y el objetivo baja
+    15 %) y Lavado de dinero (el vendedor paga completas tus comunes). Con
+    las 3, el primer soborno de cada mundo es gratis.
+  - Supersticioso: Trébol de cuatro hojas, Gato negro, Martes 13 y Espejo
+    roto. Con 3, las probabilidades "1 en X" se duplican.
+  - Matemático: Par perfecto, Números primos, Pi y Fibonacci. Con 3, las
+    cartas jugadas que no puntúan también suman sus fichas.
+  - Torneo: Ciega pequeña, Ciega grande y Botón del crupier. Con las 3,
+    +1 mano en todos los combates.
+  - Tiempo: Paciencia, Prisa y Reloj de arena. Con las 3, al ganar cada
+    mano que sobra da 25 de oro.
+  - Jardín (El poder de las flores, Corta hierbas y el nuevo Jardinero) y
+    Caridad (Materialista, Altruista y el nuevo Robin Hood): con el set
+    completo, sus baratijas ya no restan.
+- Baratijas nuevas en sets de antes: Ordenado (TOC TOC TOC; ahora el set
+  completo son 3), Ficha de la suerte (apostador), Paleta y Lienzo en
+  blanco (artista).
+- Las cartas puntúan de a una, en orden; algunas baratijas dan oro al
+  puntuar y se cobra enseguida.

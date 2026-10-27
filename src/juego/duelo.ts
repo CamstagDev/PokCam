@@ -9,6 +9,7 @@
 // Todo es inmutable: cada acción devuelve un enfrentamiento nuevo.
 
 import { barajar, type Aleatorio } from './aleatorio.ts';
+import { efectosDe } from './baratijas.ts';
 import { fichasDeCarta, type Carta } from './cartas.ts';
 import { MAX_CARTAS_JUGADAS, TAMANO_MANO, crearCombate, descartar, jugar, type Combate, type OpcionesCombate } from './combate.ts';
 import { buscarJefe, nivelDelJefe, type Jefe } from './jefes.ts';
@@ -40,7 +41,7 @@ export interface Enfrentamiento {
 }
 
 export function crearEnfrentamiento(aleatorio: Aleatorio, jefe: Jefe, opciones: Omit<OpcionesCombate, 'objetivo'>): Enfrentamiento {
-  const combate = crearCombate(aleatorio, { ...opciones, objetivo: Infinity });
+  const combate = crearCombate(aleatorio, { ...opciones, tipo: 'jefe', objetivo: Infinity });
   const pila = barajar(jefe.mazo(), aleatorio);
   const nivel = nivelDelJefe(opciones.riesgo ?? 0);
   const inicio: Enfrentamiento = {
@@ -115,10 +116,10 @@ function cambiarDuelo(e: Enfrentamiento, cambio: Partial<Duelo>): Enfrentamiento
 
 // Juega una mano en el duelo abierto. Para Bola de nieve, el objetivo de
 // la mano son los puntos del jefe en ese duelo.
-export function jugarEnDuelo(e: Enfrentamiento, ids: readonly string[], farol = false): Enfrentamiento {
+export function jugarEnDuelo(e: Enfrentamiento, ids: readonly string[], farol = false, divina = false): Enfrentamiento {
   if (e.estado !== 'jugando') throw new Error('La partida contra el jefe ya terminó');
   const duelo = dueloAbierto(e);
-  const jugado = jugar({ ...e.combate, objetivo: duelo.jefe, puntos: 0, estado: 'jugando' }, ids, farol);
+  const jugado = jugar({ ...e.combate, objetivo: duelo.jefe, puntos: 0, estado: 'jugando' }, ids, farol, divina);
   const combate = { ...jugado, objetivo: Infinity, estado: 'jugando' as const };
   const siguiente = cambiarDuelo({ ...e, combate }, { jugador: duelo.jugador + jugado.ultimaJugada!.total, manosDelJugador: duelo.manosDelJugador + 1 });
   return combate.manosRestantes === 0 ? cerrarDuelo(siguiente) : siguiente;
@@ -130,13 +131,14 @@ export function descartarEnDuelo(e: Enfrentamiento, ids: readonly string[]): Enf
 }
 
 // Cierra el duelo abierto: gana quien puso más puntos; si empatan, se
-// desempata. Después empieza el siguiente, salvo que la partida ya esté
+// desempata (con la Corona del Tahúr, gana el jugador). Después empieza el siguiente, salvo que la partida ya esté
 // decidida. Sin manos, los que faltan se cierran solos con 0.
 export function cerrarDuelo(e: Enfrentamiento): Enfrentamiento {
   if (e.estado !== 'jugando') throw new Error('La partida contra el jefe ya terminó');
   const duelo = dueloAbierto(e);
   let cerrado: Enfrentamiento;
   if (duelo.jugador !== duelo.jefe) cerrado = cambiarDuelo(e, { ganador: duelo.jugador > duelo.jefe ? 'jugador' : 'jefe' });
+  else if (efectosDe(e.combate.baratijas).some((b) => b.coronaDelTahur)) cerrado = cambiarDuelo(e, { ganador: 'jugador' });
   else cerrado = desempatar(e);
 
   const ganados = duelosGanados(cerrado, 'jugador');

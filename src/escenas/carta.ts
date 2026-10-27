@@ -4,7 +4,7 @@ import { COLORES, estiloTexto } from './estilo.ts';
 
 // Una carta de `ancho` × `alto` centrada en (x, y): el rango arriba a la
 // izquierda, el palo en el medio y abajo lo que suman sus modificaciones
-// (fichas a la izquierda, multiplicador a la derecha).
+// (fichas a la izquierda, multiplicador a la derecha). Un comodín lleva ★.
 export function dibujarCarta(escena: Phaser.Scene, x: number, y: number, carta: Carta, ancho: number, alto: number): Phaser.GameObjects.Container {
   const grande = ancho >= 100;
   const roja = carta.palo === 'corazones' || carta.palo === 'diamantes';
@@ -24,5 +24,7 @@ export function dibujarCarta(escena: Phaser.Scene, x: number, y: number, carta: 
   const multi = carta.modificaciones?.multi ?? 0;
   if (fichas > 0) objetos.push(escena.add.text(-ancho / 2 + margen / 2 + 1, abajo, `+${fichas}`, estiloTexto(tamano, COLORES.fichas)).setOrigin(0, 1));
   if (multi > 0) objetos.push(escena.add.text(ancho / 2 - margen / 2 - 1, abajo, `+${multi}×`, estiloTexto(tamano, COLORES.multi)).setOrigin(1, 1));
+  // El comodín (cuenta como de cualquier palo): una estrella arriba a la derecha.
+  if (carta.comodin) objetos.push(escena.add.text(ancho / 2 - margen / 2, -alto / 2 + margen / 2, '★', estiloTexto(tamano + 4, COLORES.oro)).setOrigin(1, 0));
   return escena.add.container(x, y, objetos);
 }

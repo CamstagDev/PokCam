@@ -8,11 +8,14 @@
 // opcional y recibe el valor de antes para devolver el de después:
 //
 //   alEmpezarCombate  manos y descartes con los que empieza cada combate
+//                     (recibe también el tipo de combate)
 //   alContarCarta     las fichas que suma cada carta que puntúa (recibe
 //                     también la carta y la mesa: el mazo y cuántas cartas
 //                     quedan por robar)
-//   alPuntuar         fichas y multiplicador de cada mano jugada (recibe
-//                     también la mesa)
+//   alPuntuarCarta    fichas, multiplicador y oro de la mano después de
+//                     que puntúa cada carta (recibe la carta y la mesa)
+//   alPuntuar         fichas, multiplicador y oro de cada mano jugada
+//                     (recibe también la mesa)
 //   alGanarCombate    el oro que da un combate ganado
 //   alPerderCombate   el oro que quita un combate perdido
 //   alSortearRareza   la probabilidad de cada rareza al ofrecer baratijas
@@ -34,10 +37,31 @@
 //                     la mano, que no es del mazo
 //   faroles           cuántas manos por combate pueden farolear (puntuar
 //                     como el tipo de mano siguiente)
+//   divinas           cuántas manos por combate pueden contar como
+//                     escalera de color (Mano de Dios)
+//   alTerminarCombate el oro de más al terminar un combate (recibe cómo
+//                     terminó: ganado o no, manos y descartes que sobran…)
+//   alFijarObjetivo   los puntos que pide cada combate
+//   alComprar         el precio de lo que se compra en una tienda (recibe
+//                     si es la primera compra de la visita y el riesgo)
+//   alVender          lo que paga el vendedor por una baratija
+//   y otras marcas que usan las reglas: cartasExtra, eco, gemelos,
+//   escaleraCorta, puente, sumanTodas, suerte, verSiguiente, reciclaje,
+//   iman, vampiro, precision, soborno, sobornoGratis, seguro,
+//   segundaOportunidad, fichaDeLaSuerte, recompensa, telescopio,
+//   trabajosDelPintor, clonador, alquimista, tesoro, coronaDelTahur (ver
+//   cada una en Efectos).
+//
+// Probabilidades "1 en X": `conSuerte(mesa, X)`. El bono del set
+// supersticioso (`suerte: 2`) las duplica. Una baratija que se rompe
+// sola (`rompe`: 1 en X al terminar cada combate) se pierde.
 //
 // Una baratija también puede cambiar el mazo al conseguirla
 // (`alConseguir`), y ser de un jefe (`deJefe`): esas solo se consiguen
 // venciéndolo, nunca en ofertas.
+//
+// El Gemelo malvado copia los efectos de la última baratija conseguida
+// (ver efectosDe).
 //
 // Una baratija puede pertenecer a un set (`conjunto`, el id de uno de
 // CONJUNTOS). Cada set da bonos según cuántas de sus baratijas se tengan;
@@ -61,8 +85,9 @@
 // nuevo y se llama desde la regla correspondiente.
 
 import { barajar, type Aleatorio } from './aleatorio.ts';
-import { modificacionesDe, type Carta, type Palo } from './cartas.ts';
+import { esDePalo, modificacionesDe, type Carta, type Palo } from './cartas.ts';
 import { MANOS, TIPOS_DE_MANO, type Niveles, type TipoMano } from './manos.ts';
+import type { TipoNodo } from '../mapa/mapa.ts';
 
 export interface InicioDeCombate {
   manos: number;
@@ -95,6 +120,7 @@ export interface ManoPuntuada {
   cartasQuePuntuan: readonly Carta[];
   fichas: number;
   multi: number;
+  oro: number; // el que dan las baratijas al puntuar
 }
 
 // Baratijas del jugador que se vuelven otras de la rareza `hacia` cuando
@@ -122,6 +148,28 @@ export interface Mesa {
   manosJugadas?: number; // en este combate, antes de esta
   niveles?: Partial<Niveles>;
   memoria?: Memoria;
+  propias?: readonly string[]; // los ids de las baratijas del jugador
+  oro?: number; // el del jugador ahora
+  tipo?: TipoNodo; // del combate
+  manosRestantes?: number; // contando la que se juega
+  descartesPrevios?: number; // los hechos desde la mano anterior
+  azar?: Aleatorio; // para las probabilidades; sin él nunca salen
+  suerte?: number; // cuánto se multiplican las probabilidades
+}
+
+// Si sale una probabilidad "1 en x" (con la suerte de la mesa).
+export function conSuerte(mesa: Mesa, x: number): boolean {
+  return !!mesa.azar && mesa.azar() < (mesa.suerte ?? 1) / x;
+}
+
+// Cómo terminó un combate, para las baratijas que dan oro al terminar.
+export interface ResumenDeCombate {
+  gano: boolean;
+  tipo: TipoNodo;
+  manosRestantes: number;
+  descartesRestantes: number;
+  descartesUsados: number;
+  manosJugadas: number;
 }
 
 // Lo que recuerda una baratija (ver "Memoria" arriba) y el de todas.
@@ -130,10 +178,11 @@ export type Memoria = Readonly<Record<string, Recuerdo>>;
 
 // Lo que pasa en la partida y las baratijas pueden recordar.
 export type Suceso =
-  | { tipo: 'mano'; mano: TipoMano; total: number; objetivo: number } // se jugó una mano
+  // se jugó una mano; `modificadas`: las cartas modificadas que puntuaron
+  | { tipo: 'mano'; mano: TipoMano; total: number; objetivo: number; modificadas?: number }
   | { tipo: 'eliminarCarta' } // en el eliminador
   | { tipo: 'apuesta'; gano: boolean } // se resolvió una apuesta de más de 0
-  | { tipo: 'combate'; gano: boolean }; // terminó un combate
+  | { tipo: 'combate'; gano: boolean; descartes?: number }; // terminó un combate, con esos descartes de sobra
 
 function recuerdo(mesa: Mesa, id: string): Recuerdo {
   return mesa.memoria?.[id] ?? {};
@@ -155,9 +204,14 @@ export const MESA_VACIA: Mesa = { mazo: [], restantes: 0 };
 
 // Lo que cambia las reglas: una baratija o el bono de un set.
 export interface Efectos {
-  alEmpezarCombate?(inicio: InicioDeCombate): InicioDeCombate;
+  alEmpezarCombate?(inicio: InicioDeCombate, tipo?: TipoNodo): InicioDeCombate;
   alContarCarta?(fichas: number, carta: Carta, mesa: Mesa): number;
+  alPuntuarCarta?(mano: ManoPuntuada, carta: Carta, mesa: Mesa): ManoPuntuada;
   alPuntuar?(mano: ManoPuntuada, mesa: Mesa): ManoPuntuada;
+  alTerminarCombate?(resumen: ResumenDeCombate): number;
+  alFijarObjetivo?(objetivo: number): number;
+  alComprar?(precio: number, primera: boolean, riesgo: number): number;
+  alVender?(valor: number, baratija: Baratija): number;
   alGanarCombate?(oro: number): number;
   alPerderCombate?(oro: number): number;
   alSortearRareza?(probabilidades: Probabilidades): Probabilidades;
@@ -172,6 +226,31 @@ export interface Efectos {
   pintorPersonalizado?: boolean; // el pintor ofrece el servicio Personalizado
   asExtra?: boolean; // un As de más en la mano al empezar cada combate
   faroles?: number; // manos por combate que puntúan como el tipo siguiente
+  divinas?: number; // manos por combate que cuentan como escalera de color
+  cartasExtra?: number; // cartas de más en la mano
+  eco?: number; // veces de más que puntúa la última carta que puntúa
+  gemelos?: number; // veces de más que puntúa la segunda carta del primer par
+  escaleraCorta?: boolean; // escaleras y colores de 4 cartas
+  puente?: boolean; // escaleras que se saltan un número
+  sumanTodas?: boolean; // las jugadas que no puntúan también suman sus fichas
+  suerte?: number; // multiplica las probabilidades "1 en X"
+  verSiguiente?: boolean; // se ve la próxima carta del mazo
+  reciclaje?: boolean; // las descartadas vuelven al fondo del mazo
+  iman?: boolean; // al robar, primero una del palo que más hay en la mano
+  vampiro?: boolean; // las modificadas que puntúan pierden sus modificaciones
+  precision?: number; // oro si una mano gana el combate por menos de 10 %
+  soborno?: boolean; // se puede sobornar al empezar un combate
+  sobornoGratis?: boolean; // el primer soborno de cada mundo es gratis
+  seguro?: boolean; // la primera derrota de cada mundo no cuesta oro
+  segundaOportunidad?: boolean; // una vez por mundo se repite un combate perdido
+  fichaDeLaSuerte?: boolean; // la primera apuesta perdida de cada mundo no cuesta oro
+  recompensa?: boolean; // vencer a un élite sube la mano más jugada
+  telescopio?: boolean; // Helman O'Grande ofrece la mano más jugada
+  trabajosDelPintor?: number; // trabajos de más por visita al pintor
+  clonador?: number; // cartas que se duplican al empezar cada mundo
+  alquimista?: boolean; // al terminar cada mundo las comunes pasan a infrecuentes
+  tesoro?: number; // eventos de más en cada mundo
+  coronaDelTahur?: boolean; // contra los jefes se ganan todos los empates
 }
 
 export interface Baratija extends Efectos {
@@ -188,9 +267,83 @@ export interface Baratija extends Efectos {
   alElegirNumero?(cambio: CambioDeBaratijas, numero: number, aleatorio: Aleatorio): CambioDeBaratijas;
   recordar?(recuerdo: Recuerdo, suceso: Suceso): Recuerdo;
   estado?(mesa: Mesa): string;
-  alConseguir?(mazo: readonly Carta[]): Carta[];
+  alConseguir?(mazo: readonly Carta[], aleatorio: Aleatorio): Carta[];
   deJefe?: string; // id del jefe que la da
+  rompe?: number; // al terminar cada combate, 1 en `rompe` de perderse
 }
+
+// La suma de una marca numérica de los efectos.
+export function sumar(efectos: readonly Efectos[], marca: 'eco' | 'gemelos' | 'cartasExtra' | 'divinas' | 'precision' | 'trabajosDelPintor' | 'clonador' | 'tesoro' | 'faroles'): number {
+  return efectos.reduce((suma, e) => suma + (e[marca] ?? 0), 0);
+}
+
+// Lo que se multiplican las probabilidades "1 en X".
+export function suerteDe(efectos: readonly Efectos[]): number {
+  return efectos.reduce((suerte, e) => suerte * (e.suerte ?? 1), 1);
+}
+
+// --- Ayudas para las baratijas de abajo ---
+
+const FIGURAS = [11, 12, 13];
+const PRIMOS = [2, 3, 5, 7, 11, 13];
+// Fibonacci: el multiplicador de cada rango.
+const FIBONACCI: Partial<Record<number, number>> = { 14: 1, 2: 1, 3: 2, 5: 3, 8: 5 };
+
+const sumarFichas = (mano: ManoPuntuada, n: number): ManoPuntuada => ({ ...mano, fichas: mano.fichas + n });
+const sumarMulti = (mano: ManoPuntuada, n: number): ManoPuntuada => ({ ...mano, multi: mano.multi + n });
+const porMulti = (mano: ManoPuntuada, n: number): ManoPuntuada => ({ ...mano, multi: mano.multi * n });
+const darOro = (mano: ManoPuntuada, n: number): ManoPuntuada => ({ ...mano, oro: mano.oro + n });
+
+// Una mano de esos tipos suma `n` fichas o multi.
+function fichasEn(tipos: readonly TipoMano[], n: number): (mano: ManoPuntuada) => ManoPuntuada {
+  return (mano) => (tipos.includes(mano.tipo) ? sumarFichas(mano, n) : mano);
+}
+
+// Cuenta las manos jugadas (Callo, Recompensa, Telescopio).
+function contarManos(r: Recuerdo, s: Suceso): Recuerdo {
+  return s.tipo === 'mano' ? { ...r, [s.mano]: (r[s.mano] ?? 0) + 1 } : r;
+}
+
+// La mano más jugada según lo que contó una baratija (la primera si empatan).
+export function manoMasJugada(memoria: Memoria, id: string): TipoMano | null {
+  return masJugadas(memoria[id] ?? {}).tipos[0] ?? null;
+}
+
+// Realeza: K, Q o J (con el set completo, cualquier figura).
+const esFigura = (rango: number) => (carta: Carta) => carta.rango === rango;
+const figura = (carta: Carta) => FIGURAS.includes(carta.rango);
+
+function reyDeRealeza(es: (c: Carta) => boolean): Efectos['alPuntuarCarta'] {
+  return (mano, carta) => (es(carta) ? sumarMulti(mano, 3) : mano);
+}
+function reinaDeRealeza(es: (c: Carta) => boolean): Efectos['alPuntuarCarta'] {
+  return (mano, carta) => (es(carta) ? sumarFichas(mano, 20) : mano);
+}
+function jotaDeRealeza(es: (c: Carta) => boolean): Efectos['alPuntuarCarta'] {
+  return (mano, carta, mesa) => (es(carta) && conSuerte(mesa, 4) ? darOro(mano, 25) : mano);
+}
+
+// Ordenado: las cartas jugadas, en el orden en que se eligieron, de rango
+// cada vez más alto.
+function ordenado(factor: number): Efectos['alPuntuar'] {
+  return (mano) => {
+    const rangos = mano.cartasJugadas.map((c) => c.rango);
+    const sube = rangos.length >= 2 && rangos.every((r, i) => i === 0 || r > rangos[i - 1]!);
+    return sube ? porMulti(mano, factor) : mano;
+  };
+}
+
+// Gemelo malvado: la última baratija conseguida que no es él.
+export const GEMELO = 'gemelo-malvado';
+export function copiaDelGemelo(ids: readonly string[]): Baratija | null {
+  if (!ids.includes(GEMELO)) return null;
+  const id = [...ids].reverse().find((otra) => otra !== GEMELO && CATALOGO.some((b) => b.id === otra));
+  return id ? buscarBaratija(id) : null;
+}
+
+// Soborno: lo que cuesta (parte del oro) y lo que baja el objetivo.
+export const COSTO_SOBORNO = 0.1;
+export const REBAJA_SOBORNO = 0.15;
 
 // Callo: la mano más jugada (o las empatadas) y cuántas veces.
 function masJugadas(r: Recuerdo): { tipos: TipoMano[]; veces: number } {
@@ -259,9 +412,9 @@ function simetrico(potencia: number): (mano: ManoPuntuada, mesa: Mesa) => ManoPu
 }
 
 // Las fichas de las cartas de un palo ×1,5 y las de otro a la mitad,
-// redondeando.
-function cambiarPalos(sube: Palo, baja: Palo): (fichas: number, carta: Carta) => number {
-  return (fichas, carta) => (carta.palo === sube ? Math.round(fichas * 1.5) : carta.palo === baja ? Math.round(fichas / 2) : fichas);
+// redondeando; sin `castigo` (con el bono de su set), las del otro quedan igual.
+function cambiarPalos(sube: Palo, baja: Palo, castigo = true): (fichas: number, carta: Carta) => number {
+  return (fichas, carta) => (esDePalo(carta, sube) ? Math.round(fichas * 1.5) : castigo && esDePalo(carta, baja) ? Math.round(fichas / 2) : fichas);
 }
 
 export const CATALOGO: readonly Baratija[] = [
@@ -271,7 +424,9 @@ export const CATALOGO: readonly Baratija[] = [
     descripcion: 'Las cartas de ♥ valen la mitad de fichas y las de ♦, 1,5 veces más.',
     rareza: 'comun',
     icono: '💰',
+    conjunto: 'caridad',
     alContarCarta: cambiarPalos('diamantes', 'corazones'),
+    potenciados: { alContarCarta: cambiarPalos('diamantes', 'corazones', false) },
   },
   {
     id: 'altruista',
@@ -279,7 +434,9 @@ export const CATALOGO: readonly Baratija[] = [
     descripcion: 'Las cartas de ♦ valen la mitad de fichas y las de ♥, 1,5 veces más.',
     rareza: 'comun',
     icono: '💝',
+    conjunto: 'caridad',
     alContarCarta: cambiarPalos('corazones', 'diamantes'),
+    potenciados: { alContarCarta: cambiarPalos('corazones', 'diamantes', false) },
   },
   {
     id: 'flower-power',
@@ -287,7 +444,9 @@ export const CATALOGO: readonly Baratija[] = [
     descripcion: 'Las cartas de ♠ valen la mitad de fichas y las de ♣, 1,5 veces más.',
     rareza: 'comun',
     icono: '🌸',
+    conjunto: 'jardin',
     alContarCarta: cambiarPalos('treboles', 'picas'),
+    potenciados: { alContarCarta: cambiarPalos('treboles', 'picas', false) },
   },
   {
     id: 'grass-mower',
@@ -295,7 +454,9 @@ export const CATALOGO: readonly Baratija[] = [
     descripcion: 'Las cartas de ♣ valen la mitad de fichas y las de ♠, 1,5 veces más.',
     rareza: 'comun',
     icono: '🚜',
+    conjunto: 'jardin',
     alContarCarta: cambiarPalos('picas', 'treboles'),
+    potenciados: { alContarCarta: cambiarPalos('picas', 'treboles', false) },
   },
   {
     id: 'subsidio',
@@ -337,7 +498,11 @@ export const CATALOGO: readonly Baratija[] = [
     descripcion: 'Multiplica por 4 el multiplicador si la mano jugada tiene al menos una carta de cada palo.',
     rareza: 'rara',
     icono: '🎨',
-    alPuntuar: (mano) => (new Set(mano.cartasJugadas.map((c) => c.palo)).size === 4 ? { ...mano, multi: mano.multi * 4 } : mano),
+    alPuntuar: (mano) => {
+      const fijas = mano.cartasJugadas.filter((c) => !c.comodin);
+      const palos = new Set(fijas.map((c) => c.palo)).size + mano.cartasJugadas.length - fijas.length;
+      return palos >= 4 ? { ...mano, multi: mano.multi * 4 } : mano;
+    },
   },
   {
     id: 'all-in',
@@ -392,7 +557,7 @@ export const CATALOGO: readonly Baratija[] = [
     descripcion: `Cada vez que juegas tu mano más jugada, esa mano suma +${FICHAS_POR_CALLO} fichas para siempre.`,
     rareza: 'infrecuente',
     icono: '🖐',
-    recordar: (r, s) => (s.tipo === 'mano' ? { ...r, [s.mano]: (r[s.mano] ?? 0) + 1 } : r),
+    recordar: contarManos,
     alPuntuar: (mano, mesa) => {
       const { tipos, veces } = masJugadas(recuerdo(mesa, 'callo'));
       return tipos.includes(mano.tipo) ? { ...mano, fichas: mano.fichas + FICHAS_POR_CALLO * veces } : mano;
@@ -564,6 +729,251 @@ export const CATALOGO: readonly Baratija[] = [
       return { baratijas: nuevas, transformaciones: [...transformaciones, { ids: comunes, combatesRestantes: numero * 2, hacia: 'legendaria' }] };
     },
   },
+
+  // --- Sets nuevos (Realeza, Bajos fondos, Supersticioso, Matemático,
+  // Torneo, Tiempo, Jardín, Caridad) y las que se suman a los de antes ---
+  {
+    id: 'el-rey',
+    nombre: 'El Rey',
+    descripcion: 'Las K que puntúan dan +3 multi.',
+    rareza: 'infrecuente',
+    icono: '👑',
+    conjunto: 'realeza',
+    alPuntuarCarta: reyDeRealeza(esFigura(13)),
+    potenciados: { alPuntuarCarta: reyDeRealeza(figura) },
+  },
+  {
+    id: 'la-reina',
+    nombre: 'La Reina',
+    descripcion: 'Las Q que puntúan dan +20 fichas.',
+    rareza: 'infrecuente',
+    icono: '👸',
+    conjunto: 'realeza',
+    alPuntuarCarta: reinaDeRealeza(esFigura(12)),
+    potenciados: { alPuntuarCarta: reinaDeRealeza(figura) },
+  },
+  {
+    id: 'la-jota',
+    nombre: 'La Jota',
+    descripcion: 'Cada J que puntúa tiene 1 en 4 de dar 25 de oro.',
+    rareza: 'infrecuente',
+    icono: '🤴',
+    conjunto: 'realeza',
+    alPuntuarCarta: jotaDeRealeza(esFigura(11)),
+    potenciados: { alPuntuarCarta: jotaDeRealeza(figura) },
+  },
+  {
+    id: 'cobro-de-piso',
+    nombre: 'Cobro de piso',
+    descripcion: '+25 de oro por cada combate ganado sin descartar.',
+    rareza: 'comun',
+    icono: '🧱',
+    conjunto: 'bajos-fondos',
+    alTerminarCombate: (r) => (r.gano && r.descartesUsados === 0 ? 25 : 0),
+  },
+  {
+    id: 'soborno',
+    nombre: 'Soborno',
+    descripcion: `Al empezar un combate puedes pagar ${Math.round(COSTO_SOBORNO * 100)}\u00a0% de tu oro para bajar el objetivo ${Math.round(REBAJA_SOBORNO * 100)}\u00a0%.`,
+    rareza: 'infrecuente',
+    icono: '🤝',
+    conjunto: 'bajos-fondos',
+    soborno: true,
+  },
+  {
+    id: 'lavado-de-dinero',
+    nombre: 'Lavado de dinero',
+    descripcion: 'El vendedor paga el precio completo por tus comunes.',
+    rareza: 'rara',
+    icono: '🧼',
+    conjunto: 'bajos-fondos',
+    alVender: (valor, baratija) => (baratija.rareza === 'comun' ? precioDe(baratija) : valor),
+  },
+  {
+    id: 'trebol-de-cuatro-hojas',
+    nombre: 'Trébol de cuatro hojas',
+    descripcion: 'Las cartas de ♣ que puntúan dan +1 multi.',
+    rareza: 'comun',
+    icono: '🍀',
+    conjunto: 'supersticioso',
+    alPuntuarCarta: (mano, carta) => (esDePalo(carta, 'treboles') ? sumarMulti(mano, 1) : mano),
+  },
+  {
+    id: 'gato-negro',
+    nombre: 'Gato negro',
+    descripcion: 'Cada ♠ que puntúa tiene 1 en 7 de dar ×2 multi.',
+    rareza: 'infrecuente',
+    icono: '🐈',
+    conjunto: 'supersticioso',
+    alPuntuarCarta: (mano, carta, mesa) => (esDePalo(carta, 'picas') && conSuerte(mesa, 7) ? porMulti(mano, 2) : mano),
+  },
+  {
+    id: 'martes-13',
+    nombre: 'Martes 13',
+    descripcion: 'Si quedan exactamente 13 cartas por robar, ×3 multi.',
+    rareza: 'infrecuente',
+    icono: '📅',
+    conjunto: 'supersticioso',
+    alPuntuar: (mano, mesa) => (mesa.restantes === 13 ? porMulti(mano, 3) : mano),
+  },
+  {
+    id: 'espejo-roto',
+    nombre: 'Espejo roto',
+    descripcion: '×2 multi siempre, pero en cada combate tiene 1 en 7 de romperse y perderse.',
+    rareza: 'rara',
+    icono: '💔',
+    conjunto: 'supersticioso',
+    alPuntuar: (mano) => porMulti(mano, 2),
+    rompe: 7,
+  },
+  {
+    id: 'par-perfecto',
+    nombre: 'Par perfecto',
+    descripcion: 'Los pares dan +15 fichas.',
+    rareza: 'comun',
+    icono: '➗',
+    conjunto: 'matematico',
+    alPuntuar: fichasEn(['par'], 15),
+  },
+  {
+    id: 'numeros-primos',
+    nombre: 'Números primos',
+    descripcion: 'Las cartas 2, 3, 5, 7, J (11) y K (13) que puntúan dan +2 multi.',
+    rareza: 'infrecuente',
+    icono: '🔢',
+    conjunto: 'matematico',
+    alPuntuarCarta: (mano, carta) => (PRIMOS.includes(carta.rango) ? sumarMulti(mano, 2) : mano),
+  },
+  {
+    id: 'pi',
+    nombre: 'Pi',
+    descripcion: 'Si juegas exactamente 3 cartas, +3,14 multi.',
+    rareza: 'infrecuente',
+    icono: '🥧',
+    conjunto: 'matematico',
+    alPuntuar: (mano) => (mano.cartasJugadas.length === 3 ? sumarMulti(mano, 3.14) : mano),
+  },
+  {
+    id: 'fibonacci',
+    nombre: 'Fibonacci',
+    descripcion: 'Las cartas A, 2, 3, 5 y 8 que puntúan dan +1, +1, +2, +3 y +5 multi en ese orden dentro de la mano.',
+    rareza: 'rara',
+    icono: '🐚',
+    conjunto: 'matematico',
+    alPuntuarCarta: (mano, carta) => sumarMulti(mano, FIBONACCI[carta.rango] ?? 0),
+  },
+  {
+    id: 'ciega-pequena',
+    nombre: 'Ciega pequeña',
+    descripcion: 'La primera mano de cada combate da +10 × riesgo fichas.',
+    rareza: 'comun',
+    icono: '🔹',
+    conjunto: 'torneo',
+    alPuntuar: (mano, mesa) => (mesa.manosJugadas === 0 ? sumarFichas(mano, 10 * (mesa.riesgo ?? 0)) : mano),
+    estado: (mesa) => `Ahora: +${10 * (mesa.riesgo ?? 0)} fichas`,
+  },
+  {
+    id: 'ciega-grande',
+    nombre: 'Ciega grande',
+    descripcion: 'La última mano de cada combate da ×2 multi.',
+    rareza: 'infrecuente',
+    icono: '🔷',
+    conjunto: 'torneo',
+    alPuntuar: (mano, mesa) => (mesa.manosRestantes === 1 ? porMulti(mano, 2) : mano),
+  },
+  {
+    id: 'boton-del-crupier',
+    nombre: 'Botón del crupier',
+    descripcion: '+1 mano en élites y jefes.',
+    rareza: 'infrecuente',
+    icono: '🔘',
+    conjunto: 'torneo',
+    alEmpezarCombate: (inicio, tipo) => (tipo === 'elite' || tipo === 'jefe' ? { ...inicio, manos: inicio.manos + 1 } : inicio),
+  },
+  {
+    id: 'paciencia',
+    nombre: 'Paciencia',
+    descripcion: '+2 descartes, −1 mano.',
+    rareza: 'comun',
+    icono: '🐢',
+    conjunto: 'tiempo',
+    alEmpezarCombate: (inicio) => ({ manos: inicio.manos - 1, descartes: inicio.descartes + 2 }),
+  },
+  {
+    id: 'prisa',
+    nombre: 'Prisa',
+    descripcion: 'Si ganas con la primera mano, +100 de oro.',
+    rareza: 'infrecuente',
+    icono: '🐇',
+    conjunto: 'tiempo',
+    alTerminarCombate: (r) => (r.gano && r.manosJugadas === 1 ? 100 : 0),
+  },
+  {
+    id: 'reloj-de-arena',
+    nombre: 'Reloj de arena',
+    descripcion: 'Cada descarte que te sobra al ganar suma +1 multi para el resto de la partida.',
+    rareza: 'rara',
+    icono: '⏳',
+    conjunto: 'tiempo',
+    recordar: (r, s) => (s.tipo === 'combate' && s.gano ? { ...r, multi: (r.multi ?? 0) + (s.descartes ?? 0) } : r),
+    alPuntuar: (mano, mesa) => sumarMulti(mano, recuerdo(mesa, 'reloj-de-arena').multi ?? 0),
+    estado: (mesa) => `Ahora: +${recuerdo(mesa, 'reloj-de-arena').multi ?? 0} multi`,
+  },
+  {
+    id: 'jardinero',
+    nombre: 'Jardinero',
+    descripcion: 'Las cartas de ♣ y ♠ que puntúan dan +5 fichas.',
+    rareza: 'comun',
+    icono: '🌱',
+    conjunto: 'jardin',
+    alContarCarta: (fichas, carta) => (esDePalo(carta, 'treboles') || esDePalo(carta, 'picas') ? fichas + 5 : fichas),
+  },
+  {
+    id: 'robin-hood',
+    nombre: 'Robin Hood',
+    descripcion: 'Las cartas de ♥ y ♦ que puntúan dan +5 fichas.',
+    rareza: 'comun',
+    icono: '🏹',
+    conjunto: 'caridad',
+    alContarCarta: (fichas, carta) => (esDePalo(carta, 'corazones') || esDePalo(carta, 'diamantes') ? fichas + 5 : fichas),
+  },
+  {
+    id: 'ordenado',
+    nombre: 'Ordenado',
+    descripcion: 'Si las cartas jugadas van en orden ascendente, ×2 multi (×3 con el set completo).',
+    rareza: 'infrecuente',
+    icono: '🗂',
+    conjunto: 'toc-toc-toc',
+    alPuntuar: ordenado(2),
+    potenciados: { alPuntuar: ordenado(3) },
+  },
+  {
+    id: 'ficha-de-la-suerte',
+    nombre: 'Ficha de la suerte',
+    descripcion: 'La primera apuesta perdida de cada mundo no cuesta oro.',
+    rareza: 'infrecuente',
+    icono: '🎲',
+    conjunto: 'apostador-empedernido',
+    fichaDeLaSuerte: true,
+  },
+  {
+    id: 'paleta',
+    nombre: 'Paleta',
+    descripcion: 'El pintor te deja modificar 2 cartas por visita.',
+    rareza: 'infrecuente',
+    icono: '🖍',
+    conjunto: 'artista',
+    trabajosDelPintor: 1,
+  },
+  {
+    id: 'lienzo-en-blanco',
+    nombre: 'Lienzo en blanco',
+    descripcion: 'Cada carta sin modificar que puntúa da +3 fichas.',
+    rareza: 'comun',
+    icono: '⬜',
+    conjunto: 'artista',
+    alContarCarta: (fichas, carta) => (modificacionesDe(carta) === 0 ? fichas + 3 : fichas),
+  },
 ];
 
 export const BARATIJAS_POR_OFERTA = 3;
@@ -583,7 +993,7 @@ export interface Conjunto {
 }
 
 export const CONJUNTOS: readonly Conjunto[] = [
-  // Por ahora una sola baratija y sin bonos.
+  // Sin bonos por ahora.
   { id: 'artista', nombre: 'Set del artista', bonos: [] },
   {
     id: 'apostador-empedernido',
@@ -600,6 +1010,46 @@ export const CONJUNTOS: readonly Conjunto[] = [
     id: 'toc-toc-toc',
     nombre: 'TOC TOC TOC',
     bonos: [{ descripcion: 'Los bonos y los castigos de las baratijas del set valen el doble.', potencia: true }],
+  },
+  {
+    id: 'realeza',
+    nombre: 'Realeza',
+    bonos: [{ cantidad: 3, descripcion: 'Cada figura que puntúa aplica los tres efectos.', potencia: true }],
+  },
+  {
+    id: 'bajos-fondos',
+    nombre: 'Bajos fondos',
+    bonos: [{ cantidad: 3, descripcion: 'El primer soborno de cada mundo es gratis.', sobornoGratis: true }],
+  },
+  {
+    id: 'supersticioso',
+    nombre: 'Supersticioso',
+    bonos: [{ cantidad: 3, descripcion: 'Todas las probabilidades "1 en X" se duplican.', suerte: 2 }],
+  },
+  {
+    id: 'matematico',
+    nombre: 'Matemático',
+    bonos: [{ cantidad: 3, descripcion: 'Las cartas jugadas que no puntúan también suman sus fichas.', sumanTodas: true }],
+  },
+  {
+    id: 'torneo',
+    nombre: 'Torneo',
+    bonos: [{ cantidad: 3, descripcion: '+1 mano en todos los combates.', alEmpezarCombate: (inicio) => ({ ...inicio, manos: inicio.manos + 1 }) }],
+  },
+  {
+    id: 'tiempo',
+    nombre: 'Tiempo',
+    bonos: [{ cantidad: 3, descripcion: 'Al ganar, cada mano que te sobra da 25 de oro.', alTerminarCombate: (r) => (r.gano ? 25 * r.manosRestantes : 0) }],
+  },
+  {
+    id: 'jardin',
+    nombre: 'Jardín',
+    bonos: [{ descripcion: 'Sus baratijas ya no restan: solo suben.', potencia: true }],
+  },
+  {
+    id: 'caridad',
+    nombre: 'Caridad',
+    bonos: [{ descripcion: 'Sus baratijas ya no restan: solo suben.', potencia: true }],
   },
 ];
 
@@ -628,11 +1078,14 @@ export function bonosActivos(ids: readonly string[]): Bono[] {
 }
 
 // Todo lo que cambia las reglas con esas baratijas: ellas (potenciadas si
-// un bono de su set lo pide) y sus bonos de set.
+// un bono de su set lo pide), la copia del Gemelo malvado y sus bonos de set.
 export function efectosDe(ids: readonly string[]): Efectos[] {
   const potenciados = CONJUNTOS.filter((c) => bonosDe(c, ids).some((b) => b.potencia)).map((c) => c.id);
-  const baratijas = baratijasDe(ids).map((b) => (b.potenciados && b.conjunto && potenciados.includes(b.conjunto) ? { ...b, ...b.potenciados } : b));
-  return [...baratijas, ...bonosActivos(ids)];
+  const conPotencia = (b: Baratija): Efectos => (b.potenciados && b.conjunto && potenciados.includes(b.conjunto) ? { ...b, ...b.potenciados } : b);
+  const baratijas = baratijasDe(ids).map(conPotencia);
+  // El Gemelo malvado: otra vez los efectos de la última conseguida.
+  const copia = copiaDelGemelo(ids);
+  return [...baratijas, ...(copia ? [conPotencia(copia)] : []), ...bonosActivos(ids)];
 }
 
 export function buscarBaratija(id: string): Baratija {
@@ -700,7 +1153,7 @@ export function fichasConBaratijas(fichas: number, carta: Carta, baratijas: read
 
 // Aplica en orden el efecto `efecto` de cada baratija que lo tenga.
 export function aplicar<
-  E extends 'alEmpezarCombate' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza' | 'alLimitarApuesta',
+  E extends 'alEmpezarCombate' | 'alGanarCombate' | 'alPerderCombate' | 'alSortearRareza' | 'alLimitarApuesta' | 'alFijarObjetivo',
 >(
   baratijas: readonly Efectos[],
   efecto: E,

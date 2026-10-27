@@ -26,6 +26,7 @@ import {
   puedeAlquilar,
   puedePersonalizar,
   puedePintarLibre,
+  trabajosDelPintor,
   type Partida,
 } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
@@ -56,10 +57,13 @@ export class EscenaPintor extends Phaser.Scene {
     mostrarRiesgo(this, nivelDeRiesgo(partida));
     mostrarBotonesInventario(this, () => partidaActual(this));
     const oferta = partida.oferta;
-    const usado = (oferta?.usados?.length ?? 0) > 0;
+    const quedan = trabajosDelPintor(partida) - (oferta?.usados?.length ?? 0);
+    const usado = quedan <= 0;
 
     this.add.text(width / 2, 140, 'Gustavo el austriaco', estiloTexto(40)).setOrigin(0.5);
-    const subtitulo = usado ? 'El pintor ya hizo su trabajo en esta visita' : 'Elige uno de sus servicios';
+    const subtitulo = usado
+      ? 'El pintor ya hizo su trabajo en esta visita'
+      : quedan > 1 ? `Elige uno de sus servicios (te quedan ${quedan} trabajos)` : 'Elige uno de sus servicios';
     this.add.text(width / 2, 190, subtitulo, estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
 
     const personalizado = ofrecePersonalizado(partida);
@@ -186,7 +190,8 @@ export class EscenaPintor extends Phaser.Scene {
     if (cancelable) capa.add(crearBoton(this, width / 2, height - 80, 'Cancelar', COLORES.borde, () => capa.destroy(), 240));
   }
 
-  // Guarda la partida y muestra cómo quedó la carta; de ahí se sigue al mapa.
+  // Guarda la partida y muestra cómo quedó la carta; de ahí se sigue al mapa
+  // o, si le quedan trabajos (Paleta), se vuelve al pintor.
   private terminar(partida: Partida, id: string, modificador: Modificador): void {
     jugarPartida(this, partida);
     const { width, height } = this.scale;
@@ -197,7 +202,9 @@ export class EscenaPintor extends Phaser.Scene {
       this.add.text(width / 2, 120, NOMBRE_MODIFICADOR[modificador], estiloTexto(40, COLORES.oro)).setOrigin(0.5),
       dibujarCarta(this, width / 2, height / 2, carta, 150, 210),
       this.add.text(width / 2, height / 2 + 150, detalle, estiloTexto(26, COLORES.textoSuave)).setOrigin(0.5),
-      crearBoton(this, width / 2, height - 80, 'Seguir', COLORES.borde, () => this.seguir(), 240),
+      (partida.oferta?.usados?.length ?? 0) < trabajosDelPintor(partida)
+        ? crearBoton(this, width / 2, height - 80, 'Otro trabajo', COLORES.oro, () => this.scene.restart(), 240)
+        : crearBoton(this, width / 2, height - 80, 'Seguir', COLORES.borde, () => this.seguir(), 240),
     ]).setDepth(200);
   }
 

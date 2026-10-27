@@ -436,10 +436,10 @@ describe('vender y volver a tirar en el vendedor', () => {
 });
 
 describe('sets de baratijas', () => {
-  it('el apostador empedernido son All In, Tasador, Racha y la Ruleta de la suerte; el bono es con 3', () => {
+  it('el apostador empedernido son All In, Tasador, Racha, la Ruleta de la suerte y la Ficha de la suerte; el bono es con 3', () => {
     const apostador = CONJUNTOS.find((c) => c.id === 'apostador-empedernido')!;
     expect(apostador.nombre).toBe('Set del apostador empedernido');
-    expect(miembrosDe(apostador).map((b) => b.id).sort()).toEqual(['all-in', 'racha', 'ruleta-de-la-suerte', 'tasador']);
+    expect(miembrosDe(apostador).map((b) => b.id).sort()).toEqual(['all-in', 'ficha-de-la-suerte', 'racha', 'ruleta-de-la-suerte', 'tasador']);
     expect(bonosActivos(['all-in', 'ruleta-de-la-suerte', 'racha'])).toHaveLength(1);
     expect(bonosActivos(['all-in', 'tasador'])).toEqual([]);
     expect(bonosActivos(['tasador', 'racha', 'all-in'])).toHaveLength(1);
@@ -524,10 +524,10 @@ describe('set TOC TOC TOC', () => {
   const fichasDe8 = (ids: string[], mazo: Carta[]) =>
     puntuar([carta('picas-8')], efectosDe(ids), { mazo, restantes: 0 }).fichas - 5; // carta alta: 5 fichas de base
 
-  it('son Estético y Simétrico', () => {
+  it('son Estético, Simétrico y Ordenado', () => {
     const toc = CONJUNTOS.find((c) => c.id === 'toc-toc-toc')!;
     expect(toc.nombre).toBe('TOC TOC TOC');
-    expect(miembrosDe(toc).map((b) => b.id).sort()).toEqual(['estetico', 'simetrico']);
+    expect(miembrosDe(toc).map((b) => b.id).sort()).toEqual(['estetico', 'ordenado', 'simetrico']);
   });
 
   it('Estético: rojas y negras a la mitad, un color igual, un palo ×1,25', () => {
@@ -546,7 +546,7 @@ describe('set TOC TOC TOC', () => {
   });
 
   it('con el set completo los bonos y los castigos valen el doble', () => {
-    const ambos = ['estetico', 'simetrico'];
+    const ambos = ['estetico', 'simetrico', 'ordenado'];
     expect(fichasDe8(ambos, mazoDe('picas', 'picas'))).toBe(12);
     expect(fichasDe8(ambos, mazoDe('picas', 'corazones'))).toBe(2);
     const base = puntuar([carta('picas-8')]).fichas;

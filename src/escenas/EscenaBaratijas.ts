@@ -8,7 +8,7 @@
 // pregunta. La partida se guarda después de cada elección o compra.
 
 import Phaser from 'phaser';
-import { DATOS_RAREZA, baratijasDe, buscarBaratija, precioDe, valorDeVenta } from '../juego/baratijas.ts';
+import { DATOS_RAREZA, baratijasDe, buscarBaratija } from '../juego/baratijas.ts';
 import {
   ORO_POR_PASAR,
   cerrarOferta,
@@ -16,11 +16,13 @@ import {
   costoDeTirada,
   elegirBaratija,
   nivelDeRiesgo,
+  precioDeBaratija,
   puedeComprar,
   puedePasarRecompensa,
   puedeVolverATirar,
   responderEleccion,
   puedeVenderBaratijas,
+  valorAlVender,
   venderBaratija,
   volverATirar,
   type Partida,
@@ -75,7 +77,7 @@ export class EscenaBaratijas extends Phaser.Scene {
       if (esElite) {
         crearBoton(this, x, y + ALTO / 2 + 50, 'Elegir', COLORES.acento, () => this.guardarYSeguir(elegirBaratija(partida, id)));
       } else {
-        const boton = crearBoton(this, x, y + ALTO / 2 + 50, `Comprar · ${precioDe(baratija)}`, COLORES.oro, () => {
+        const boton = crearBoton(this, x, y + ALTO / 2 + 50, `Comprar · ${precioDeBaratija(partida, id)}`, COLORES.oro, () => {
           jugarPartida(this, comprarBaratija(partida, id));
           this.scene.restart();
         }, 220);
@@ -113,10 +115,10 @@ export class EscenaBaratijas extends Phaser.Scene {
       return;
     }
     capa.add(this.add.text(width / 2, 105, 'El vendedor paga la mitad de su precio', estiloTexto(20, COLORES.textoSuave)).setOrigin(0.5));
-    // En una columna, o en dos si no caben.
+    // En una columna, o en más si no caben.
     const porColumna = 7;
     const columnas = Math.ceil(baratijas.length / porColumna);
-    const ancho = columnas > 1 ? 580 : 640;
+    const ancho = columnas > 2 ? 400 : columnas > 1 ? 580 : 640;
     baratijas.forEach((baratija, i) => {
       const columna = Math.floor(i / porColumna);
       const x = width / 2 + (columna - (columnas - 1) / 2) * (ancho + 20);
@@ -127,7 +129,7 @@ export class EscenaBaratijas extends Phaser.Scene {
         this.add.text(x - ancho / 2 + 16, y, baratija.icono, estiloTexto(26)).setOrigin(0, 0.5),
         this.add.text(x - ancho / 2 + 60, y - 10, baratija.nombre, estiloTexto(20)).setOrigin(0, 0.5),
         this.add.text(x - ancho / 2 + 60, y + 13, DATOS_RAREZA[baratija.rareza].nombre, estiloTexto(14, color)).setOrigin(0, 0.5),
-        crearBoton(this, x + ancho / 2 - 100, y, `Vender · ${valorDeVenta(baratija)}`, COLORES.oro, () => {
+        crearBoton(this, x + ancho / 2 - 100, y, `Vender · ${valorAlVender(partida, baratija.id)}`, COLORES.oro, () => {
           jugarPartida(this, venderBaratija(partidaActual(this), baratija.id));
           this.scene.restart({ vender: true });
         }, 180),

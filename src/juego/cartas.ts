@@ -13,6 +13,23 @@ export interface Carta {
   rango: Rango;
   // Cuántas veces se le puso cada modificador (el pintor).
   modificaciones?: Partial<Record<Modificador, number>>;
+  comodin?: boolean; // cuenta como de cualquier palo (la baratija Comodín)
+}
+
+// Si la carta cuenta como de ese palo: la suya o, si es comodín, cualquiera.
+export function esDePalo(carta: Carta, palo: Palo): boolean {
+  return carta.comodin === true || carta.palo === palo;
+}
+
+export function esRoja(carta: Carta): boolean {
+  return carta.palo === 'corazones' || carta.palo === 'diamantes';
+}
+
+// Si todas las cartas pueden ser de un mismo color (los comodines valen
+// para cualquiera).
+export function mismoColor(cartas: readonly Carta[]): boolean {
+  const fijas = cartas.filter((c) => !c.comodin);
+  return fijas.every((c) => esRoja(c)) || fijas.every((c) => !esRoja(c));
 }
 
 // Lo que el pintor le puede poner a una carta. Cada vez que se pone uno

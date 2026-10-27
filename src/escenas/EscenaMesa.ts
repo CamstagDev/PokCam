@@ -7,12 +7,15 @@
 // Contra el jefe la mesa es una partida de duelos (juego/duelo.ts): arriba
 // los 3 duelos con los puntos de cada uno, debajo la mano que juega el jefe
 // en el duelo abierto, y "Cerrar duelo" pasa al siguiente. Con Faroleo, el
-// botón 🎭 hace que la próxima mano puntúe como el tipo siguiente.
+// botón 🎭 hace que la próxima mano puntúe como el tipo siguiente; con Mano
+// de Dios, el 🙏 hace que cuente como escalera de color. Con Soborno, el 🤝
+// baja el objetivo antes de la primera mano.
 
 import Phaser from 'phaser';
 import { crearAleatorio } from '../juego/aleatorio.ts';
 import { SIMBOLO_PALO, fichasDeCarta, nombreRango, ordenarMano, type Carta, type Orden } from '../juego/cartas.ts';
 import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
+import { efectosDe } from '../juego/baratijas.ts';
 import { DUELOS, cerrarDuelo, crearEnfrentamiento, descartarEnDuelo, dueloAbierto, duelosGanados, jugarEnDuelo, type Enfrentamiento } from '../juego/duelo.ts';
 import { jefeDelMundo } from '../juego/jefes.ts';
 import { MANOS, evaluarMano } from '../juego/manos.ts';
@@ -20,6 +23,7 @@ import { baratijasDe, bonosActivos, buscarBaratija, formatear } from '../juego/b
 import type { Partida } from '../juego/partida.ts';
 import {
   apostar,
+  costoDelSoborno,
   enBancarrota,
   hayQueApostar,
   maximoApostable,
@@ -27,7 +31,9 @@ import {
   riesgoDelCombate,
   preverApuesta,
   puedeApostarBaratijas,
+  puedeSobornar,
   resolverCombate,
+  sobornar,
   totalApostado,
 } from '../juego/partida.ts';
 import type { TipoNodo } from '../mapa/mapa.ts';
@@ -70,6 +76,9 @@ export class EscenaMesa extends Phaser.Scene {
   private botonCerrarDuelo: Boton | null = null;
   private botonFarol: BotonRedondo | null = null;
   private farol = false; // la próxima mano farolea
+  private botonDivina: BotonRedondo | null = null;
+  private divina = false; // la próxima mano es de Dios
+  private botonSoborno: BotonRedondo | null = null;
 
   constructor() {
     super('mesa');
@@ -88,19 +97,27 @@ export class EscenaMesa extends Phaser.Scene {
     this.botonCerrarDuelo = null;
     this.botonFarol = null;
     this.farol = false;
+    this.botonDivina = null;
+    this.divina = false;
+    this.botonSoborno = null;
   }
 
   create(): void {
     const partida = partidaActual(this);
     // El oro entra en la semilla para que reintentar al jefe (con menos oro)
     // reparta otras cartas; continuar la misma partida reparte las mismas.
-    const aleatorio = crearAleatorio(partida.mapa.semilla + partida.visitados.length + partida.oro);
+    // La Segunda oportunidad también, para que el combate repetido sea otro.
+    const semilla = partida.mapa.semilla + partida.visitados.length + partida.oro + (partida.memoria['segunda-oportunidad']?.mundo ?? 0) * 7;
+    const aleatorio = crearAleatorio(semilla);
     const opciones = {
       mazo: partida.mazo,
       baratijas: partida.baratijas,
       niveles: partida.niveles,
       riesgo: riesgoDelCombate(partida),
       mundo: partida.mundo,
+      tipo: this.tipo,
+      oro: partida.oro,
+      semilla,
       memoria: partida.memoria,
     };
     if (this.tipo === 'jefe') {
@@ -122,6 +139,16 @@ export class EscenaMesa extends Phaser.Scene {
         this.farol = !this.farol;
         this.botonFarol?.marcar(this.farol);
       });
+    }
+    if (this.combate.divinas > 0) {
+      this.botonDivina = crearBotonRedondo(this, width / 2 + 520, 652, '🙏', 'Mano de Dios', () => {
+        if (this.bloqueada || this.combate.divinas === 0) return;
+        this.divina = !this.divina;
+        this.botonDivina?.marcar(this.divina);
+      });
+    }
+    if (puedeSobornar(partida) && this.combate.manosJugadas === 0) {
+      this.botonSoborno = crearBotonRedondo(this, width / 2 - 400, 652, '🤝', 'Sobornar', () => this.pedirSoborno());
     }
     // Bien separados para que Valor, Apostar y Palo quepan entre los dos.
     this.botonJugar = crearBoton(this, width / 2 - 240, 660, 'Jugar mano', COLORES.fichas, () => this.accion('jugar'));
@@ -170,6 +197,29 @@ export class EscenaMesa extends Phaser.Scene {
     });
   }
 
+  // Soborno: pagar parte del oro para bajar el objetivo de este combate.
+  private pedirSoborno(): void {
+    const partida = partidaActual(this);
+    if (this.bloqueada || !puedeSobornar(partida) || this.combate.manosJugadas > 0) return;
+    const costo = costoDelSoborno(partida);
+    const antes = this.combate.objetivo;
+    const sobornada = sobornar(partida);
+    const despues = objetivoDelCombate(sobornada);
+    const texto = `¿Sobornar ${costo === 0 ? 'gratis' : `por ${costo} de oro`}?\nEl objetivo baja de ${antes} a ${despues}.`;
+    confirmar(this, texto, 'Sobornar', COLORES.oro, () => {
+      jugarPartida(this, sobornada);
+      this.combate = { ...this.combate, objetivo: despues, oroInicial: sobornada.oro };
+      this.oro.cambiar(sobornada.oro);
+      this.quitarSoborno();
+      this.actualizar();
+    });
+  }
+
+  private quitarSoborno(): void {
+    this.botonSoborno?.destroy();
+    this.botonSoborno = null;
+  }
+
   private fijarApuesta(cantidad: number, baratijas: string[]): void {
     jugarPartida(this, apostar(partidaActual(this), cantidad, baratijas));
     this.botonApostar?.destroy();
@@ -183,16 +233,24 @@ export class EscenaMesa extends Phaser.Scene {
     for (const id of ids) this.cartas.delete(id);
     this.elegidas.clear();
     const farol = cual === 'jugar' && this.farol;
+    const divina = cual === 'jugar' && this.divina;
     if (this.duelo) {
-      this.duelo = cual === 'jugar' ? jugarEnDuelo(this.duelo, ids, farol) : descartarEnDuelo(this.duelo, ids);
+      this.duelo = cual === 'jugar' ? jugarEnDuelo(this.duelo, ids, farol, divina) : descartarEnDuelo(this.duelo, ids);
       this.combate = this.duelo.combate;
     } else {
-      this.combate = cual === 'jugar' ? jugar(this.combate, ids, farol) : descartar(this.combate, ids);
+      this.combate = cual === 'jugar' ? jugar(this.combate, ids, farol, divina) : descartar(this.combate, ids);
     }
     if (farol) {
       this.farol = false;
       this.botonFarol?.marcar(false);
     }
+    if (divina) {
+      this.divina = false;
+      this.botonDivina?.marcar(false);
+    }
+    if (cual === 'jugar') this.quitarSoborno();
+    // El oro que dieron las baratijas al puntuar se ve enseguida.
+    this.oro.cambiar(this.combate.oroInicial + this.combate.oroGanado);
     this.combate = { ...this.combate, mano: ordenarMano(this.combate.mano, this.orden) };
     if (this.duelo) this.duelo = { ...this.duelo, combate: this.combate };
     this.actualizar();
@@ -264,6 +322,7 @@ export class EscenaMesa extends Phaser.Scene {
         ? [`Duelos: ${duelosGanados(e, 'jugador')} – ${duelosGanados(e, 'jefe')}`, `Manos: ${c.manosRestantes}   Descartes: ${c.descartesRestantes}`, `Mazo: ${c.pila.length}`]
         : [`Objetivo: ${c.objetivo}`, `Puntos: ${c.puntos}`, `Manos: ${c.manosRestantes}   Descartes: ${c.descartesRestantes}   Mazo: ${c.pila.length}`]),
       ...this.lineaDeApuesta(),
+      ...this.lineaDeSiguiente(),
     ]);
     this.dibujarDuelos();
     this.botonCerrarDuelo?.activar(!this.terminado());
@@ -271,11 +330,17 @@ export class EscenaMesa extends Phaser.Scene {
       this.botonFarol.destroy();
       this.botonFarol = null;
     }
+    if (this.botonDivina && c.divinas === 0) {
+      this.botonDivina.destroy();
+      this.botonDivina = null;
+    }
     // Con cartas elegidas se anticipa qué mano se jugaría (solo el nombre);
     // sin elegir, queda el resultado de la última jugada.
     if (this.elegidas.size > 0) {
       const cartas = c.mano.filter((carta) => this.elegidas.has(carta.id));
-      this.jugada.setText(MANOS[evaluarMano(cartas).tipo].nombre);
+      const efectos = efectosDe(c.baratijas);
+      const reglas = { corta: efectos.some((e) => e.escaleraCorta), puente: efectos.some((e) => e.puente) };
+      this.jugada.setText(this.divina ? MANOS.escaleraColor.nombre : MANOS[evaluarMano(cartas, reglas).tipo].nombre);
     } else if (c.ultimaJugada) {
       const j = c.ultimaJugada;
       this.jugada.setText(`${MANOS[j.tipo].nombre}: ${j.fichas} × ${formatear(j.multi)} = ${j.total}`);
@@ -295,6 +360,13 @@ export class EscenaMesa extends Phaser.Scene {
     if (total === 0) return [];
     const iconos = baratijasDe(partida.baratijasApostadas).map((b) => b.icono).join('');
     return [`Apuesta: ${total}${iconos ? ` (${iconos})` : ''}`];
+  }
+
+  // Cartas marcadas: la próxima carta del mazo.
+  private lineaDeSiguiente(): string[] {
+    const siguiente = this.combate.pila[0];
+    if (!siguiente || !efectosDe(this.combate.baratijas).some((e) => e.verSiguiente)) return [];
+    return [`Siguiente: ${cartaCorta(siguiente)}`];
   }
 
   // Las cartas que ya estaban se deslizan a su lugar nuevo; las recién
@@ -343,14 +415,18 @@ export class EscenaMesa extends Phaser.Scene {
     const gano = (this.duelo?.estado ?? this.combate.estado) === 'ganado';
     const antes = partidaActual(this).oro;
     const teniaAntes = partidaActual(this).baratijas;
-    const perdidas = gano ? [] : baratijasDe(partidaActual(this).baratijasApostadas);
-    const partida = resolverCombate(partidaActual(this), gano, this.combate.memoria);
+    const partida = resolverCombate(partidaActual(this), gano, this.combate);
+    const perdidas = baratijasDe(teniaAntes.filter((id) => !partida.baratijas.includes(id)));
     const quebrado = enBancarrota(partida);
     const jefeVencido = gano && this.tipo === 'jefe';
+    // Segunda oportunidad: un combate normal perdido se repite.
+    const otraVez = !gano && this.tipo !== 'jefe' && partida.combatePendiente;
     // Vencer al jefe no termina la partida: resolverCombate la pasa al
     // mundo siguiente.
     const finDePartida = quebrado;
-    const titulo = jefeVencido ? `¡Venciste a ${jefeDelMundo(partidaActual(this).mundo).nombre}!` : gano ? '¡Combate ganado!' : quebrado ? 'Te quedaste sin oro' : 'Perdiste el combate';
+    const titulo = jefeVencido
+      ? `¡Venciste a ${jefeDelMundo(partidaActual(this).mundo).nombre}!`
+      : gano ? '¡Combate ganado!' : quebrado ? 'Te quedaste sin oro' : otraVez ? 'Segunda oportunidad' : 'Perdiste el combate';
     const diferencia = partida.oro - antes;
 
     this.botonJugar.activar(false);
@@ -367,10 +443,11 @@ export class EscenaMesa extends Phaser.Scene {
     this.add.text(width / 2, height / 2 - 80, titulo, estiloTexto(48, gano ? COLORES.acento : COLORES.multi)).setOrigin(0.5);
     const oro = `${diferencia >= 0 ? '+' : '−'}${Math.abs(diferencia)} de oro`;
     const sinBaratijas = perdidas.length > 0 ? `\nPerdiste ${perdidas.map((b) => `${b.icono} ${b.nombre}`).join(', ')}` : '';
-    const premio = jefeVencido ? partida.baratijas.find((id) => !teniaAntes.includes(id)) : undefined;
-    const ganada = premio ? `\nTe llevas ${buscarBaratija(premio).icono} ${buscarBaratija(premio).nombre}` : '';
-    const mundoNuevo = jefeVencido ? `${ganada}\nSigues en el mundo ${partida.mundo}` : '';
-    const detalle = quebrado ? 'Fin de la partida' : oro + sinBaratijas + mundoNuevo;
+    const nuevas = partida.baratijas.filter((id) => !teniaAntes.includes(id)).map(buscarBaratija);
+    const ganada = nuevas.length > 0 ? `\nTe llevas ${nuevas.map((b) => `${b.icono} ${b.nombre}`).join(', ')}` : '';
+    const mundoNuevo = jefeVencido ? `\nSigues en el mundo ${partida.mundo}` : '';
+    const repetir = otraVez ? '\nEl combate se vuelve a jugar, sin perder nada' : '';
+    const detalle = quebrado ? 'Fin de la partida' : oro + sinBaratijas + ganada + mundoNuevo + repetir;
     this.add
       .text(width / 2, height / 2 - 20, detalle, { ...estiloTexto(28, quebrado ? COLORES.textoSuave : COLORES.oro), align: 'center' })
       .setOrigin(0.5);

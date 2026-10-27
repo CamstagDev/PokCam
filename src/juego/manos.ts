@@ -2,7 +2,7 @@
 // puntúan. Como en Balatro, se pueden jugar menos de 5 cartas: con 1 carta
 // la mano es "carta alta".
 
-import type { Carta, Rango } from './cartas.ts';
+import { PALOS, esDePalo, type Carta, type Rango } from './cartas.ts';
 
 export type TipoMano =
   | 'cartaAlta'
@@ -68,7 +68,14 @@ export interface ManoEvaluada {
   cartasQuePuntuan: Carta[];
 }
 
-export function evaluarMano(cartas: readonly Carta[]): ManoEvaluada {
+// Reglas que cambian las baratijas: escaleras y colores de 4 cartas
+// (Escalera corta) y escaleras que se saltan un número (Puente).
+export interface Reglas {
+  corta?: boolean;
+  puente?: boolean;
+}
+
+export function evaluarMano(cartas: readonly Carta[], reglas: Reglas = {}): ManoEvaluada {
   if (cartas.length === 0 || cartas.length > 5) {
     throw new Error(`Se juegan de 1 a 5 cartas (llegaron ${cartas.length})`);
   }
@@ -80,25 +87,52 @@ export function evaluarMano(cartas: readonly Carta[]): ManoEvaluada {
   const grupos = [...porRango.values()].sort((a, b) => b.length - a.length || b[0]!.rango - a[0]!.rango);
   const tamanos = grupos.map((g) => g.length);
 
-  const color = cartas.length === 5 && cartas.every((c) => c.palo === cartas[0]!.palo);
-  const escalera = cartas.length === 5 && esEscalera(cartas);
+  const minimo = reglas.corta ? 4 : 5;
+  const puente = reglas.puente === true;
+  const color = buscarColor(cartas, minimo);
+  const escalera = buscarEscalera(cartas, minimo, puente);
+  const escaleraColor = PALOS.map((palo) => cartas.filter((c) => esDePalo(c, palo)))
+    .filter((delPalo) => delPalo.length >= minimo)
+    .map((delPalo) => buscarEscalera(delPalo, minimo, puente))
+    .find((e) => e !== null);
   const todas = [...cartas];
 
-  if (escalera && color) return { tipo: 'escaleraColor', cartasQuePuntuan: todas };
+  if (escaleraColor) return { tipo: 'escaleraColor', cartasQuePuntuan: escaleraColor };
   if (tamanos[0] === 4) return { tipo: 'poker', cartasQuePuntuan: grupos[0]! };
   if (tamanos[0] === 3 && tamanos[1] === 2) return { tipo: 'full', cartasQuePuntuan: todas };
-  if (color) return { tipo: 'color', cartasQuePuntuan: todas };
-  if (escalera) return { tipo: 'escalera', cartasQuePuntuan: todas };
+  if (color) return { tipo: 'color', cartasQuePuntuan: color };
+  if (escalera) return { tipo: 'escalera', cartasQuePuntuan: escalera };
   if (tamanos[0] === 3) return { tipo: 'trio', cartasQuePuntuan: grupos[0]! };
   if (tamanos[0] === 2 && tamanos[1] === 2) return { tipo: 'doblePar', cartasQuePuntuan: [...grupos[0]!, ...grupos[1]!] };
   if (tamanos[0] === 2) return { tipo: 'par', cartasQuePuntuan: grupos[0]! };
   return { tipo: 'cartaAlta', cartasQuePuntuan: [grupos[0]![0]!] };
 }
 
-function esEscalera(cartas: readonly Carta[]): boolean {
-  const rangos = [...new Set(cartas.map((c) => c.rango))].sort((a, b) => a - b);
-  if (rangos.length !== 5) return false;
-  if (rangos[4]! - rangos[0]! === 4) return true;
-  // A-2-3-4-5: el as cuenta como 1.
-  return rangos.join(',') === '2,3,4,5,14';
+// Las cartas del palo que más se repite (los comodines cuentan para
+// todos), si son al menos `minimo`; en el orden en que se jugaron.
+function buscarColor(cartas: readonly Carta[], minimo: number): Carta[] | null {
+  const mejor = PALOS.map((palo) => cartas.filter((c) => esDePalo(c, palo))).sort((a, b) => b.length - a.length)[0]!;
+  return mejor.length >= minimo ? mejor : null;
+}
+
+// La escalera más larga que se puede armar con las cartas (de rangos
+// distintos y seguidos; el as también vale 1), si tiene al menos `minimo`.
+// Con `puente`, puede saltarse un número una vez.
+function buscarEscalera(cartas: readonly Carta[], minimo: number, puente: boolean): Carta[] | null {
+  const porValor = new Map<number, Carta>();
+  for (const carta of cartas) {
+    if (!porValor.has(carta.rango)) porValor.set(carta.rango, carta);
+    if (carta.rango === 14 && !porValor.has(1)) porValor.set(1, carta);
+  }
+  let mejor: number[] = [];
+  const seguir = (cadena: number[], salto: boolean) => {
+    if (cadena.length > mejor.length) mejor = cadena;
+    const ultimo = cadena.at(-1)!;
+    if (porValor.has(ultimo + 1)) seguir([...cadena, ultimo + 1], salto);
+    if (puente && !salto && porValor.has(ultimo + 2)) seguir([...cadena, ultimo + 2], true);
+  };
+  for (const valor of porValor.keys()) seguir([valor], false);
+  const elegidas = mejor.map((v) => porValor.get(v)!);
+  // El as no puede estar dos veces (como 1 y como 14).
+  return mejor.length >= minimo && new Set(elegidas).size === elegidas.length ? elegidas : null;
 }
