@@ -289,6 +289,8 @@ const PRIMOS = [2, 3, 5, 7, 11, 13];
 // Fibonacci: el multiplicador de cada rango.
 const FIBONACCI: Partial<Record<number, number>> = { 14: 1, 2: 1, 3: 2, 5: 3, 8: 5 };
 
+const CON_PAR: readonly TipoMano[] = ['par', 'doblePar', 'trio', 'full', 'poker'];
+
 const sumarFichas = (mano: ManoPuntuada, n: number): ManoPuntuada => ({ ...mano, fichas: mano.fichas + n });
 const sumarMulti = (mano: ManoPuntuada, n: number): ManoPuntuada => ({ ...mano, multi: mano.multi + n });
 const porMulti = (mano: ManoPuntuada, n: number): ManoPuntuada => ({ ...mano, multi: mano.multi * n });
@@ -334,6 +336,23 @@ function ordenado(factor: number): Efectos['alPuntuar'] {
     const sube = rangos.length >= 2 && rangos.every((r, i) => i === 0 || r > rangos[i - 1]!);
     return sube ? porMulti(mano, factor) : mano;
   };
+}
+
+// Espiral: cuántas manos seguidas del mismo tipo lleva (la última jugada
+// es `ultima`, el índice del tipo + 1).
+function espiral(r: Recuerdo, mano: TipoMano): number {
+  return r.ultima === TIPOS_DE_MANO.indexOf(mano) + 1 ? (r.seguidas ?? 0) : 0;
+}
+
+// Vampiro: ×1 más ×0,2 por cada carta que dejó sin modificar.
+function factorDeVampiro(r: Recuerdo): number {
+  return 1 + 0.2 * (r.cartas ?? 0);
+}
+
+// Recompensa y Telescopio: cuál es la mano más jugada.
+function masJugadaEnTexto(mesa: Mesa, id: string): string {
+  const mano = manoMasJugada(mesa.memoria ?? {}, id);
+  return `Ahora: ${mano ? MANOS[mano].nombre : 'ninguna'}`;
 }
 
 // Gemelo malvado: la última baratija conseguida que no es él.
@@ -1208,6 +1227,123 @@ export const CATALOGO: readonly Baratija[] = [
     rareza: 'infrecuente',
     icono: '📐',
     precision: 100,
+  },
+
+  // --- Raras ---
+  {
+    id: 'vampiro',
+    nombre: 'Vampiro',
+    descripcion: 'Cada carta modificada que puntúa pierde su modificador y esta baratija gana ×0,2 multi para siempre.',
+    rareza: 'rara',
+    icono: '🧛',
+    vampiro: true,
+    recordar: (r, s) => (s.tipo === 'mano' && s.modificadas ? { ...r, cartas: (r.cartas ?? 0) + s.modificadas } : r),
+    alPuntuar: (mano, mesa) => porMulti(mano, factorDeVampiro(recuerdo(mesa, 'vampiro'))),
+    estado: (mesa) => `Ahora: ×${formatear(factorDeVampiro(recuerdo(mesa, 'vampiro')))}`,
+  },
+  {
+    id: 'espiral',
+    nombre: 'Espiral',
+    descripcion: 'Cada mano seguida del mismo tipo suma +2 multi en el combate; si cambias de tipo, vuelve a 0.',
+    rareza: 'rara',
+    icono: '🌀',
+    recordar: (r, s) => {
+      if (s.tipo === 'combate') return {};
+      if (s.tipo !== 'mano') return r;
+      const ultima = TIPOS_DE_MANO.indexOf(s.mano) + 1;
+      return { ultima, seguidas: r.ultima === ultima ? (r.seguidas ?? 0) + 1 : 1 };
+    },
+    alPuntuar: (mano, mesa) => sumarMulti(mano, 2 * espiral(recuerdo(mesa, 'espiral'), mano.tipo)),
+  },
+  {
+    id: 'duo-dinamico',
+    nombre: 'Dúo dinámico',
+    descripcion: 'Las manos con al menos un par dan ×2 multi.',
+    rareza: 'rara',
+    icono: '👥',
+    alPuntuar: (mano) => (CON_PAR.includes(mano.tipo) ? porMulti(mano, 2) : mano),
+  },
+  {
+    id: 'tormenta-perfecta',
+    nombre: 'Tormenta perfecta',
+    descripcion: 'Si juegas 5 cartas y todas puntúan, ×2 multi.',
+    rareza: 'rara',
+    icono: '⛈',
+    alPuntuar: (mano) => (mano.cartasJugadas.length === 5 && mano.cartasQuePuntuan.length === 5 ? porMulti(mano, 2) : mano),
+  },
+  {
+    id: 'clonador',
+    nombre: 'Clonador',
+    descripcion: 'Al empezar cada mundo, duplica al azar una carta de tu mazo, con sus modificadores.',
+    rareza: 'rara',
+    icono: '🧬',
+    clonador: 1,
+  },
+  {
+    id: 'iman',
+    nombre: 'Imán',
+    descripcion: 'En cada robo, la primera carta es del palo que más tienes en la mano.',
+    rareza: 'rara',
+    icono: '🧲',
+    iman: true,
+  },
+  {
+    id: 'recompensa',
+    nombre: 'Recompensa',
+    descripcion: 'Cada élite que vences sube un nivel tu mano más jugada.',
+    rareza: 'rara',
+    icono: '🏆',
+    recompensa: true,
+    recordar: contarManos,
+    estado: (mesa) => masJugadaEnTexto(mesa, 'recompensa'),
+  },
+  {
+    id: 'telescopio',
+    nombre: 'Telescopio',
+    descripcion: "Helman O'Grande siempre ofrece tu mano más jugada.",
+    rareza: 'rara',
+    icono: '🔭',
+    telescopio: true,
+    recordar: contarManos,
+    estado: (mesa) => masJugadaEnTexto(mesa, 'telescopio'),
+  },
+  {
+    id: 'comodin',
+    nombre: 'Comodín',
+    descripcion: 'Una carta al azar de tu mazo pasa a ser comodín: cuenta como cualquier palo.',
+    rareza: 'rara',
+    icono: '🤡',
+    alConseguir: (mazo, aleatorio) => {
+      const libres = mazo.filter((c) => !c.comodin);
+      const elegida = libres[Math.floor(aleatorio() * libres.length)];
+      return elegida ? mazo.map((c) => (c.id === elegida.id ? { ...c, comodin: true } : c)) : [...mazo];
+    },
+  },
+  {
+    id: 'contrato-con-el-diablo',
+    nombre: 'Contrato con el diablo',
+    descripcion: '×3 multi siempre, pero el objetivo de todos los combates sube 25\u00a0%.',
+    rareza: 'rara',
+    icono: '😈',
+    alPuntuar: (mano) => porMulti(mano, 3),
+    alFijarObjetivo: (objetivo) => objetivo * 1.25,
+  },
+  {
+    id: 'bancarrota',
+    nombre: 'Bancarrota',
+    descripcion: 'Con menos de 100 de oro, ×3 multi.',
+    rareza: 'rara',
+    icono: '📉',
+    alPuntuar: (mano, mesa) => (mesa.oro !== undefined && mesa.oro < 100 ? porMulti(mano, 3) : mano),
+  },
+  {
+    id: 'segunda-oportunidad',
+    nombre: 'Segunda oportunidad',
+    descripcion: 'Una vez por mundo, si pierdes un combate normal, lo vuelves a jugar.',
+    rareza: 'rara',
+    icono: '🔁',
+    segundaOportunidad: true,
+    estado: (mesa) => (recuerdo(mesa, 'segunda-oportunidad').mundo === mesa.mundo ? 'Usada en este mundo' : 'Lista en este mundo'),
   },
 ];
 

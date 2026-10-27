@@ -302,3 +302,7 @@ la versión nueva (ver scripts/nueva-version.mjs).
   Puente (escaleras que se saltan un número), Arqueólogo, Gemelos,
   Inversión, Vista de lince (9 cartas en la mano), Descuento de veterano,
   Seguro y Precisión.
+- 12 baratijas raras nuevas: Vampiro, Espiral, Dúo dinámico, Tormenta
+  perfecta, Clonador, Imán, Recompensa, Telescopio, Comodín (una carta de
+  tu mazo cuenta como cualquier palo; lleva una ★), Contrato con el
+  diablo, Bancarrota y Segunda oportunidad.
