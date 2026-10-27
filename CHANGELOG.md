@@ -23,7 +23,7 @@ la versión nueva (ver scripts/nueva-version.mjs).
   van con 0.
 - El primer jefe es El Tahúr 🃏: mazo del 7 al As, una mano por duelo (la
   mejor que pueda) y la muestra antes de que juegues. Sus manos suben un
-  nivel cada 4 de riesgo. En un empate, cada uno roba una carta y gana la
+  nivel cada 6 de riesgo. En un empate, cada uno roba una carta y gana la
   de más fichas (con modificaciones); si empatan, otra vez. Por ahora es
   el jefe de todos los mundos.
 - Al vencerlo te llevas una de sus baratijas al azar (solo se consiguen

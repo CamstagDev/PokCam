@@ -49,7 +49,7 @@ export function buscarJefe(id: string): Jefe {
 
 // Los jefes suben de nivel todas sus manos con el riesgo: 1 nivel más cada
 // RIESGO_POR_NIVEL_DEL_JEFE.
-export const RIESGO_POR_NIVEL_DEL_JEFE = 4;
+export const RIESGO_POR_NIVEL_DEL_JEFE = 6;
 
 export function nivelDelJefe(riesgo: number): number {
   return 1 + Math.floor(riesgo / RIESGO_POR_NIVEL_DEL_JEFE);

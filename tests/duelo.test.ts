@@ -33,7 +33,8 @@ describe('El Tahúr', () => {
 
   it('sube de nivel sus manos con el riesgo', () => {
     expect(nivelDelJefe(0)).toBe(1);
-    expect(nivelDelJefe(8)).toBe(3);
+    expect(nivelDelJefe(5)).toBe(1);
+    expect(nivelDelJefe(12)).toBe(3);
     expect(nuevo().nivelesDelJefe.par).toBe(1);
   });
 });
