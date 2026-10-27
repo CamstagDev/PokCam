@@ -313,3 +313,6 @@ la versión nueva (ver scripts/nueva-version.mjs).
   Alquimista y Corona del Tahúr.
 - Al terminar un combate se ve qué baratijas se perdieron (apostadas, el
   Espejo roto, el Fénix) y cuáles se ganaron.
+- Los nombres y las descripciones largas de las baratijas se achican para
+  caber en su ficha. En la mesa, los botones de las baratijas (🎭, 🙏, 🤝)
+  van en fila a la derecha de Descartar.

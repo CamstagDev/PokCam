@@ -104,6 +104,11 @@ export function fichaDeBaratija(
   const descripcion = escena.add
     .text(-ancho / 2 + 20, -alto / 2 + 76, baratija.descripcion, { ...estiloTexto(16, COLORES.textoSuave), wordWrap: { width: ancho - 40 } })
     .setOrigin(0, 0);
+  // Los nombres largos se achican, y las descripciones largas bajan de
+  // tamaño hasta caber sobre las etiquetas de abajo.
+  const libre = ancho - 92;
+  if (nombre.width > libre) nombre.setScale(libre / nombre.width);
+  for (let tamano = 15; descripcion.height > alto - 76 - 24 && tamano >= 12; tamano--) descripcion.setFontSize(tamano);
   const partes = [fondo, icono, nombre, descripcion, rareza];
   if (baratija.conjunto) {
     const set = buscarConjunto(baratija.conjunto).nombre;

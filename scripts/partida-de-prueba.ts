@@ -2,9 +2,10 @@
 // importar desde "Importar" en las ranuras y probar cosas:
 //   - la colección completa (todas las baratijas y los nodos desbloqueados)
 //   - 99 999 de oro
-//   - empieza con Claire obscure, Callo, Coleccionista y Especialista (en
-//     par), en el vendedor con Crypto monedas, Bróker
-//     y No gracias
+//   - empieza con Claire obscure, Paleta, Callo, Especialista (en par),
+//     Soborno, Mano de Dios, Cartas marcadas, Vista de lince y el Gemelo
+//     malvado (que copia a Vista de lince), un comodín en el mazo, y en el
+//     vendedor con Bróker, Cupón y Descuento de veterano
 //   - en los pisos 1 y 2 hay evento, pintor, vendedor, élite, eliminador, mano
 //     negra y tienda de cartas
 //
@@ -24,9 +25,16 @@ const especiales = ['evento', 'pintor', 'vendedor', 'elite', 'eliminador', 'mano
 });
 
 const exportado: Exportado = {
-  version: 14,
+  version: 15,
   guardadoEn: Date.now(),
-  partida: { ...partida, oro: 99_999, baratijas: ['claire-obscure', 'callo', 'coleccionista', 'especialista'], memoria: { callo: { par: 3 }, especialista: { eleccion: 2 } }, oferta: { tipo: 'vendedor', baratijas: ['crypto-monedas', 'broker', 'no-gracias'] } },
+  partida: {
+    ...partida,
+    oro: 99_999,
+    mazo: partida.mazo.map((c) => (c.id === 'corazones-14' ? { ...c, comodin: true } : c)),
+    baratijas: ['claire-obscure', 'paleta', 'callo', 'especialista', 'soborno', 'mano-de-dios', 'cartas-marcadas', 'vista-de-lince', 'gemelo-malvado'],
+    memoria: { callo: { par: 3 }, especialista: { eleccion: 2 } },
+    oferta: { tipo: 'vendedor', baratijas: ['broker', 'cupon', 'descuento-de-veterano'] },
+  },
   coleccion: CATALOGO.map((b) => b.id),
   nodos: Object.keys(DATOS_NODO),
 };

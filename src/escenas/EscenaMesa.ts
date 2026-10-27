@@ -133,22 +133,25 @@ export class EscenaMesa extends Phaser.Scene {
     if (this.duelo) {
       this.botonCerrarDuelo = crearBoton(this, width - 150, 380, 'Cerrar duelo', COLORES.oro, () => this.cerrarDuelo(), 220);
     }
+    // Los botones de las baratijas van a la derecha de Descartar, en fila.
+    const huecos = [width / 2 + 385, width / 2 + 485, width / 2 + 585];
     if (this.combate.faroles > 0) {
-      this.botonFarol = crearBotonRedondo(this, width / 2 + 400, 652, '🎭', 'Farolear', () => {
+      this.botonFarol = crearBotonRedondo(this, huecos.shift()!, 652, '🎭', 'Farolear', () => {
         if (this.bloqueada || this.combate.faroles === 0) return;
         this.farol = !this.farol;
         this.botonFarol?.marcar(this.farol);
       });
     }
     if (this.combate.divinas > 0) {
-      this.botonDivina = crearBotonRedondo(this, width / 2 + 520, 652, '🙏', 'Mano de Dios', () => {
+      this.botonDivina = crearBotonRedondo(this, huecos.shift()!, 652, '🙏', 'Mano de Dios', () => {
         if (this.bloqueada || this.combate.divinas === 0) return;
         this.divina = !this.divina;
         this.botonDivina?.marcar(this.divina);
+        this.actualizar();
       });
     }
     if (puedeSobornar(partida) && this.combate.manosJugadas === 0) {
-      this.botonSoborno = crearBotonRedondo(this, width / 2 - 400, 652, '🤝', 'Sobornar', () => this.pedirSoborno());
+      this.botonSoborno = crearBotonRedondo(this, huecos.shift()!, 652, '🤝', 'Sobornar', () => this.pedirSoborno());
     }
     // Bien separados para que Valor, Apostar y Palo quepan entre los dos.
     this.botonJugar = crearBoton(this, width / 2 - 240, 660, 'Jugar mano', COLORES.fichas, () => this.accion('jugar'));

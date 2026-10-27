@@ -1,6 +1,6 @@
 {
-  "version": 14,
-  "guardadoEn": 1792801057773,
+  "version": 15,
+  "guardadoEn": 1793115055972,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -696,7 +696,8 @@
       {
         "id": "corazones-14",
         "palo": "corazones",
-        "rango": 14
+        "rango": 14,
+        "comodin": true
       },
       {
         "id": "treboles-2",
@@ -831,16 +832,21 @@
     ],
     "baratijas": [
       "claire-obscure",
+      "paleta",
       "callo",
-      "coleccionista",
-      "especialista"
+      "especialista",
+      "soborno",
+      "mano-de-dios",
+      "cartas-marcadas",
+      "vista-de-lince",
+      "gemelo-malvado"
     ],
     "oferta": {
       "tipo": "vendedor",
       "baratijas": [
-        "crypto-monedas",
         "broker",
-        "no-gracias"
+        "cupon",
+        "descuento-de-veterano"
       ]
     },
     "probabilidades": {
@@ -878,7 +884,8 @@
       "especialista": {
         "eleccion": 2
       }
-    }
+    },
+    "soborno": false
   },
   "coleccion": [
     "materialista",
@@ -909,7 +916,81 @@
     "mazo-limpio",
     "tarjeta-de-credito",
     "crypto-monedas",
-    "de-zero-a-heroe"
+    "de-zero-a-heroe",
+    "el-rey",
+    "la-reina",
+    "la-jota",
+    "cobro-de-piso",
+    "soborno",
+    "lavado-de-dinero",
+    "trebol-de-cuatro-hojas",
+    "gato-negro",
+    "martes-13",
+    "espejo-roto",
+    "par-perfecto",
+    "numeros-primos",
+    "pi",
+    "fibonacci",
+    "ciega-pequena",
+    "ciega-grande",
+    "boton-del-crupier",
+    "paciencia",
+    "prisa",
+    "reloj-de-arena",
+    "jardinero",
+    "robin-hood",
+    "ordenado",
+    "ficha-de-la-suerte",
+    "paleta",
+    "lienzo-en-blanco",
+    "mano-de-hierro",
+    "calcetin-de-la-suerte",
+    "parejita",
+    "a-la-tercera-va-la-vencida",
+    "escalera-de-mano",
+    "brocha-gorda",
+    "casa-llena",
+    "solitario",
+    "calderilla",
+    "propina",
+    "descarte-rapido",
+    "cartas-marcadas",
+    "cupon",
+    "mapa-del-tesoro",
+    "cuenta-atras",
+    "reciclaje",
+    "eco",
+    "doble-filo",
+    "monocromo",
+    "escalera-corta",
+    "puente",
+    "arqueologo",
+    "gemelos",
+    "inversion",
+    "vista-de-lince",
+    "descuento-de-veterano",
+    "seguro",
+    "precision",
+    "vampiro",
+    "espiral",
+    "duo-dinamico",
+    "tormenta-perfecta",
+    "clonador",
+    "iman",
+    "recompensa",
+    "telescopio",
+    "comodin",
+    "contrato-con-el-diablo",
+    "bancarrota",
+    "segunda-oportunidad",
+    "rey-midas",
+    "la-banca-siempre-gana",
+    "mano-de-dios",
+    "gemelo-malvado",
+    "tiempo-extra",
+    "fenix",
+    "alquimista",
+    "corona-del-tahur"
   ],
   "nodos": [
     "inicio",
