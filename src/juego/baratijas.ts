@@ -1345,6 +1345,75 @@ export const CATALOGO: readonly Baratija[] = [
     segundaOportunidad: true,
     estado: (mesa) => (recuerdo(mesa, 'segunda-oportunidad').mundo === mesa.mundo ? 'Usada en este mundo' : 'Lista en este mundo'),
   },
+
+  // --- Legendarias ---
+  {
+    id: 'rey-midas',
+    nombre: 'Rey Midas',
+    descripcion: 'Cada ♦ que puntúa da 5 de oro.',
+    rareza: 'legendaria',
+    icono: '🥇',
+    alPuntuarCarta: (mano, carta) => (esDePalo(carta, 'diamantes') ? darOro(mano, 5) : mano),
+  },
+  {
+    id: 'la-banca-siempre-gana',
+    nombre: 'La banca siempre gana',
+    descripcion: 'Las apuestas ganadas pagan el triple; las perdidas cuestan lo normal.',
+    rareza: 'legendaria',
+    icono: '🏦',
+    alResolverApuesta: (oro) => (oro > 0 ? oro * 3 : oro),
+  },
+  {
+    id: 'mano-de-dios',
+    nombre: 'Mano de Dios',
+    descripcion: 'Una vez por combate, la mano jugada cuenta como escalera de color.',
+    rareza: 'legendaria',
+    icono: '🙏',
+    divinas: 1,
+  },
+  {
+    id: GEMELO,
+    nombre: 'Gemelo malvado',
+    descripcion: 'Copia el efecto de la última baratija que conseguiste.',
+    rareza: 'legendaria',
+    icono: '👿',
+    estado: (mesa) => {
+      const copia = copiaDelGemelo(mesa.propias ?? []);
+      return copia ? `Ahora copia: ${copia.icono} ${copia.nombre}` : 'Ahora no copia nada';
+    },
+  },
+  {
+    id: 'tiempo-extra',
+    nombre: 'Tiempo extra',
+    descripcion: '+2 manos y +2 descartes en cada combate.',
+    rareza: 'legendaria',
+    icono: '⌛',
+    alEmpezarCombate: (inicio) => ({ manos: inicio.manos + 2, descartes: inicio.descartes + 2 }),
+  },
+  {
+    id: 'fenix',
+    nombre: 'Fénix',
+    descripcion: 'Si llegas a 0 de oro, vuelves con 300 y el Fénix se pierde.',
+    rareza: 'legendaria',
+    icono: '🐦',
+  },
+  {
+    id: 'alquimista',
+    nombre: 'Alquimista',
+    descripcion: 'Al terminar cada mundo, tus comunes pasan a infrecuentes al azar.',
+    rareza: 'legendaria',
+    icono: '⚗',
+    alquimista: true,
+  },
+  {
+    id: 'corona-del-tahur',
+    nombre: 'Corona del Tahúr',
+    descripcion: 'En los duelos contra jefes ganas todos los empates y tus manos dan ×2 multi.',
+    rareza: 'legendaria',
+    icono: '💎',
+    coronaDelTahur: true,
+    alPuntuar: (mano, mesa) => (mesa.tipo === 'jefe' ? porMulti(mano, 2) : mano),
+  },
 ];
 
 export const BARATIJAS_POR_OFERTA = 3;

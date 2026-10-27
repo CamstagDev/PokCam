@@ -306,3 +306,10 @@ la versión nueva (ver scripts/nueva-version.mjs).
   perfecta, Clonador, Imán, Recompensa, Telescopio, Comodín (una carta de
   tu mazo cuenta como cualquier palo; lleva una ★), Contrato con el
   diablo, Bancarrota y Segunda oportunidad.
+- 8 baratijas legendarias nuevas: Rey Midas, La banca siempre gana, Mano
+  de Dios (botón 🙏 en la mesa: una vez por combate la mano cuenta como
+  escalera de color), Gemelo malvado (copia la última baratija que
+  conseguiste; en el inventario dice cuál), Tiempo extra, Fénix,
+  Alquimista y Corona del Tahúr.
+- Al terminar un combate se ve qué baratijas se perdieron (apostadas, el
+  Espejo roto, el Fénix) y cuáles se ganaron.
