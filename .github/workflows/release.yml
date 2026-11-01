@@ -54,7 +54,7 @@ jobs:
       - run: npm run android:sync
       # APK de prueba (sin firma de Google Play; eso llega con el paso de
       # publicar en la tienda).
-      - run: ./gradlew assembleDebug
+      - run: chmod +x gradlew && ./gradlew assembleDebug
         working-directory: android
       - run: mv android/app/build/outputs/apk/debug/app-debug.apk "PokCam-${ETIQUETA}.apk"
       - uses: actions/upload-artifact@v7
