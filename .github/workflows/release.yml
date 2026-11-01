@@ -52,6 +52,18 @@ jobs:
           java-version: 21
       - run: npm ci
       - run: npm run android:sync
+      # El APK de prueba se firma con la clave de depuración del PC de
+      # Camstag (secreto ANDROID_DEBUG_KEYSTORE, en base64), para que
+      # instale encima de la app ya instalada sin borrar las partidas. Sin
+      # el secreto, Gradle crea una clave nueva.
+      - name: Clave de firma
+        env:
+          CLAVE: ${{ secrets.ANDROID_DEBUG_KEYSTORE }}
+        run: |
+          if [ -n "$CLAVE" ]; then
+            mkdir -p ~/.android
+            echo "$CLAVE" | base64 -d > ~/.android/debug.keystore
+          fi
       # APK de prueba (sin firma de Google Play; eso llega con el paso de
       # publicar en la tienda).
       - run: chmod +x gradlew && ./gradlew assembleDebug
