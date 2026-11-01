@@ -3,7 +3,8 @@
 // localStorage, que existe igual en el navegador, en Electron y en Android.
 
 import type Phaser from 'phaser';
-import { agregarAColeccion, agregarNodosVistos, borrar, guardar, type Almacen } from '../juego/guardado.ts';
+import { barajasDesbloqueadas } from '../juego/barajas.ts';
+import { agregarAColeccion, agregarNodosVistos, borrar, desbloquearBarajas, guardar, type Almacen } from '../juego/guardado.ts';
 import type { Partida } from '../juego/partida.ts';
 import { buscarNodo } from '../mapa/mapa.ts';
 
@@ -32,13 +33,15 @@ export function partidaActual(escena: Phaser.Scene): Partida {
 }
 
 // Pone la partida en juego y la guarda en su ranura. Sus baratijas y los
-// tipos de nodo visitados quedan desbloqueados en la colección.
+// tipos de nodo visitados quedan desbloqueados en la colección, y lo
+// logrado desbloquea barajas especiales.
 export function jugarPartida(escena: Phaser.Scene, partida: Partida, ranura: number = escena.registry.get('ranura')): void {
   escena.registry.set('partida', partida);
   escena.registry.set('ranura', ranura);
   guardar(almacen, ranura, partida);
   agregarAColeccion(almacen, partida.baratijas);
   agregarNodosVistos(almacen, partida.visitados.map((id) => buscarNodo(partida.mapa, id).tipo));
+  desbloquearBarajas(almacen, barajasDesbloqueadas(partida));
 }
 
 // Al terminar la partida (en bancarrota) su ranura queda libre.

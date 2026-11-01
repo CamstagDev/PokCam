@@ -316,3 +316,15 @@ la versión nueva (ver scripts/nueva-version.mjs).
 - Los nombres y las descripciones largas de las baratijas se achican para
   caber en su ficha. En la mesa, los botones de las baratijas (🎭, 🙏, 🤝)
   van en fila a la derecha de Descartar.
+- Barajas especiales: al empezar una partida nueva se elige la baraja.
+  Hay 7, cada una con algo a favor y algo en contra: clásica, del Tahúr
+  (sin 2 al 6, objetivos +25 %), de la fortuna (1000 de oro; la apuesta
+  empieza en 0 % y sube 5 % por combate ganado, hasta 50 %), del
+  apostador (se apuesta todo, pero ganar combates no da oro), del artista
+  (10 cartas modificadas; el pintor cobra el doble), bicolor (solo ♥ y ♠,
+  cada carta dos veces; un descarte menos) y maldita (una rara al
+  empezar; el vendedor no vende comunes). Las bloqueadas dicen qué logro
+  las desbloquea, y lo desbloqueado vale para todas las ranuras.
+- Cambiazo reemplaza a Mazo limpio entre las baratijas de El Tahúr: una
+  vez por combate, el botón 🔄 cambia la carta elegida por la de arriba
+  del mazo, sin gastar un descarte.

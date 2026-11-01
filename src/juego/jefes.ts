@@ -32,7 +32,7 @@ export const JEFES: readonly Jefe[] = [
     reparto: [1, 1, 1],
     revela: true,
     desempate: 'cartaSiguiente',
-    baratijas: ['as-bajo-la-manga', 'faroleo', 'mazo-limpio'],
+    baratijas: ['as-bajo-la-manga', 'faroleo', 'cambiazo'],
   },
 ];
 

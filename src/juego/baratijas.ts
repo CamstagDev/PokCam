@@ -227,6 +227,7 @@ export interface Efectos {
   asExtra?: boolean; // un As de más en la mano al empezar cada combate
   faroles?: number; // manos por combate que puntúan como el tipo siguiente
   divinas?: number; // manos por combate que cuentan como escalera de color
+  cambiazos?: number; // cartas por combate que se cambian por la de arriba del mazo
   cartasExtra?: number; // cartas de más en la mano
   eco?: number; // veces de más que puntúa la última carta que puntúa
   gemelos?: number; // veces de más que puntúa la segunda carta del primer par
@@ -273,7 +274,7 @@ export interface Baratija extends Efectos {
 }
 
 // La suma de una marca numérica de los efectos.
-export function sumar(efectos: readonly Efectos[], marca: 'eco' | 'gemelos' | 'cartasExtra' | 'divinas' | 'precision' | 'trabajosDelPintor' | 'clonador' | 'tesoro' | 'faroles'): number {
+export function sumar(efectos: readonly Efectos[], marca: 'eco' | 'gemelos' | 'cartasExtra' | 'divinas' | 'precision' | 'trabajosDelPintor' | 'clonador' | 'tesoro' | 'faroles' | 'cambiazos'): number {
   return efectos.reduce((suma, e) => suma + (e[marca] ?? 0), 0);
 }
 
@@ -701,16 +702,13 @@ export const CATALOGO: readonly Baratija[] = [
     faroles: 1,
   },
   {
-    id: 'mazo-limpio',
-    nombre: 'Mazo limpio',
-    descripcion: 'Al conseguirla se van de tu mazo todos los 2, 3 y 4.',
+    id: 'cambiazo',
+    nombre: 'Cambiazo',
+    descripcion: 'Una vez por combate, cambia una carta de tu mano por la de arriba del mazo, sin gastar un descarte.',
     rareza: 'infrecuente',
-    icono: '🧹',
+    icono: '🔄',
     deJefe: 'tahur',
-    alConseguir: (mazo) => {
-      const limpio = mazo.filter((c) => c.rango > 4);
-      return limpio.length > 0 ? limpio : [...mazo];
-    },
+    cambiazos: 1,
   },
   {
     id: 'tarjeta-de-credito',

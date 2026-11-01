@@ -5,13 +5,14 @@
 // Una ranura que no se puede leer (JSON roto, de una versión que ya no
 // existe) se trata como vacía, para que nunca impida jugar.
 
+import { IDS_DE_BARAJA, LOGROS_INICIALES, type IdBaraja } from './barajas.ts';
 import { PROBABILIDADES_INICIALES } from './baratijas.ts';
 import { crearMazo } from './cartas.ts';
 import { nivelesIniciales } from './manos.ts';
 import { ORO_INICIAL, type Partida } from './partida.ts';
 
 export const RANURAS = 3;
-const VERSION = 15;
+const VERSION = 16;
 const PREFIJO = 'pokcam.ranura.';
 
 export interface Almacen {
@@ -70,7 +71,8 @@ export function leerGuardado(texto: string): Guardado | null {
     // las de antes de la 11, de antes de Crypto monedas, y las de antes de
     // la 12, de antes de los mundos, y las de antes de la 13, de antes de la
     // memoria de las baratijas, las de antes de la 14, de antes del recargo
-    // por eliminar, y las de antes de la 15, de antes del soborno.
+    // por eliminar, las de antes de la 15, de antes del soborno, y las de
+    // antes de la 16, de antes de las barajas especiales.
     const partida = { ...guardado.partida };
     if (version < 2) partida.oro = ORO_INICIAL;
     if (version < 3) partida.mazo = crearMazo();
@@ -95,6 +97,10 @@ export function leerGuardado(texto: string): Guardado | null {
     if (version < 13) partida.memoria = {};
     if (version < 14) partida.recargoEliminar = 0;
     if (version < 15) partida.soborno = false;
+    if (version < 16) {
+      partida.baraja = 'clasica';
+      partida.logros = LOGROS_INICIALES;
+    }
     return { ...guardado, version: VERSION, partida };
   } catch {
     return null;
@@ -155,17 +161,39 @@ export function agregarNodosVistos(almacen: Almacen, tipos: readonly string[]): 
   if (nuevos.length > 0) almacen.setItem(CLAVE_NODOS, JSON.stringify([...vistos, ...nuevos]));
 }
 
+// Las barajas especiales desbloqueadas, en cualquier ranura y partida
+// (la clásica siempre). No se borran al borrar ranuras.
+const CLAVE_BARAJAS = 'pokcam.barajas';
+
+export function leerBarajas(almacen: Almacen): IdBaraja[] {
+  try {
+    const ids = JSON.parse(almacen.getItem(CLAVE_BARAJAS) ?? '[]') as unknown;
+    const guardadas = Array.isArray(ids) ? ids : [];
+    return IDS_DE_BARAJA.filter((id) => id === 'clasica' || guardadas.includes(id));
+  } catch {
+    return ['clasica'];
+  }
+}
+
+export function desbloquearBarajas(almacen: Almacen, ids: readonly IdBaraja[]): IdBaraja[] {
+  const tenidas = leerBarajas(almacen);
+  const nuevas = [...new Set(ids)].filter((id) => !tenidas.includes(id));
+  if (nuevas.length > 0) almacen.setItem(CLAVE_BARAJAS, JSON.stringify([...tenidas, ...nuevas].filter((id) => id !== 'clasica')));
+  return nuevas;
+}
+
 // Exportar e importar: el guardado de una ranura como archivo JSON, con la
 // colección para que al importarlo en otro equipo también se desbloquee.
 export interface Exportado extends Guardado {
   coleccion?: string[];
   nodos?: string[]; // los tipos de nodo vistos
+  barajas?: string[]; // las barajas desbloqueadas
 }
 
 export function exportarRanura(almacen: Almacen, ranura: number): string | null {
   const guardado = cargar(almacen, ranura);
   if (!guardado) return null;
-  const exportado: Exportado = { ...guardado, coleccion: leerColeccion(almacen), nodos: leerNodosVistos(almacen) };
+  const exportado: Exportado = { ...guardado, coleccion: leerColeccion(almacen), nodos: leerNodosVistos(almacen), barajas: leerBarajas(almacen) };
   return JSON.stringify(exportado, null, 2);
 }
 
@@ -175,9 +203,10 @@ export function importarRanura(almacen: Almacen, ranura: number, texto: string):
   if (!guardado) return false;
   guardar(almacen, ranura, guardado.partida, guardado.guardadoEn);
   try {
-    const { coleccion, nodos } = JSON.parse(texto) as Exportado;
+    const { coleccion, nodos, barajas } = JSON.parse(texto) as Exportado;
     if (Array.isArray(coleccion)) agregarAColeccion(almacen, coleccion.filter((id) => typeof id === 'string'));
     if (Array.isArray(nodos)) agregarNodosVistos(almacen, nodos.filter((tipo) => typeof tipo === 'string'));
+    if (Array.isArray(barajas)) desbloquearBarajas(almacen, IDS_DE_BARAJA.filter((id) => barajas.includes(id)));
   } catch {
     // ya se leyó bien arriba
   }

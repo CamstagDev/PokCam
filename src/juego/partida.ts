@@ -28,7 +28,17 @@ import {
   type Transformacion,
   valorDeVenta,
 } from './baratijas.ts';
-import { MODIFICADORES, PALOS, RANGOS, crearMazo, modificacionesDe, modificar, type Carta, type Modificador, type Palo } from './cartas.ts';
+import {
+  APUESTA_POR_VICTORIA,
+  LOGROS_INICIALES,
+  OBJETIVO_DEL_TAHUR,
+  ORO_DE_LA_FORTUNA,
+  PINTOR_DEL_ARTISTA,
+  mazoDeBaraja,
+  type IdBaraja,
+  type Logros,
+} from './barajas.ts';
+import { MODIFICADORES, PALOS, RANGOS, modificacionesDe, modificar, type Carta, type Modificador, type Palo } from './cartas.ts';
 import { jefeDelMundo } from './jefes.ts';
 import { TIPOS_DE_MANO, nivelesIniciales, type Niveles, type TipoMano } from './manos.ts';
 import { buscarNodo, generarMapa, type Mapa, type Nodo, type TipoNodo } from '../mapa/mapa.ts';
@@ -91,6 +101,8 @@ export interface Partida {
   memoria: Memoria;
   // Si se sobornó en el combate en curso (baja su objetivo).
   soborno: boolean;
+  baraja: IdBaraja; // la elegida al empezar (ver barajas.ts)
+  logros: Logros; // lo contado para desbloquear barajas
 }
 
 // Con Crypto monedas, cada paso en el mapa deja una predicción (sube o
@@ -144,10 +156,46 @@ const OFERTA_DEL_SERVICIO: Record<Servicio, Oferta['tipo']> = {
   personalizado: 'pintor',
 };
 
-export function crearPartida(semilla: number): Partida {
+export function crearPartida(semilla: number, baraja: IdBaraja = 'clasica'): Partida {
   const mapa = generarMapa(semilla);
   const inicio = mapa.pisos[0]![0]!;
-  return { mapa, nodoActual: inicio.id, visitados: [inicio.id], combatePendiente: false, oro: ORO_INICIAL, mazo: crearMazo(), baratijas: [], oferta: null, probabilidades: PROBABILIDADES_INICIALES, mundo: 1, riesgoBase: 0, recargoEliminar: 0, eleccion: null, transformaciones: [], apuesta: null, baratijasApostadas: [], racha: 0, niveles: nivelesIniciales(), cripto: { predicciones: [], ultima: null }, memoria: {}, soborno: false };
+  const aleatorio = crearAleatorio(semilla * 83 + 5);
+  const partida: Partida = {
+    mapa,
+    nodoActual: inicio.id,
+    visitados: [inicio.id],
+    combatePendiente: false,
+    oro: baraja === 'fortuna' ? ORO_DE_LA_FORTUNA : ORO_INICIAL,
+    mazo: mazoDeBaraja(baraja, aleatorio),
+    baratijas: [],
+    oferta: null,
+    probabilidades: PROBABILIDADES_INICIALES,
+    mundo: 1,
+    riesgoBase: 0,
+    recargoEliminar: 0,
+    eleccion: null,
+    transformaciones: [],
+    apuesta: null,
+    baratijasApostadas: [],
+    racha: 0,
+    niveles: nivelesIniciales(),
+    cripto: { predicciones: [], ultima: null },
+    memoria: {},
+    soborno: false,
+    baraja,
+    logros: LOGROS_INICIALES,
+  };
+  // Baraja maldita: una rara al azar desde el principio.
+  if (baraja !== 'maldita') return partida;
+  const rara = sortearDeRareza(aleatorio, 'rara', []);
+  return rara ? conseguir(partida, rara) : partida;
+}
+
+// Los descartes de cada combate (la bicolor tiene uno menos).
+export const DESCARTES_POR_COMBATE = 3;
+
+export function descartesDeLaPartida(partida: Partida): number {
+  return DESCARTES_POR_COMBATE - (partida.baraja === 'bicolor' ? 1 : 0);
 }
 
 // Los nodos a los que se puede ir desde donde está el jugador.
@@ -212,7 +260,8 @@ export function resolverCombate(partida: Partida, gano: boolean, fin: FinDeComba
   }
 
   const oro = ORO_POR_COMBATE[nodo.tipo] ?? 0;
-  let combate = gano ? aplicar(efectos, 'alGanarCombate', oro) : -aplicar(efectos, 'alPerderCombate', oro);
+  // Con la baraja del apostador, ganar no da oro.
+  let combate = gano ? (partida.baraja === 'apostador' ? 0 : aplicar(efectos, 'alGanarCombate', oro)) : -aplicar(efectos, 'alPerderCombate', oro);
   // Seguro: la primera derrota del mundo no cuesta oro.
   if (!gano && efectos.some((e) => e.seguro) && !usadaEnElMundo(partida, memoria, 'seguro')) {
     combate = Math.max(0, combate);
@@ -246,8 +295,18 @@ export function resolverCombate(partida: Partida, gano: boolean, fin: FinDeComba
   const recordada = sucesos.reduce((m, suceso) => recordar(m, partida.baratijas, suceso), memoria);
   const conMemoria = { ...partida, mazo, memoria: recordada };
   const sinPerdidas = quitarBaratijas(conMemoria, [...(gano ? [] : apostadas), ...rotas(partida, efectos)]);
+  const logros = partida.logros ?? LOGROS_INICIALES;
+  const jefe = gano && nodo.tipo === 'jefe';
   const resuelto = {
     ...sinPerdidas,
+    logros: {
+      ...logros,
+      victorias: logros.victorias + (gano ? 1 : 0),
+      apuestasGanadas: logros.apuestasGanadas + (gano && apostado > 0 ? 1 : 0),
+      jefes: logros.jefes + (jefe ? 1 : 0),
+      jefesConEstetico: logros.jefesConEstetico + (jefe && partida.baratijas.includes('estetico') ? 1 : 0),
+      jefesSinComprar: logros.jefesSinComprar + (jefe && logros.compras === 0 ? 1 : 0),
+    },
     oro: partida.oro + combate + apuesta + oroGanado + alTerminar,
     combatePendiente: !gano && nodo.tipo === 'jefe',
     apuesta: null,
@@ -405,8 +464,17 @@ function avanzarTransformaciones(partida: Partida): Pick<Partida, 'baratijas' | 
 // volvió a tirar, así que continuar la partida no cambia lo que se ofrece.
 function sortearOferta(partida: Partida, tipo: Oferta['tipo'], tiradas = 0): Oferta {
   const aleatorio = crearAleatorio(partida.mapa.semilla * 31 + partida.visitados.length * 7 + (tipo === 'elite' ? 1 : 2) + tiradas * 101);
-  const baratijas = sortearBaratijas(aleatorio, partida.baratijas, probabilidadesDeRareza(partida));
+  const probabilidades = probabilidadesDeRareza(partida);
+  // Baraja maldita: el vendedor no vende comunes.
+  const baratijas = sortearBaratijas(aleatorio, partida.baratijas, tipo === 'vendedor' && partida.baraja === 'maldita' ? sinComunes(probabilidades) : probabilidades);
   return tiradas > 0 ? { tipo, baratijas, tiradas } : { tipo, baratijas };
+}
+
+// Las mismas proporciones entre las otras rarezas, sin comunes.
+function sinComunes(probabilidades: Probabilidades): Probabilidades {
+  const total = probabilidades.infrecuente + probabilidades.rara + probabilidades.legendaria;
+  if (total <= 0) return { infrecuente: 1, rara: 0, legendaria: 0 };
+  return { infrecuente: probabilidades.infrecuente / total, rara: probabilidades.rara / total, legendaria: probabilidades.legendaria / total };
 }
 
 // Las de la partida con lo que cambien sus baratijas.
@@ -477,6 +545,7 @@ export function comprarBaratija(partida: Partida, id: string): Partida {
     ...partida,
     oro: partida.oro - precioDeBaratija(partida, id),
     oferta: { ...oferta, baratijas: oferta.baratijas.filter((b) => b !== id), compras: (oferta.compras ?? 0) + 1 },
+    logros: { ...(partida.logros ?? LOGROS_INICIALES), compras: (partida.logros?.compras ?? 0) + 1 },
   };
   return conseguir(pagada, id);
 }
@@ -648,8 +717,16 @@ export function costoDelPaso(partida: Partida): number {
 // apostado y perderlo lo resta (o lo que cambien los bonos de set).
 export const FRACCION_APOSTABLE = 0.5;
 
+// Lo que deja apostar la baraja: con la del apostador, todo; con la de la
+// fortuna, APUESTA_POR_VICTORIA por cada combate ganado, hasta lo normal.
+export function fraccionDeLaBaraja(partida: Partida): number {
+  if (partida.baraja === 'apostador') return 1;
+  if (partida.baraja === 'fortuna') return Math.min(FRACCION_APOSTABLE, Math.round((partida.logros?.victorias ?? 0) * APUESTA_POR_VICTORIA * 100) / 100);
+  return FRACCION_APOSTABLE;
+}
+
 export function maximoApostable(partida: Partida): number {
-  const fraccion = aplicar(efectosDe(partida.baratijas), 'alLimitarApuesta', FRACCION_APOSTABLE);
+  const fraccion = aplicar(efectosDe(partida.baratijas), 'alLimitarApuesta', fraccionDeLaBaraja(partida));
   return Math.max(0, Math.floor(partida.oro * fraccion));
 }
 
@@ -811,6 +888,15 @@ export function mejorarMano(partida: Partida, tipo: TipoMano): Partida {
 //                  las modificaciones de todo el mazo (al menos ×1).
 export const COSTO_PINTURA_LIBRE = 100;
 
+// Con la baraja del artista, el pintor cobra el doble.
+function precioDelPintor(partida: Partida, precio: number): number {
+  return partida.baraja === 'artista' ? precio * PINTOR_DEL_ARTISTA : precio;
+}
+
+export function costoDePinturaLibre(partida: Partida): number {
+  return precioDelPintor(partida, COSTO_PINTURA_LIBRE);
+}
+
 export function trabajosDelPintor(partida: Partida): number {
   return 1 + sumar(efectosDe(partida.baratijas), 'trabajosDelPintor');
 }
@@ -846,13 +932,13 @@ function costoPorModificaciones(cartas: readonly Carta[]): number {
 
 export function puedePintarLibre(partida: Partida): boolean {
   const id = partida.oferta?.cartaLibre;
-  return !!id && partida.mazo.some((c) => c.id === id) && puedeUsar(partida, 'pintura', COSTO_PINTURA_LIBRE);
+  return !!id && partida.mazo.some((c) => c.id === id) && puedeUsar(partida, 'pintura', costoDePinturaLibre(partida));
 }
 
 export function pintarLibre(partida: Partida, palo?: Palo): { partida: Partida; modificador: Modificador } {
   if (!puedePintarLibre(partida)) throw new Error('No se puede usar la pintura libre');
   const modificador = modificadorLibre(partida);
-  return { partida: pintar(usar(partida, 'pintura', COSTO_PINTURA_LIBRE), partida.oferta!.cartaLibre!, modificador, palo), modificador };
+  return { partida: pintar(usar(partida, 'pintura', costoDePinturaLibre(partida)), partida.oferta!.cartaLibre!, modificador, palo), modificador };
 }
 
 export function cartasEnAlquiler(partida: Partida): Carta[] {
@@ -861,7 +947,7 @@ export function cartasEnAlquiler(partida: Partida): Carta[] {
 }
 
 export function costoDeAlquiler(partida: Partida): number {
-  return costoPorModificaciones(cartasEnAlquiler(partida));
+  return precioDelPintor(partida, costoPorModificaciones(cartasEnAlquiler(partida)));
 }
 
 export function puedeAlquilar(partida: Partida, id: string): boolean {
@@ -879,7 +965,7 @@ export function ofrecePersonalizado(partida: Partida): boolean {
 }
 
 export function costoDePersonalizado(partida: Partida): number {
-  return costoPorModificaciones(partida.mazo);
+  return precioDelPintor(partida, costoPorModificaciones(partida.mazo));
 }
 
 export function puedePersonalizar(partida: Partida, id: string): boolean {
@@ -976,7 +1062,8 @@ export function riesgoDelCombate(partida: Partida): number {
 export function objetivoDelCombate(partida: Partida): number {
   const base = OBJETIVO_BASE[nodoActual(partida).tipo] ?? OBJETIVO_BASE.combate!;
   const objetivo = aplicar(efectosDe(partida.baratijas), 'alFijarObjetivo', base + OBJETIVO_POR_RIESGO * riesgoDelCombate(partida));
-  return Math.round(objetivo * (partida.soborno ? 1 - REBAJA_SOBORNO : 1));
+  const tahur = partida.baraja === 'tahur' ? OBJETIVO_DEL_TAHUR : 1;
+  return Math.round(objetivo * tahur * (partida.soborno ? 1 - REBAJA_SOBORNO : 1));
 }
 
 // Soborno: al empezar un combate (no contra el jefe) se paga COSTO_SOBORNO

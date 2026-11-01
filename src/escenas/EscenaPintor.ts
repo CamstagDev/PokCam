@@ -12,7 +12,7 @@
 import Phaser from 'phaser';
 import { MODIFICADORES, NOMBRE_MODIFICADOR, PALOS, SIMBOLO_PALO, nombreDeCarta, ordenarMano, type Carta, type Modificador, type Palo } from '../juego/cartas.ts';
 import {
-  COSTO_PINTURA_LIBRE,
+  costoDePinturaLibre,
   alquilar,
   cartasEnAlquiler,
   cerrarOferta,
@@ -79,13 +79,13 @@ export class EscenaPintor extends Phaser.Scene {
     let x = xDe(0);
     this.panel(x, y, ancho, '🖌 Pintura libre', 'Toma esta carta de tu mazo y le pone un modificador al azar.');
     if (libre) dibujarCarta(this, x, arriba + 190, libre, 76, 106);
-    crearBoton(this, x, abajo - 44, `Pintar · ${COSTO_PINTURA_LIBRE}`, COLORES.oro, () => {
+    crearBoton(this, x, abajo - 44, `Pintar · ${costoDePinturaLibre(partida)}`, COLORES.oro, () => {
       const pintarCon = (palo?: Palo) => {
         const { partida: pintada, modificador } = pintarLibre(partidaActual(this), palo);
         this.terminar(pintada, oferta!.cartaLibre!, modificador);
       };
       // Al tocar Pintar ya se aceptó: si toca cambiar de palo, no hay vuelta atrás.
-      if (modificadorLibre(partida) === 'palo') this.elegirPalo(libre!, `Cambiar de palo a ${nombreDeCarta(libre!)} por ${COSTO_PINTURA_LIBRE} de oro`, pintarCon, false);
+      if (modificadorLibre(partida) === 'palo') this.elegirPalo(libre!, `Cambiar de palo a ${nombreDeCarta(libre!)} por ${costoDePinturaLibre(partida)} de oro`, pintarCon, false);
       else pintarCon();
     }, 240).activar(puedePintarLibre(partida));
 

@@ -1,6 +1,7 @@
 // Las 3 ranuras de guardado, en dos modos:
 //   'nueva'      se elige dónde empezar; si la ranura está ocupada se pide
-//                confirmar antes de sobrescribirla.
+//                confirmar antes de sobrescribirla. Después se elige la
+//                baraja (EscenaBarajas).
 //   'continuar'  se elige qué partida seguir.
 // En los dos, la ✕ de una ranura ocupada la borra (tras confirmar), y
 // debajo de cada ranura se puede exportar su partida a un archivo o
@@ -8,7 +9,6 @@
 
 import Phaser from 'phaser';
 import { RANURAS, borrar, cargar, exportarRanura, importarRanura, resumirTodas, type Resumen } from '../juego/guardado.ts';
-import { crearPartida } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
 import { abrirArchivo, descargar } from './archivos.ts';
 import { avisar, confirmar } from './confirmar.ts';
@@ -116,10 +116,7 @@ export class EscenaRanuras extends Phaser.Scene {
       return;
     }
 
-    const empezar = () => {
-      jugarPartida(this, crearPartida(Date.now()), ranura);
-      this.scene.start('mapa');
-    };
+    const empezar = () => this.scene.start('barajas', { ranura });
     if (resumen) {
       confirmar(this, `La ranura ${ranura + 1} ya tiene una partida.\n¿Sobrescribirla?`, 'Sobrescribir', COLORES.multi, empezar);
     } else {

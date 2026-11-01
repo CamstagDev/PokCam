@@ -1,6 +1,6 @@
 {
-  "version": 15,
-  "guardadoEn": 1793115055972,
+  "version": 16,
+  "guardadoEn": 1793542343048,
   "partida": {
     "mapa": {
       "semilla": 20261021,
@@ -838,6 +838,7 @@
       "soborno",
       "mano-de-dios",
       "cartas-marcadas",
+      "cambiazo",
       "vista-de-lince",
       "gemelo-malvado"
     ],
@@ -885,7 +886,16 @@
         "eleccion": 2
       }
     },
-    "soborno": false
+    "soborno": false,
+    "baraja": "clasica",
+    "logros": {
+      "victorias": 0,
+      "apuestasGanadas": 0,
+      "compras": 0,
+      "jefes": 0,
+      "jefesConEstetico": 0,
+      "jefesSinComprar": 0
+    }
   },
   "coleccion": [
     "materialista",
@@ -913,7 +923,7 @@
     "fichas-al-fuego",
     "as-bajo-la-manga",
     "faroleo",
-    "mazo-limpio",
+    "cambiazo",
     "tarjeta-de-credito",
     "crypto-monedas",
     "de-zero-a-heroe",
@@ -991,6 +1001,15 @@
     "fenix",
     "alquimista",
     "corona-del-tahur"
+  ],
+  "barajas": [
+    "clasica",
+    "tahur",
+    "fortuna",
+    "apostador",
+    "artista",
+    "bicolor",
+    "maldita"
   ],
   "nodos": [
     "inicio",

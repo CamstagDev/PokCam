@@ -37,6 +37,7 @@ export interface Combate {
   descartesDesdeMano: number; // los hechos desde la última mano jugada
   faroles: number; // los que quedan en este combate (Faroleo)
   divinas: number; // las que quedan en este combate (Mano de Dios)
+  cambiazos: number; // los que quedan en este combate (Cambiazo)
   oroInicial: number; // el de la partida al empezar
   oroGanado: number; // el que dieron las baratijas durante el combate
   semilla: number; // para las probabilidades de cada mano
@@ -89,6 +90,7 @@ export function crearCombate(
     descartesDesdeMano: 0,
     faroles: sumar(efectos, 'faroles'),
     divinas: sumar(efectos, 'divinas'),
+    cambiazos: sumar(efectos, 'cambiazos'),
     oroInicial: oro,
     oroGanado: 0,
     semilla,
@@ -180,6 +182,22 @@ export function descartar(combate: Combate, ids: readonly string[]): Combate {
     descartesUsados: combate.descartesUsados + 1,
     descartesDesdeMano: combate.descartesDesdeMano + 1,
   });
+}
+
+// Cambiazo: la carta va al fondo de la pila y se roba la de arriba, sin
+// gastar un descarte.
+export function cambiar(combate: Combate, id: string): Combate {
+  const [carta] = elegidas(combate, [id], 1);
+  if (combate.cambiazos === 0) throw new Error('No quedan cambiazos');
+  if (combate.pila.length === 0) throw new Error('No quedan cartas en el mazo');
+  const [arriba, ...resto] = combate.pila;
+  const fondo = carta!.id === AS_EXTRA ? [] : [carta!];
+  return {
+    ...combate,
+    mano: combate.mano.map((c) => (c.id === id ? arriba! : c)),
+    pila: [...resto, ...fondo],
+    cambiazos: combate.cambiazos - 1,
+  };
 }
 
 function elegidas(combate: Combate, ids: readonly string[], maximo: number): Carta[] {

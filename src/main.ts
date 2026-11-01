@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import './estilos.css';
 import { EscenaMenu } from './escenas/EscenaMenu.ts';
 import { EscenaRanuras } from './escenas/EscenaRanuras.ts';
+import { EscenaBarajas } from './escenas/EscenaBarajas.ts';
 import { EscenaMapa } from './escenas/EscenaMapa.ts';
 import { EscenaMesa } from './escenas/EscenaMesa.ts';
 import { EscenaBaratijas } from './escenas/EscenaBaratijas.ts';
@@ -27,5 +28,5 @@ new Phaser.Game({
     height: 720,
   },
   // La primera es la que arranca: el menú principal.
-  scene: [EscenaMenu, EscenaRanuras, EscenaMapa, EscenaMesa, EscenaBaratijas, EscenaEliminador, EscenaManoNegra, EscenaTienda, EscenaPintor, EscenaEvento, EscenaColecciones],
+  scene: [EscenaMenu, EscenaRanuras, EscenaBarajas, EscenaMapa, EscenaMesa, EscenaBaratijas, EscenaEliminador, EscenaManoNegra, EscenaTienda, EscenaPintor, EscenaEvento, EscenaColecciones],
 });

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { crearAleatorio } from '../src/juego/aleatorio.ts';
 import { crearMazo, type Carta } from '../src/juego/cartas.ts';
-import { AS_EXTRA, crearCombate, jugar } from '../src/juego/combate.ts';
+import { AS_EXTRA, cambiar, crearCombate, jugar } from '../src/juego/combate.ts';
 import { cerrarDuelo, crearEnfrentamiento, dueloAbierto, duelosGanados, jugarEnDuelo, mejorJugada, type Enfrentamiento } from '../src/juego/duelo.ts';
 import { JEFES, buscarJefe, nivelDelJefe } from '../src/juego/jefes.ts';
-import { avanzar, comprarBaratija, crearPartida, premioDelJefe, resolverCombate, type Partida } from '../src/juego/partida.ts';
+import { avanzar, crearPartida, premioDelJefe, resolverCombate, type Partida } from '../src/juego/partida.ts';
 import { sortearBaratijas, CATALOGO } from '../src/juego/baratijas.ts';
 import { evaluarMano } from '../src/juego/manos.ts';
 import { puntuar } from '../src/juego/puntuacion.ts';
@@ -20,12 +20,12 @@ describe('El Tahúr', () => {
     expect(mazo.every((c) => c.rango >= 7)).toBe(true);
     expect(tahur.reparto).toEqual([1, 1, 1]);
     expect(tahur.revela).toBe(true);
-    expect(tahur.baratijas).toEqual(['as-bajo-la-manga', 'faroleo', 'mazo-limpio']);
+    expect(tahur.baratijas).toEqual(['as-bajo-la-manga', 'faroleo', 'cambiazo']);
   });
 
   it('sus baratijas no salen en las ofertas', () => {
     const deJefe = CATALOGO.filter((b) => b.deJefe).map((b) => b.id);
-    expect(deJefe.sort()).toEqual(['as-bajo-la-manga', 'faroleo', 'mazo-limpio']);
+    expect(deJefe.sort()).toEqual(['as-bajo-la-manga', 'cambiazo', 'faroleo']);
     for (let s = 1; s < 200; s++) {
       for (const id of sortearBaratijas(crearAleatorio(s), [], { infrecuente: 1, rara: 0, legendaria: 0 })) expect(deJefe).not.toContain(id);
     }
@@ -141,11 +141,18 @@ describe('las baratijas del Tahúr', () => {
     expect(() => jugar(combate, [combate.mano[0]!.id], true)).toThrow();
   });
 
-  it('Mazo limpio: al conseguirla se van los 2, 3 y 4', () => {
-    const partida: Partida = { ...crearPartida(7), oro: 1000, oferta: { tipo: 'vendedor', baratijas: ['mazo-limpio'] } };
-    const con = comprarBaratija(partida, 'mazo-limpio');
-    expect(con.mazo).toHaveLength(40);
-    expect(con.mazo.every((c) => c.rango > 4)).toBe(true);
+  it('Cambiazo: una vez por combate cambia una carta de la mano por la de arriba del mazo', () => {
+    let combate = crearCombate(crearAleatorio(1), { objetivo: 99_999, mazo: crearMazo(), baratijas: ['cambiazo'] });
+    expect(combate.cambiazos).toBe(1);
+    const cambiada = combate.mano[0]!;
+    const arriba = combate.pila[0]!;
+    combate = cambiar(combate, cambiada.id);
+    expect(combate.mano[0]).toEqual(arriba);
+    expect(combate.mano).toHaveLength(8);
+    expect(combate.pila.at(-1)).toEqual(cambiada);
+    expect(combate.descartesRestantes).toBe(3);
+    expect(() => cambiar(combate, combate.mano[1]!.id)).toThrow();
+    expect(crearCombate(crearAleatorio(1), { objetivo: 1, mazo: crearMazo() }).cambiazos).toBe(0);
   });
 
   it('vencer al jefe da una de sus baratijas que no tengas y pasa al mundo siguiente', () => {
@@ -154,7 +161,7 @@ describe('las baratijas del Tahúr', () => {
     const jefe = base.mapa.pisos[piso]![0]!;
     const enJefe: Partida = { ...base, nodoActual: jefe.id, combatePendiente: true, apuesta: 0, baratijas: ['faroleo'] };
     const premio = premioDelJefe(enJefe);
-    expect(['as-bajo-la-manga', 'mazo-limpio']).toContain(premio);
+    expect(['as-bajo-la-manga', 'cambiazo']).toContain(premio);
     const despues = resolverCombate(enJefe, true);
     expect(despues.mundo).toBe(2);
     expect(despues.baratijas).toEqual(['faroleo', premio]);

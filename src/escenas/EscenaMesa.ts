@@ -9,14 +9,15 @@
 // en el duelo abierto, y "Cerrar duelo" pasa al siguiente. Con Faroleo, el
 // botón 🎭 hace que la próxima mano puntúe como el tipo siguiente; con Mano
 // de Dios, el 🙏 hace que cuente como escalera de color. Con Soborno, el 🤝
-// baja el objetivo antes de la primera mano.
+// baja el objetivo antes de la primera mano. Con Cambiazo, el 🔄 cambia la
+// carta elegida por la de arriba del mazo.
 
 import Phaser from 'phaser';
 import { crearAleatorio } from '../juego/aleatorio.ts';
 import { SIMBOLO_PALO, fichasDeCarta, nombreRango, ordenarMano, type Carta, type Orden } from '../juego/cartas.ts';
-import { MAX_CARTAS_JUGADAS, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
+import { MAX_CARTAS_JUGADAS, cambiar, crearCombate, descartar, jugar, type Combate } from '../juego/combate.ts';
 import { efectosDe } from '../juego/baratijas.ts';
-import { DUELOS, cerrarDuelo, crearEnfrentamiento, descartarEnDuelo, dueloAbierto, duelosGanados, jugarEnDuelo, type Enfrentamiento } from '../juego/duelo.ts';
+import { DUELOS, cambiarEnDuelo, cerrarDuelo, crearEnfrentamiento, descartarEnDuelo, dueloAbierto, duelosGanados, jugarEnDuelo, type Enfrentamiento } from '../juego/duelo.ts';
 import { jefeDelMundo } from '../juego/jefes.ts';
 import { MANOS, evaluarMano } from '../juego/manos.ts';
 import { baratijasDe, bonosActivos, buscarBaratija, formatear } from '../juego/baratijas.ts';
@@ -24,6 +25,7 @@ import type { Partida } from '../juego/partida.ts';
 import {
   apostar,
   costoDelSoborno,
+  descartesDeLaPartida,
   enBancarrota,
   hayQueApostar,
   maximoApostable,
@@ -40,7 +42,7 @@ import type { TipoNodo } from '../mapa/mapa.ts';
 import { crearBoton, crearBotonRedondo, type Boton, type BotonRedondo } from './boton.ts';
 import { dibujarCarta } from './carta.ts';
 import { preguntarApuesta } from './apuesta.ts';
-import { confirmar } from './confirmar.ts';
+import { avisar, confirmar } from './confirmar.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { mostrarBotonesInventario } from './inventario.ts';
 import { mostrarCripto } from './cripto.ts';
@@ -79,6 +81,7 @@ export class EscenaMesa extends Phaser.Scene {
   private botonDivina: BotonRedondo | null = null;
   private divina = false; // la próxima mano es de Dios
   private botonSoborno: BotonRedondo | null = null;
+  private botonCambiazo: BotonRedondo | null = null;
 
   constructor() {
     super('mesa');
@@ -100,6 +103,7 @@ export class EscenaMesa extends Phaser.Scene {
     this.botonDivina = null;
     this.divina = false;
     this.botonSoborno = null;
+    this.botonCambiazo = null;
   }
 
   create(): void {
@@ -117,6 +121,7 @@ export class EscenaMesa extends Phaser.Scene {
       mundo: partida.mundo,
       tipo: this.tipo,
       oro: partida.oro,
+      descartes: descartesDeLaPartida(partida),
       semilla,
       memoria: partida.memoria,
     };
@@ -133,8 +138,9 @@ export class EscenaMesa extends Phaser.Scene {
     if (this.duelo) {
       this.botonCerrarDuelo = crearBoton(this, width - 150, 380, 'Cerrar duelo', COLORES.oro, () => this.cerrarDuelo(), 220);
     }
-    // Los botones de las baratijas van a la derecha de Descartar, en fila.
-    const huecos = [width / 2 + 385, width / 2 + 485, width / 2 + 585];
+    // Los botones de las baratijas van a la derecha de Descartar, en fila
+    // (y si no caben, a la izquierda de Jugar).
+    const huecos = [width / 2 + 385, width / 2 + 485, width / 2 + 585, width / 2 - 385, width / 2 - 485, width / 2 - 585];
     if (this.combate.faroles > 0) {
       this.botonFarol = crearBotonRedondo(this, huecos.shift()!, 652, '🎭', 'Farolear', () => {
         if (this.bloqueada || this.combate.faroles === 0) return;
@@ -149,6 +155,9 @@ export class EscenaMesa extends Phaser.Scene {
         this.botonDivina?.marcar(this.divina);
         this.actualizar();
       });
+    }
+    if (this.combate.cambiazos > 0) {
+      this.botonCambiazo = crearBotonRedondo(this, huecos.shift()!, 652, '🔄', 'Cambiazo', () => this.hacerCambiazo());
     }
     if (puedeSobornar(partida) && this.combate.manosJugadas === 0) {
       this.botonSoborno = crearBotonRedondo(this, huecos.shift()!, 652, '🤝', 'Sobornar', () => this.pedirSoborno());
@@ -216,6 +225,34 @@ export class EscenaMesa extends Phaser.Scene {
       this.quitarSoborno();
       this.actualizar();
     });
+  }
+
+  // Cambiazo: la carta elegida por la de arriba del mazo.
+  private hacerCambiazo(): void {
+    if (this.bloqueada || this.terminado() || this.combate.cambiazos === 0) return;
+    if (this.elegidas.size !== 1) {
+      avisar(this, 'Elige una sola carta de tu mano para el Cambiazo.');
+      return;
+    }
+    if (this.combate.pila.length === 0) {
+      avisar(this, 'No quedan cartas en el mazo.');
+      return;
+    }
+    const [id] = [...this.elegidas];
+    this.cartas.get(id!)?.destroy();
+    this.cartas.delete(id!);
+    this.elegidas.clear();
+    if (this.duelo) {
+      this.duelo = cambiarEnDuelo(this.duelo, id!);
+      this.combate = this.duelo.combate;
+    } else {
+      this.combate = cambiar(this.combate, id!);
+    }
+    this.combate = { ...this.combate, mano: ordenarMano(this.combate.mano, this.orden) };
+    if (this.duelo) this.duelo = { ...this.duelo, combate: this.combate };
+    this.botonCambiazo?.destroy();
+    this.botonCambiazo = null;
+    this.actualizar();
   }
 
   private quitarSoborno(): void {

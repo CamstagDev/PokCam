@@ -11,7 +11,7 @@
 import { barajar, type Aleatorio } from './aleatorio.ts';
 import { efectosDe } from './baratijas.ts';
 import { fichasDeCarta, type Carta } from './cartas.ts';
-import { MAX_CARTAS_JUGADAS, TAMANO_MANO, crearCombate, descartar, jugar, type Combate, type OpcionesCombate } from './combate.ts';
+import { MAX_CARTAS_JUGADAS, TAMANO_MANO, cambiar, crearCombate, descartar, jugar, type Combate, type OpcionesCombate } from './combate.ts';
 import { buscarJefe, nivelDelJefe, type Jefe } from './jefes.ts';
 import { TIPOS_DE_MANO, type Niveles } from './manos.ts';
 import { puntuar, type Puntuacion } from './puntuacion.ts';
@@ -128,6 +128,11 @@ export function jugarEnDuelo(e: Enfrentamiento, ids: readonly string[], farol = 
 export function descartarEnDuelo(e: Enfrentamiento, ids: readonly string[]): Enfrentamiento {
   if (e.estado !== 'jugando') throw new Error('La partida contra el jefe ya terminó');
   return { ...e, combate: descartar(e.combate, ids) };
+}
+
+export function cambiarEnDuelo(e: Enfrentamiento, id: string): Enfrentamiento {
+  if (e.estado !== 'jugando') throw new Error('La partida contra el jefe ya terminó');
+  return { ...e, combate: cambiar(e.combate, id) };
 }
 
 // Cierra el duelo abierto: gana quien puso más puntos; si empatan, se
