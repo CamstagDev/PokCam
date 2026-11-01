@@ -6,6 +6,8 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+## 0.2.0 (2026-11-01)
+
 - En el mapa, los caminos que salen de donde estás brillan en dorado y
   laten despacio; los demás caminos y las fichas que no puedes tomar
   quedan más apagados.
