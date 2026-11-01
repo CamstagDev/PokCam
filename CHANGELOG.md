@@ -6,6 +6,8 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+- En Android, la app muestra su versión de verdad (antes decía 1.0).
+
 ## 0.2.0 (2026-11-01)
 
 - En el mapa, los caminos que salen de donde estás brillan en dorado y
