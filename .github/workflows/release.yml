@@ -53,12 +53,12 @@ jobs:
       - run: npm ci
       - run: npm run android:sync
       # El APK de prueba se firma con la clave de depuración del PC de
-      # Camstag (secreto ANDROID_DEBUG_KEYSTORE, en base64), para que
+      # Camstag (secreto ANDROID_KEYSTORE_BASE64), para que
       # instale encima de la app ya instalada sin borrar las partidas. Sin
       # el secreto, Gradle crea una clave nueva.
       - name: Clave de firma
         env:
-          CLAVE: ${{ secrets.ANDROID_DEBUG_KEYSTORE }}
+          CLAVE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           if [ -n "$CLAVE" ]; then
             mkdir -p ~/.android
