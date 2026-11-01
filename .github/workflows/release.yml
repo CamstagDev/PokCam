@@ -62,7 +62,9 @@ jobs:
         run: |
           if [ -n "$CLAVE" ]; then
             mkdir -p ~/.android
-            echo "$CLAVE" | base64 -d > ~/.android/debug.keystore
+            # Sin saltos de línea de Windows ni cabeceras de certutil.
+            printf '%s' "$CLAVE" | tr -d '\r' | grep -v -- '-----' | base64 -d -i > ~/.android/debug.keystore
+            keytool -list -keystore ~/.android/debug.keystore -storepass android | grep -i 'SHA'
           fi
       # APK de prueba (sin firma de Google Play; eso llega con el paso de
       # publicar en la tienda).
