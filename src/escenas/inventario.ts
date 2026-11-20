@@ -11,15 +11,16 @@ import { crearBotonRedondo } from './boton.ts';
 import { dibujarCarta } from './carta.ts';
 import { abrirCapa } from './capa.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
+import { pixelArt } from './pixel/texturas.ts';
 
 // Lee la partida al tocar, para mostrar siempre lo último (por ejemplo,
 // recién comprada una baratija).
 export function mostrarBotonesInventario(escena: Phaser.Scene, partida: () => Partida): Phaser.GameObjects.Container[] {
   const y = escena.scale.height - 60;
   return [
-    crearBotonRedondo(escena, 50, y, '✦', 'Baratijas', () => verBaratijas(escena, partida())),
-    crearBotonRedondo(escena, 120, y, '▤', 'Mazo', () => verMazo(escena, partida())),
-    crearBotonRedondo(escena, 190, y, '≡', 'Manos', () => verManos(escena, partida())),
+    crearBotonRedondo(escena, 50, y, ['ui', 'baratijas'], 'Baratijas', () => verBaratijas(escena, partida())),
+    crearBotonRedondo(escena, 120, y, ['ui', 'mazo'], 'Mazo', () => verMazo(escena, partida())),
+    crearBotonRedondo(escena, 190, y, ['ui', 'manos'], 'Manos', () => verManos(escena, partida())),
   ].map((boton) => boton.setDepth(60));
 }
 
@@ -99,7 +100,7 @@ export function fichaDeBaratija(
   const color = COLOR_RAREZA[baratija.rareza];
   const fondo = escena.add.rectangle(0, 0, ancho, alto, COLORES.panel).setStrokeStyle(2, color);
   const rareza = escena.add.text(-ancho / 2 + 72, -alto / 2 + 44, DATOS_RAREZA[baratija.rareza].nombre, estiloTexto(15, color));
-  const icono = escena.add.text(-ancho / 2 + 20, -alto / 2 + 16, baratija.icono, estiloTexto(34)).setOrigin(0, 0);
+  const icono = pixelArt(escena, -ancho / 2 + 20, -alto / 2 + 14, 'baratija', baratija.id, 48).setOrigin(0, 0);
   const nombre = escena.add.text(-ancho / 2 + 72, -alto / 2 + 16, baratija.nombre, estiloTexto(22)).setOrigin(0, 0);
   const descripcion = escena.add
     .text(-ancho / 2 + 20, -alto / 2 + 76, baratija.descripcion, { ...estiloTexto(16, COLORES.textoSuave), wordWrap: { width: ancho - 40 } })

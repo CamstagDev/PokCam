@@ -16,6 +16,7 @@ import { crearBotonRedondo } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { fichaDeBaratija } from './inventario.ts';
 import { almacen } from './sesion.ts';
+import { pixelArt } from './pixel/texturas.ts';
 
 const ANCHO = 300;
 const ALTO = 170;
@@ -96,14 +97,14 @@ export class EscenaColecciones extends Phaser.Scene {
       const enFila = Math.min(POR_FILA, tipos.length - fila * POR_FILA);
       const x = width / 2 + ((i % POR_FILA) - (enFila - 1) / 2) * (ANCHO + 20);
       const y = ALTO_BARRA + 30 + ALTO / 2 + fila * (ALTO + 20);
-      const { nombre, icono, descripcion } = DATOS_NODO[tipo];
+      const { nombre, descripcion } = DATOS_NODO[tipo];
       if (!vistos.includes(tipo)) {
-        this.fichaEnSombra(x, y, icono, '');
+        this.fichaEnSombra(x, y, ['nodo', tipo], '');
         return;
       }
       this.add.rectangle(x, y, ANCHO, ALTO, COLORES.panel).setStrokeStyle(2, COLORES.borde);
       this.add.circle(x - ANCHO / 2 + 44, y - ALTO / 2 + 40, 26, COLORES.fondo).setStrokeStyle(2, COLORES.borde);
-      this.add.text(x - ANCHO / 2 + 44, y - ALTO / 2 + 40, icono, estiloTexto(26)).setOrigin(0.5);
+      pixelArt(this, x - ANCHO / 2 + 44, y - ALTO / 2 + 40, 'nodo', tipo, 32);
       const titulo = this.add.text(x - ANCHO / 2 + 84, y - ALTO / 2 + 40, nombre, estiloTexto(22)).setOrigin(0, 0.5);
       // Los nombres largos se achican para no salirse de la ficha.
       const libre = ANCHO - 104;
@@ -155,7 +156,7 @@ export class EscenaColecciones extends Phaser.Scene {
       if (this.coleccion.includes(baratija.id)) {
         fichaDeBaratija(this, x, centro, baratija, ANCHO, ALTO);
       } else {
-        this.fichaEnSombra(x, centro, baratija.icono, DATOS_RAREZA[baratija.rareza].nombre);
+        this.fichaEnSombra(x, centro, ['baratija', baratija.id], DATOS_RAREZA[baratija.rareza].nombre);
       }
     });
     const filas = Math.ceil(baratijas.length / POR_FILA);
@@ -163,9 +164,10 @@ export class EscenaColecciones extends Phaser.Scene {
   }
 
   // La silueta del icono en negro, sin nombre ni descripción.
-  private fichaEnSombra(x: number, y: number, icono: string, rareza: string): void {
+  private fichaEnSombra(x: number, y: number, icono: string | [string, string], rareza: string): void {
     this.add.rectangle(x, y, ANCHO, ALTO, COLORES.panel, 0.5).setStrokeStyle(2, COLORES.borde);
-    this.add.text(x, y - 16, icono, estiloTexto(54)).setOrigin(0.5).setTint(0x000000).setAlpha(0.85);
+    const sombra = typeof icono === 'string' ? this.add.text(x, y - 16, icono, estiloTexto(54)).setOrigin(0.5) : pixelArt(this, x, y - 16, icono[0], icono[1], 64);
+    sombra.setTint(0x000000).setAlpha(0.85);
     this.add.text(x, y + 44, '???', estiloTexto(20, COLORES.textoSuave)).setOrigin(0.5);
     this.add.text(x + ANCHO / 2 - 14, y + ALTO / 2 - 10, rareza, estiloTexto(15, COLORES.borde)).setOrigin(1, 1);
   }

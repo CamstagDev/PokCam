@@ -49,6 +49,7 @@ import { mostrarCripto } from './cripto.ts';
 import { mostrarOro, type Marcador } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { irAPartida, jugarPartida, partidaActual, terminarPartida } from './sesion.ts';
+import { retratoJuntoA } from './pixel/texturas.ts';
 
 const ANCHO_CARTA = 110;
 const ALTO_CARTA = 154;
@@ -142,14 +143,14 @@ export class EscenaMesa extends Phaser.Scene {
     // (y si no caben, a la izquierda de Jugar).
     const huecos = [width / 2 + 385, width / 2 + 485, width / 2 + 585, width / 2 - 385, width / 2 - 485, width / 2 - 585];
     if (this.combate.faroles > 0) {
-      this.botonFarol = crearBotonRedondo(this, huecos.shift()!, 652, '🎭', 'Farolear', () => {
+      this.botonFarol = crearBotonRedondo(this, huecos.shift()!, 652, ['baratija', 'faroleo'], 'Farolear', () => {
         if (this.bloqueada || this.combate.faroles === 0) return;
         this.farol = !this.farol;
         this.botonFarol?.marcar(this.farol);
       });
     }
     if (this.combate.divinas > 0) {
-      this.botonDivina = crearBotonRedondo(this, huecos.shift()!, 652, '🙏', 'Mano de Dios', () => {
+      this.botonDivina = crearBotonRedondo(this, huecos.shift()!, 652, ['baratija', 'mano-de-dios'], 'Mano de Dios', () => {
         if (this.bloqueada || this.combate.divinas === 0) return;
         this.divina = !this.divina;
         this.botonDivina?.marcar(this.divina);
@@ -157,16 +158,16 @@ export class EscenaMesa extends Phaser.Scene {
       });
     }
     if (this.combate.cambiazos > 0) {
-      this.botonCambiazo = crearBotonRedondo(this, huecos.shift()!, 652, '🔄', 'Cambiazo', () => this.hacerCambiazo());
+      this.botonCambiazo = crearBotonRedondo(this, huecos.shift()!, 652, ['baratija', 'cambiazo'], 'Cambiazo', () => this.hacerCambiazo());
     }
     if (puedeSobornar(partida) && this.combate.manosJugadas === 0) {
-      this.botonSoborno = crearBotonRedondo(this, huecos.shift()!, 652, '🤝', 'Sobornar', () => this.pedirSoborno());
+      this.botonSoborno = crearBotonRedondo(this, huecos.shift()!, 652, ['baratija', 'soborno'], 'Sobornar', () => this.pedirSoborno());
     }
     // Bien separados para que Valor, Apostar y Palo quepan entre los dos.
     this.botonJugar = crearBoton(this, width / 2 - 240, 660, 'Jugar mano', COLORES.fichas, () => this.accion('jugar'));
     this.botonDescartar = crearBoton(this, width / 2 + 240, 660, 'Descartar', COLORES.multi, () => this.accion('descartar'));
-    this.botonesOrden.set('valor', crearBotonRedondo(this, width / 2 - 64, 652, 'A↓', 'Valor', () => this.ordenar('valor')));
-    this.botonesOrden.set('palo', crearBotonRedondo(this, width / 2 + 64, 652, '♠♥', 'Palo', () => this.ordenar('palo')));
+    this.botonesOrden.set('valor', crearBotonRedondo(this, width / 2 - 64, 652, ['ui', 'valor'], 'Valor', () => this.ordenar('valor')));
+    this.botonesOrden.set('palo', crearBotonRedondo(this, width / 2 + 64, 652, ['ui', 'palo'], 'Palo', () => this.ordenar('palo')));
     this.botonesOrden.get(this.orden)!.marcar(true);
     this.combate = { ...this.combate, mano: ordenarMano(this.combate.mano, this.orden) };
     // La partida ya está guardada con este combate pendiente: al continuar
@@ -184,7 +185,7 @@ export class EscenaMesa extends Phaser.Scene {
     // botón para apostar; desaparece al apostar o al jugar la primera mano
     // (sin apostar, la apuesta es 0). Sin nada para apostar, no aparece.
     if (partida.apuesta === null) {
-      if (hayQueApostar(partida)) this.botonApostar = crearBotonRedondo(this, width / 2, 652, '$', 'Apostar', () => this.pedirApuesta());
+      if (hayQueApostar(partida)) this.botonApostar = crearBotonRedondo(this, width / 2, 652, ['ui', 'apostar'], 'Apostar', () => this.pedirApuesta());
       else jugarPartida(this, apostar(partida, 0));
     }
   }
@@ -347,7 +348,8 @@ export class EscenaMesa extends Phaser.Scene {
     if (abierto && jefe.revela) {
       const jugadas = abierto.jugadasDelJefe;
       const texto = jugadas.map((j) => `${MANOS[j.puntuacion.tipo].nombre} · ${j.puntuacion.fichas} × ${formatear(j.puntuacion.multi)} = ${j.puntuacion.total}`).join('  +  ');
-      objetos.push(this.add.text(width / 2, 232, `${jefe.icono} ${jefe.nombre} juega: ${texto}`, estiloTexto(20, COLORES.textoSuave)).setOrigin(0.5));
+      const linea = this.add.text(width / 2 + 24, 232, `${jefe.nombre} juega: ${texto}`, estiloTexto(20, COLORES.textoSuave)).setOrigin(0.5);
+      objetos.push(linea, retratoJuntoA(this, linea, jefe.id, 40));
       const cartas = jugadas.flatMap((j) => j.cartas);
       cartas.forEach((carta, i) => objetos.push(dibujarCarta(this, width / 2 + (i - (cartas.length - 1) / 2) * 62, 295, carta, 56, 78)));
     }
@@ -398,8 +400,8 @@ export class EscenaMesa extends Phaser.Scene {
     const partida = partidaActual(this);
     const total = totalApostado(partida);
     if (total === 0) return [];
-    const iconos = baratijasDe(partida.baratijasApostadas).map((b) => b.icono).join('');
-    return [`Apuesta: ${total}${iconos ? ` (${iconos})` : ''}`];
+    const cuantas = partida.baratijasApostadas.length;
+    return [`Apuesta: ${total}${cuantas > 0 ? ` (${cuantas} baratija${cuantas === 1 ? '' : 's'})` : ''}`];
   }
 
   // Cartas marcadas: la próxima carta del mazo.
@@ -482,9 +484,9 @@ export class EscenaMesa extends Phaser.Scene {
     this.add.rectangle(width / 2, height / 2, width, height, COLORES.fondo, 0.85);
     this.add.text(width / 2, height / 2 - 80, titulo, estiloTexto(48, gano ? COLORES.acento : COLORES.multi)).setOrigin(0.5);
     const oro = `${diferencia >= 0 ? '+' : '−'}${Math.abs(diferencia)} de oro`;
-    const sinBaratijas = perdidas.length > 0 ? `\nPerdiste ${perdidas.map((b) => `${b.icono} ${b.nombre}`).join(', ')}` : '';
+    const sinBaratijas = perdidas.length > 0 ? `\nPerdiste ${perdidas.map((b) => b.nombre).join(', ')}` : '';
     const nuevas = partida.baratijas.filter((id) => !teniaAntes.includes(id)).map(buscarBaratija);
-    const ganada = nuevas.length > 0 ? `\nTe llevas ${nuevas.map((b) => `${b.icono} ${b.nombre}`).join(', ')}` : '';
+    const ganada = nuevas.length > 0 ? `\nTe llevas ${nuevas.map((b) => b.nombre).join(', ')}` : '';
     const mundoNuevo = jefeVencido ? `\nSigues en el mundo ${partida.mundo}` : '';
     const repetir = otraVez ? '\nEl combate se vuelve a jugar, sin perder nada' : '';
     const detalle = quebrado ? 'Fin de la partida' : oro + sinBaratijas + ganada + mundoNuevo + repetir;

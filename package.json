@@ -17,7 +17,8 @@
     "android:sync": "npm run build && cap sync android",
     "android:apk": "npm run android:sync && node scripts/gradle.mjs assembleDebug",
     "version:nueva": "node scripts/nueva-version.mjs",
-    "partida:prueba": "node --experimental-strip-types scripts/partida-de-prueba.ts"
+    "partida:prueba": "node --experimental-strip-types scripts/partida-de-prueba.ts",
+    "sprites": "node --experimental-strip-types scripts/hoja-de-sprites.ts"
   },
   "main": "electron/main.js",
   "author": "CamstagDev",

@@ -12,7 +12,7 @@
 
 import Phaser from 'phaser';
 import { avanzar, enBancarrota, nivelDeRiesgo, nodoActual, nodosDisponibles, type Partida } from '../juego/partida.ts';
-import { DATOS_NODO, buscarNodo, type Nodo } from '../mapa/mapa.ts';
+import { buscarNodo, type Nodo } from '../mapa/mapa.ts';
 import { crearBoton } from './boton.ts';
 import { avisar } from './confirmar.ts';
 import { mostrarBotonesInventario } from './inventario.ts';
@@ -124,7 +124,7 @@ export class EscenaMapa extends Phaser.Scene {
         const actual = nodo.id === partida.nodoActual;
         const visitado = partida.visitados.includes(nodo.id);
         const late = disponibles.has(nodo.id);
-        const ficha = crearFichaDePoker(this, nodo.tipo, DATOS_NODO[nodo.tipo].icono, RADIO, {
+        const ficha = crearFichaDePoker(this, nodo.tipo, RADIO, {
           conLuz: late,
           borde: actual ? COLORES.acento : undefined,
         });
@@ -195,7 +195,8 @@ export class EscenaMapa extends Phaser.Scene {
         // chato, de alto × cos(INCLINACION).
         ficha.contenedor.setPosition(x, y).setScale(s, s * Math.cos(angulo)).setDepth(y);
         // El icono casi derecho, para que se lea bien aunque la ficha esté acostada.
-        ficha.icono.setScale(1, 0.85 / Math.cos(angulo));
+        const base = ficha.icono.scaleX;
+        ficha.icono.setScale(base, (base * 0.85) / Math.cos(angulo));
       }
     };
     this.events.on(Phaser.Scenes.Events.UPDATE, dibujar);

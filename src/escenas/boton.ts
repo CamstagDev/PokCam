@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { COLORES, estiloTexto } from './estilo.ts';
+import { pixelArt } from './pixel/texturas.ts';
 
 export interface Boton extends Phaser.GameObjects.Container {
   activar(activo: boolean): void;
@@ -50,13 +51,13 @@ export function crearBotonRedondo(
   escena: Phaser.Scene,
   x: number,
   y: number,
-  simbolo: string,
+  simbolo: string | readonly [string, string], // texto, o [grupo, id] de un sprite
   leyenda: string,
   alTocar: () => void,
 ): BotonRedondo {
   const radio = 24;
   const circulo = escena.add.circle(0, 0, radio, COLORES.borde);
-  const etiqueta = escena.add.text(0, 0, simbolo, estiloTexto(18)).setOrigin(0.5);
+  const etiqueta = typeof simbolo === 'string' ? escena.add.text(0, 0, simbolo, estiloTexto(18)).setOrigin(0.5) : pixelArt(escena, 0, 0, simbolo[0], simbolo[1], 32);
   const debajo = escena.add.text(0, radio + 12, leyenda, estiloTexto(13, COLORES.textoSuave)).setOrigin(0.5);
   const boton = escena.add.container(x, y, [circulo, etiqueta, debajo]) as BotonRedondo;
   boton.setSize(radio * 2, radio * 2).setInteractive({ useHandCursor: true });

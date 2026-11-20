@@ -35,6 +35,7 @@ import { mostrarCripto } from './cripto.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
+import { pixelArt, retratoJuntoA } from './pixel/texturas.ts';
 
 const ANCHO = 300;
 const ALTO = 190;
@@ -62,7 +63,8 @@ export class EscenaBaratijas extends Phaser.Scene {
     }
     const esElite = oferta.tipo === 'elite';
 
-    this.add.text(width / 2, 140, esElite ? 'Elige una baratija' : 'Raimundo el vendedor del mundo', estiloTexto(40)).setOrigin(0.5);
+    const titulo = this.add.text(width / 2, 140, esElite ? 'Elige una baratija' : 'Raimundo el vendedor del mundo', estiloTexto(40)).setOrigin(0.5);
+    if (!esElite) retratoJuntoA(this, titulo, 'raimundo');
     this.add
       .text(width / 2, 190, esElite ? 'Recompensa por vencer al élite' : 'Paga con oro lo que quieras llevarte', estiloTexto(22, COLORES.textoSuave))
       .setOrigin(0.5);
@@ -126,7 +128,7 @@ export class EscenaBaratijas extends Phaser.Scene {
       const color = COLOR_RAREZA[baratija.rareza];
       capa.add([
         this.add.rectangle(x, y, ancho, 54, COLORES.panel).setStrokeStyle(2, color),
-        this.add.text(x - ancho / 2 + 16, y, baratija.icono, estiloTexto(26)).setOrigin(0, 0.5),
+        pixelArt(this, x - ancho / 2 + 14, y, 'baratija', baratija.id, 32).setOrigin(0, 0.5),
         this.add.text(x - ancho / 2 + 60, y - 10, baratija.nombre, estiloTexto(20)).setOrigin(0, 0.5),
         this.add.text(x - ancho / 2 + 60, y + 13, DATOS_RAREZA[baratija.rareza].nombre, estiloTexto(14, color)).setOrigin(0, 0.5),
         crearBoton(this, x + ancho / 2 - 100, y, `Vender · ${valorAlVender(partida, baratija.id)}`, COLORES.oro, () => {

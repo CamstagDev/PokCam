@@ -32,6 +32,7 @@ import { mostrarCripto } from './cripto.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
+import { pixelArt, retratoJuntoA } from './pixel/texturas.ts';
 
 const ANCHO_PANEL = 440;
 const ALTO_PANEL = 300;
@@ -50,7 +51,7 @@ export class EscenaEliminador extends Phaser.Scene {
     mostrarBotonesInventario(this, () => partidaActual(this));
     const usados = partida.oferta?.usados ?? [];
 
-    this.add.text(width / 2, 140, 'Edmundo manos de cinceles', estiloTexto(40)).setOrigin(0.5);
+    retratoJuntoA(this, this.add.text(width / 2, 140, 'Edmundo manos de cinceles', estiloTexto(40)).setOrigin(0.5), 'edmundo');
     this.add.text(width / 2, 190, 'La ruleta, una vez por visita; cartas, las que puedas pagar', estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
 
     const y = height / 2 + 40;
@@ -108,7 +109,7 @@ export class EscenaEliminador extends Phaser.Scene {
       const fondo = this.add.rectangle(x, height / 2 - 20, 150, 150, COLORES.panel).setStrokeStyle(2, COLORES.borde);
       capa.add([
         fondo,
-        this.add.text(x, height / 2 - 45, baratija.icono, estiloTexto(48)).setOrigin(0.5),
+        pixelArt(this, x, height / 2 - 45, 'baratija', baratija.id, 64),
         this.add.text(x, height / 2 + 25, baratija.nombre, { ...estiloTexto(16), align: 'center', wordWrap: { width: 140 } }).setOrigin(0.5),
       ]);
       return fondo;

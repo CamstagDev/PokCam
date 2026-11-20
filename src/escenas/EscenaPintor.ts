@@ -39,6 +39,7 @@ import { mostrarBotonesInventario } from './inventario.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
+import { retratoJuntoA } from './pixel/texturas.ts';
 
 const ALTO_PANEL = 360;
 
@@ -60,7 +61,7 @@ export class EscenaPintor extends Phaser.Scene {
     const quedan = trabajosDelPintor(partida) - (oferta?.usados?.length ?? 0);
     const usado = quedan <= 0;
 
-    this.add.text(width / 2, 140, 'Gustavo el austriaco', estiloTexto(40)).setOrigin(0.5);
+    retratoJuntoA(this, this.add.text(width / 2, 140, 'Gustavo el austriaco', estiloTexto(40)).setOrigin(0.5), 'gustavo');
     const subtitulo = usado
       ? 'El pintor ya hizo su trabajo en esta visita'
       : quedan > 1 ? `Elige uno de sus servicios (te quedan ${quedan} trabajos)` : 'Elige uno de sus servicios';

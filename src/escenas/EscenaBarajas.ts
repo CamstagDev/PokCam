@@ -9,6 +9,7 @@ import { crearPartida } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
 import { almacen, irAPartida, jugarPartida } from './sesion.ts';
+import { pixelArt } from './pixel/texturas.ts';
 
 const ANCHO = 280;
 const ALTO = 262;
@@ -46,7 +47,7 @@ export class EscenaBarajas extends Phaser.Scene {
     const arriba = y - ALTO / 2;
     const ancho = ANCHO - 30;
     const alfa = libre ? 1 : 0.45;
-    this.add.text(x, arriba + 30, libre ? baraja.icono : '🔒', estiloTexto(30)).setOrigin(0.5).setAlpha(libre ? 1 : 0.8);
+    pixelArt(this, x, arriba + 28, libre ? 'baraja' : 'ui', libre ? baraja.id : 'candado', 48);
     this.add.text(x, arriba + 66, baraja.nombre, { ...estiloTexto(20), fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alfa);
     this.add
       .text(x, arriba + 92, `✔ ${baraja.ventaja}`, { ...estiloTexto(14, COLORES.acento), wordWrap: { width: ancho } })

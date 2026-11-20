@@ -7,6 +7,12 @@ la versión nueva (ver scripts/nueva-version.mjs).
 ## Sin publicar
 
 - En Android, la app muestra su versión de verdad (antes decía 1.0).
+- Pixel art: las 104 baratijas tienen su icono dibujado píxel a píxel (las
+  de un set llevan el emblema del set en la esquina), y también las
+  cartas (con figuras para J, Q y K), los palos, los nodos del mapa, el
+  oro, el riesgo, los botones de la mesa y del inventario y las barajas.
+  Raimundo, Gustavo, Edmundo, Helman O'Grande y El Tahúr tienen retrato.
+  `npm run sprites` arma hoja-de-sprites.html para verlos todos juntos.
 
 ## 0.2.0 (2026-11-01)
 

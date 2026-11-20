@@ -15,6 +15,7 @@ import { mostrarCripto } from './cripto.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
+import { retratoJuntoA } from './pixel/texturas.ts';
 
 const ANCHO = 300;
 const ALTO = 230;
@@ -37,7 +38,7 @@ export class EscenaManoNegra extends Phaser.Scene {
     const usada = partida.oferta?.usados?.includes('mejorar') ?? false;
     const costo = costoDeMejorar(partida);
 
-    this.add.text(width / 2, 140, "Helman O'Grande", estiloTexto(40)).setOrigin(0.5);
+    retratoJuntoA(this, this.add.text(width / 2, 140, "Helman O'Grande", estiloTexto(40)).setOrigin(0.5), 'helman');
     const subtitulo = usada ? 'Ya mejoraste una mano en esta visita' : `Sube un nivel a una de estas manos por ${costo} de oro`;
     this.add.text(width / 2, 190, subtitulo, estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
 

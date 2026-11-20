@@ -3,6 +3,7 @@ import { valorDeVenta, type Baratija } from '../juego/baratijas.ts';
 import type { Prevision } from '../juego/partida.ts';
 import { crearBoton } from './boton.ts';
 import { COLORES, estiloTexto } from './estilo.ts';
+import { pixelArt } from './pixel/texturas.ts';
 
 export interface OpcionesApuesta {
   maximo: number; // el oro que se puede apostar
@@ -86,7 +87,7 @@ export function preguntarApuesta(
     const enFila = Math.min(POR_FILA, baratijas.length - fila * POR_FILA);
     const x = width / 2 + ((i % POR_FILA) - (enFila - 1) / 2) * (ANCHO_FICHA + 12);
     const fondo = escena.add.rectangle(0, 0, ANCHO_FICHA, 66, COLORES.fondo).setStrokeStyle(2, COLORES.borde);
-    const icono = escena.add.text(0, -12, baratija.icono, estiloTexto(26)).setOrigin(0.5);
+    const icono = pixelArt(escena, 0, -12, 'baratija', baratija.id, 32);
     const precio = escena.add.text(0, 18, String(valorDeVenta(baratija)), estiloTexto(16, COLORES.oro)).setOrigin(0.5);
     const ficha = escena.add.container(x, yFichas + fila * 76, [fondo, icono, precio]).setSize(ANCHO_FICHA, 66);
     ficha.setInteractive({ useHandCursor: true }).on('pointerdown', () => {

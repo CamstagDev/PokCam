@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import type { TipoNodo } from '../mapa/mapa.ts';
-import { estiloTexto } from './estilo.ts';
+import { pixelArt } from './pixel/texturas.ts';
 
 export const COLOR_DE_FICHA: Record<TipoNodo, number> = {
   inicio: 0xe9e4d8,
@@ -28,7 +28,7 @@ const LUZ = 0xfff1b8;
 export interface FichaDePoker {
   contenedor: Phaser.GameObjects.Container;
   cara: Phaser.GameObjects.Arc; // la que recibe los toques
-  icono: Phaser.GameObjects.Text;
+  icono: Phaser.GameObjects.Image;
   // Prende o apaga la luz del borde (si la tiene).
   iluminar(prendida: boolean): void;
 }
@@ -46,12 +46,10 @@ function oscurecer(color: number, factor: number): number {
 export function crearFichaDePoker(
   escena: Phaser.Scene,
   tipo: TipoNodo,
-  icono: string,
   radio: number,
   { conLuz, borde }: { conLuz: boolean; borde?: number },
 ): FichaDePoker {
   const color = COLOR_DE_FICHA[tipo];
-  const clara = tipo === 'inicio' || tipo === 'evento';
   // El canto: la ficha repetida más abajo y la franja entre las dos. Como
   // la ficha se achata al acostarla, se dibuja alto para que se note.
   const grosor = radio * 0.42;
@@ -74,7 +72,7 @@ export function crearFichaDePoker(
   dibujo.fillStyle(oscurecer(color, 0.85)).fillCircle(0, 0, radio * 0.62);
   dibujo.lineStyle(2, blanco, 0.8).strokeCircle(0, 0, radio * 0.66);
   if (borde !== undefined) dibujo.lineStyle(4, borde).strokeCircle(0, 0, radio);
-  const texto = escena.add.text(0, 0, icono, estiloTexto(radio * 0.8, clara ? 0x2a2418 : 0xf6f3ea)).setOrigin(0.5);
+  const texto = pixelArt(escena, 0, 0, 'nodo', tipo, Math.round((radio * 0.85) / 16) * 16 || 16);
 
   const partes: Phaser.GameObjects.GameObject[] = [canto, cara, dibujo, texto];
   let resplandor: Phaser.GameObjects.Graphics | undefined;

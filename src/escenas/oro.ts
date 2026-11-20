@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { COLORES, css, estiloTexto } from './estilo.ts';
+import { pixelArt } from './pixel/texturas.ts';
 
 export interface Marcador extends Phaser.GameObjects.Container {
   cambiar(oro: number): void;
@@ -12,7 +13,7 @@ export function mostrarOro(escena: Phaser.Scene, oro: number): Marcador {
   const fondo = escena.add.graphics();
   fondo.fillStyle(COLORES.panel).fillRoundedRect(-70, -24, 140, 48, 24);
   fondo.lineStyle(2, COLORES.oro).strokeRoundedRect(-70, -24, 140, 48, 24);
-  const moneda = escena.add.circle(-42, 0, 13, COLORES.oro).setStrokeStyle(3, 0xc8962a);
+  const moneda = pixelArt(escena, -42, 0, 'ui', 'oro', 32);
   // En deuda (con la Tarjeta de crédito) el número se pinta de rojo.
   const texto = escena.add.text(-20, 0, String(oro), estiloTexto(24, oro < 0 ? COLORES.multi : COLORES.oro)).setOrigin(0, 0.5);
   const marcador = escena.add.container(x, 50, [fondo, moneda, texto]).setDepth(50) as Marcador;

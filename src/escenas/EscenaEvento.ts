@@ -18,6 +18,7 @@ import { mostrarBotonesInventario } from './inventario.ts';
 import { mostrarOro } from './oro.ts';
 import { mostrarRiesgo } from './riesgo.ts';
 import { irAPartida, jugarPartida, partidaActual } from './sesion.ts';
+import { retratoJuntoA } from './pixel/texturas.ts';
 
 const ANCHO_CARTA = 96;
 const ALTO_CARTA = 134;
@@ -37,7 +38,7 @@ export class EscenaEvento extends Phaser.Scene {
     const oferta = partida.oferta;
 
     if (oferta?.evento === 'regaloRaimundo') {
-      this.add.text(width / 2, 140, 'El regalo de Raimundo', estiloTexto(40)).setOrigin(0.5);
+      retratoJuntoA(this, this.add.text(width / 2, 140, 'El regalo de Raimundo', estiloTexto(40)).setOrigin(0.5), 'raimundo');
       this.add.text(width / 2, 190, 'Raimundo insiste: elige una de estas cartas para tu mazo', estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
       const cartas = oferta.cartas ?? [];
       cartas.forEach((carta, i) => {
@@ -55,7 +56,7 @@ export class EscenaEvento extends Phaser.Scene {
     }
 
     // El regalo de Gustavo.
-    this.add.text(width / 2, 140, 'El regalo de Gustavo', estiloTexto(40)).setOrigin(0.5);
+    retratoJuntoA(this, this.add.text(width / 2, 140, 'El regalo de Gustavo', estiloTexto(40)).setOrigin(0.5), 'gustavo');
     const carta = partida.mazo.find((c) => c.id === oferta?.cartaLibre);
     if (carta) {
       this.add.text(width / 2, 190, `Duplicó las modificaciones de tu carta más modificada: ${nombreDeCarta(carta)}`, estiloTexto(22, COLORES.textoSuave)).setOrigin(0.5);
