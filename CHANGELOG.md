@@ -6,6 +6,8 @@ la versión nueva (ver scripts/nueva-version.mjs).
 
 ## Sin publicar
 
+## 0.3.0 (2026-11-25)
+
 - Mapa en pixel art: el paño, la baranda y la mesa de alrededor se pintan píxel a píxel, con la luz en bandas tramadas; los caminos son líneas escalonadas (tiza punteada los que faltan, oro los que se pueden tomar); las fichas también son pixel art, con su canto, rayas y luz, y el icono va aplastado como la ficha, pintado encima. Todo el mapa tiene el mismo tamaño de píxel.
 - En Android, la app muestra su versión de verdad (antes decía 1.0).
 - Pixel art: las 104 baratijas tienen su icono dibujado píxel a píxel (las
